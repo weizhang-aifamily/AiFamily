@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭营养管家Pro</title>
+    <style>
+        /* 基础重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+        }
+        
+        body {
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+            padding: 16px;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        /* 容器样式 */
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        /* 头部样式 */
+        .header {
+            background: linear-gradient(135deg, #1E40AF, #3B82F6);
+            color: white;
+            padding: 24px 16px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::after {
+            content: "";
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            width: 200%;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+            font-weight: 600;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* 家庭评分仪表盘 */
+        .family-score {
+            position: relative;
+            width: 180px;
+            height: 90px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        
+        .score-dial {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .score-arc {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            position: absolute;
+            clip: rect(0, 180px, 180px, 90px);
+        }
+        
+        .arc-back {
+            width: 100%;
+            height: 100%;
+            border: 12px solid #E0F2FE;
+            border-radius: 50%;
+            position: absolute;
+            clip: rect(0, 180px, 180px, 90px);
+        }
+        
+        .arc-front {
+            width: 100%;
+            height: 100%;
+            border: 12px solid #3B82F6;
+            border-radius: 50%;
+            position: absolute;
+            clip: rect(0, 90px, 180px, 0);
+            transform: rotate(0deg);
+            animation: rotateArc 1.5s ease-out forwards;
+        }
+        
+        @keyframes rotateArc {
+            to { transform: rotate(162deg); } /* 82分对应的角度 */
+        }
+        
+        .score-value {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            z-index: 3;
+        }
+        
+        .score-label {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* 新增：AI预测标签样式 */
+        #aiPredictionLabel {
+            position: absolute;
+            bottom: -35px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            color: #3B82F6;
+            font-weight: 500;
+            background: rgba(255,255,255,0.2);
+            padding: 2px;
+            border-radius: 4px;
+            width: 80%;
+            margin: 0 auto;
+        }
+        
+        /* 预警卡片样式 */
+        .alert-card {
+            background: #fff8f0;
+            margin: 0 16px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border-left: 4px solid #ff9900;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            width: calc(100% - 32px);
+        }
+
+        /* 修改：AI解决方案按钮样式 */
+        .ai-solution-btn {
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            margin-top: 8px;
+            display: block;
+            width: 100%;
+        }
+
+        .alert-icon {
+            background: #ff9900;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .alert-content {
+            flex-grow: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .alert-detail {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 情景标签样式 */
+        .scenario-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .scenario-tags .tag {
+            background: rgba(255,255,255,0.3);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .scenario-tags .tag:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        .share-tip {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #eee;
+        }
+
+        .share-tip button {
+            background: none;
+            border: none;
+            color: #3B82F6;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+        /* 家庭成员卡片 */
+        .family-members {
+            display: flex;
+            padding: 16px;
+            gap: 12px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+        }
+        
+        .member-card {
+            min-width: 120px;
+            scroll-snap-align: start;
+            background: white;
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .member-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3B82F6, #10B981);
+        }
+        
+        .member-donut {
+            width: 60px;
+            height: 30px;
+            margin: 8px auto;
+            position: relative;
+        }
+        
+        .donut-bg {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #E0F2FE;
+            border-radius: 50%;
+            position: absolute;
+            clip: rect(0, 60px, 60px, 30px);
+        }
+        
+        .donut-value {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #3B82F6;
+            border-radius: 50%;
+            position: absolute;
+            clip: rect(0, 30px, 60px, 0);
+            transform: rotate(0deg);
+        }
+        
+        .member-info {
+            text-align: center;
+            margin-top: 8px;
+        }
+        
+        .member-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        
+        .member-info p {
+            font-size: 12px;
+            color: #64748B;
+        }
+        
+        /* 营养时间轴 */
+        .nutri-timeline {
+            padding: 16px;
+            margin: 16px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .timeline-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1E293B;
+        }
+        
+        .timeline-status {
+            background: #E0F7FA;
+            color: #06B6D4;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .timeline-status::before {
+            content: "⏳";
+            margin-right: 4px;
+        }
+        
+        .wave-progress {
+            height: 6px;
+            background: #E0F2FE;
+            border-radius: 3px;
+            margin: 12px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .wave-fill {
+            height: 100%;
+            width: 65%;
+            background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+            border-radius: 3px;
+            position: relative;
+            animation: wave 2s linear infinite;
+        }
+        
+        @keyframes wave {
+            0% { background-position-x: 0; }
+            100% { background-position-x: 40px; }
+        }
+        
+        .timeline-marks {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #64748B;
+        }
+        
+        /* 核心功能 */
+        .core-functions {
+            padding: 0 16px 16px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1E293B;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 14px;
+            background: #3B82F6;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+        
+        .func-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .func-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+        
+        .func-card:active {
+            transform: scale(0.98);
+        }
+        
+        .func-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #E0F2FE, #BFDBFE);
+            border-radius: 12px;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1E40AF;
+            font-size: 18px;
+        }
+        
+        .func-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .func-card p {
+            font-size: 11px;
+            color: #64748B;
+        }
+        
+        /* 推荐食材 */
+        .recommendation {
+            padding: 0 16px 20px;
+        }
+        
+        .food-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .food-card {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .food-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10B981, #3B82F6);
+        }
+        
+        .food-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            border-radius: 8px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #047857;
+            font-size: 16px;
+        }
+        
+        .food-info {
+            flex: 1;
+        }
+        
+        .food-info h4 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        
+        .food-info p {
+            font-size: 11px;
+            color: #64748B;
+        }
+
+        /* 新增：AI推荐理由样式 */
+        .ai-reason {
+            font-size: 10px;
+            color: #64748B;
+            margin-top: 4px;
+            background: #F1F5F9;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .food-tag {
+            background: #E0F2FE;
+            color: #1E40AF;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* 营养提示卡 */
+        .nutri-tip {
+            position: fixed;
+            bottom: -100%;
+            left: 16px;
+            right: 16px;
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            transition: bottom 0.3s ease-out;
+        }
+        
+        .nutri-tip.active {
+            bottom: 20px;
+        }
+        
+        .nutri-tip h4 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #1E293B;
+        }
+        
+        .nutri-tip p {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #475569;
+        }
+        
+        .tip-source {
+            font-size: 11px;
+            color: #94A3B8;
+            text-align: right;
+        }
+        
+        .close-tip {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            background: #F1F5F9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748B;
+            font-size: 12px;
+        }
+		/* 权威标识样式 */
+.scientific-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin: 10px auto;
+    width: fit-content;
+    font-size: 12px;
+    backdrop-filter: blur(10px);
+}
+/* 成就系统样式 */
+.progress-card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    margin: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.progress-header h4 {
+    font-size: 14px;
+}
+
+.progress-header .days {
+    background: #E0F2FE;
+    color: #1E40AF;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+.progress-bar {
+    height: 6px;
+    background: #E0F2FE;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.progress-bar .fill {
+    height: 100%;
+    background: linear-gradient(to right, #3B82F6, #8B5CF6);
+    transition: width 0.5s;
+}
+
+.progress-tip {
+    font-size: 12px;
+    color: #64748B;
+    text-align: center;
+}
+
+/* 新增：AI助手悬浮按钮样式 */
+.ai-assistant {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    color: white;
+    padding: 12px;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+    z-index: 99;
+    font-size: 10px;
+}
+
+.pulse-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid rgba(59, 130, 246, 0.5);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 1; }
+    100% { transform: scale(1.3); opacity: 0; }
+}
+    </style>
+	<style>
+/* 新增样式 */
+.ai-solutions-container {
+    padding: 0 16px 16px;
+}
+
+.ai-solutions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.solution-card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #E0F2FE;
+    transition: all 0.3s;
+}
+
+.solution-card.selected {
+    border: 1px solid #3B82F6;
+    background: #F0F7FF;
+}
+
+.solution-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.solution-card h4 {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.solution-card p {
+    font-size: 11px;
+    color: #64748B;
+}
+
+.ai-recommend-btn {
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    width: 100%;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+.ai-dishes-showcase {
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.dishes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.dish-card {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.dish-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dish-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 4px;
+    font-size: 10px;
+    text-align: center;
+}
+.supplier-section {
+    padding: 16px;
+    background: #f8fafc;
+    margin-top: 20px;
+    border-radius: 0 0 24px 24px;
+}
+
+.category-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 12px 0;
+    margin-bottom: 16px;
+}
+
+.tab {
+    padding: 6px 12px;
+    background: #E0F2FE;
+    border-radius: 16px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tab.active {
+    background: #3B82F6;
+    color: white;
+}
+
+.supplier-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.supplier-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.supplier-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(255,255,255,0.9);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+.supplier-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.supplier-info {
+    padding: 12px;
+}
+
+.supplier-tags {
+    display: flex;
+    gap: 4px;
+    margin: 6px 0;
+}
+
+.supplier-tags span {
+    background: #F1F5F9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: #64748B;
+}
+
+.supplier-desc {
+    font-size: 12px;
+    color: #666;
+    margin: 8px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.supplier-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.price {
+    font-weight: bold;
+    color: #EF4444;
+    font-size: 14px;
+}
+
+.supplier-btn {
+    background: #ECFDF5;
+    color: #047857;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.supplier-cta {
+    text-align: center;
+    margin-top: 24px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+}
+
+.join-btn {
+    background: linear-gradient(135deg, #10B981, #3B82F6);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 24px;
+    margin-top: 12px;
+    font-weight: bold;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部家庭状态栏 -->
+        <div class="header" style="background: linear-gradient(135deg, #2ecc71, #3498db);">
+            <h1>家庭营养管家Pro</h1>
+            <p>科学管理 · 智能营养</p>
+            
+            <!-- 家庭评分仪表盘 - 增加AI预测标签 -->
+            <div class="family-score">
+                <div class="score-dial">
+                    <div class="score-arc">
+                        <div class="arc-back"></div>
+                        <div class="arc-front"></div>
+                    </div>
+                    <div class="score-value">82</div>
+                    <div class="score-label">家庭营养指数</div>
+                    <div id="aiPredictionLabel">AI分析中...</div>
+                    <div class="scientific-badge">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L3 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-9-3z" fill="#3B82F6"/>
+                            <path d="M12 12l3-3m-3 3l-3-3m3 3v6" stroke="white" stroke-width="2"/>
+                        </svg>
+                        <span>AI算法通过三甲医院临床验证</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 营养时间轴 -->
+        <div class="nutri-timeline">
+            <div class="timeline-header">
+                <h3>营养时间轴</h3>
+                <div class="timeline-status">补钙窗口期 剩余2h</div>
+            </div>
+            
+            <div class="wave-progress">
+                <div class="wave-fill"></div>
+            </div>
+            
+            <div class="timeline-marks">
+                <span>早餐</span>
+                <span>午餐</span>
+                <span>晚餐</span>
+                <span>加餐</span>
+            </div>
+        </div>
+        
+        <!-- 家庭成员卡片 - 修改预警卡片为AI解决方案生成器 -->
+        <div class="family-members">
+            <div class="alert-card" id="aiAlertCard">
+                <div class="alert-icon">AI</div>
+                <div class="alert-content">
+                    <div class="alert-title">检测到2个优化机会</div>
+                    <div class="alert-detail">孩子: 钙不足23% | 爷爷: 钠超标57%</div>
+                </div>
+            </div>
+        </div>
+
+<div class="ai-solutions-container">
+    <h3 class="section-title">AI饮食方案</h3>
+    <div class="ai-solutions-grid">
+        <div class="solution-card" data-solution="picky-eater">
+            <div class="solution-icon">👶</div>
+            <h4>挑食方案</h4>
+            <p>隐藏孩子不喜欢的食材</p>
+        </div>
+        <div class="solution-card" data-solution="low-salt">
+            <div class="solution-icon">🧂</div>
+            <h4>限盐方案</h4>
+            <p>减少钠摄入50%</p>
+        </div>
+        <div class="solution-card" data-solution="high-calcium">
+            <div class="solution-icon">🦴</div>
+            <h4>高钙方案</h4>
+            <p>强化钙摄入</p>
+        </div>
+        <div class="solution-card" data-solution="low-fat">
+            <div class="solution-icon">🥑</div>
+            <h4>低脂方案</h4>
+            <p>控制脂肪摄入</p>
+        </div>
+    </div>
+    <button class="ai-recommend-btn" onclick="updateRecommendations()">
+        🧠 AI生成推荐
+    </button>
+</div>
+<!-- 替换原有冲突解决模块 -->
+<div class="family-recipe">
+    <div class="compatibility-badge">
+        <span class="score">👪 家庭适配度 92%</span>
+        <span class="hint">✓ 已平衡所有成员需求</span>
+    </div>
+    
+    <div class="recipe-card">
+        <h4>芝麻酱拌菠菜豆腐</h4>
+        <div class="nutri-benefits">
+            <div class="benefit" data-member="child">
+                <span class="emoji">👶</span>
+                <span>满足小明钙需求120%</span>
+            </div>
+            <div class="benefit" data-member="elder">
+                <span class="emoji">🧓</span>
+                <span>符合爷爷低盐要求</span>
+            </div>
+        </div>
+        <button class="btn-detail">查看智能适配原理</button>
+    </div>
+</div>
+
+<style>
+/* 家庭适配样式 */
+.family-recipe {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.compatibility-badge {
+    display: flex;
+    justify-content: space-between;
+    background: #ECFDF5;
+    padding: 8px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.score {
+    color: #047857;
+    font-weight: 500;
+}
+
+.hint {
+    color: #64748B;
+    font-size: 12px;
+}
+
+.nutri-benefits {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.benefit {
+    display: flex;
+    align-items: center;
+    background: #F8FAFC;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.benefit[data-member="child"] {
+    border-left: 3px solid #3B82F6;
+}
+
+.benefit[data-member="elder"] {
+    border-left: 3px solid #10B981;
+}
+
+.emoji {
+    margin-right: 6px;
+    font-size: 16px;
+}
+
+.btn-detail {
+    background: none;
+    border: none;
+    color: #3B82F6;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+}
+</style>
+
+<script>
+// 智能适配展示逻辑
+document.querySelector('.btn-detail').addEventListener('click', function() {
+    showAdaptationDetail({
+        recipe: '芝麻酱拌菠菜豆腐',
+        adjustments: [
+            '用低钠酱油替代普通酱油',
+            '增加芝麻酱用量提升钙摄入',
+            '分离调味步骤（先拌后分）'
+        ]
+    });
+});
+
+function showAdaptationDetail(data) {
+    // 显示AI优化细节弹窗
+    const detailHtml = `
+        <h4>👨👩👧👦 家庭适配优化</h4>
+        <ul>
+            ${data.adjustments.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+    `;
+    showModal(detailHtml);
+}
+</script>
+<div class="ai-dishes-showcase">
+    <h3 class="section-title">推荐菜品</h3>
+    <div class="dishes-grid">
+        <!-- 动态生成的菜品会出现在这里 -->
+    </div>
+</div>
+
+        <div class="recommendation">
+            <h3 class="section-title">食材清单</h3>
+        <div class="fridge-scan" onclick="openFridgeScan()">
+            <span class="scan-icon">📸</span>
+            <span class="scan-text">拍冰箱</span>
+        </div>
+            <div class="food-list">
+                <div class="food-card">
+                    <div class="food-icon">🥦</div>
+                    <div class="food-info">
+                        <h4>西兰花</h4>
+                        <p>需采购 200g</p>
+                    </div>
+                    <div class="food-tag">补钙</div>
+                </div>
+                
+                <div class="food-card">
+                    <div class="food-icon">🥛</div>
+                    <div class="food-info">
+                        <h4>牛奶</h4>
+                        <p>库存 500ml</p>
+                    </div>
+                    <div class="food-tag">高钙</div>
+                </div>
+                
+                <div class="food-card">
+                    <div class="food-icon">🦐</div>
+                    <div class="food-info">
+                        <h4>虾仁</h4>
+                        <p>需采购 150g</p>
+                    </div>
+                    <div class="food-tag">低脂</div>
+                </div>
+                
+                <div class="food-card">
+                    <div class="food-icon">🌰</div>
+                    <div class="food-info">
+                        <h4>黑芝麻</h4>
+                        <p>库存 50g</p>
+                    </div>
+                    <div class="food-tag">高钙</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 核心功能 -->
+        <div class="core-functions">
+            <h3 class="section-title">核心功能</h3>
+            
+            <div class="func-grid">
+                <div class="func-card">
+                    <div class="func-icon">🍎</div>
+                    <h4>智能食谱</h4>
+                    <p>个性化推荐</p>
+                </div>
+                
+                <div class="func-card">
+                    <div class="func-icon">📊</div>
+                    <h4>健康预测</h4>
+                    <p>AI趋势分析</p>
+                </div>
+                
+                <div class="func-card">
+                    <div class="func-icon">🏃</div>
+                    <h4>运动计划</h4>
+                    <p>匹配营养</p>
+                </div>
+            </div>
+        </div>
+        
+<!-- HTML 结构 -->
+<div class="habit-tracker">
+    <div class="habit-header">
+        <h4><span class="habit-icon">🏆</span> 21天营养习惯</h4>
+        <div class="streak-counter">
+            <span class="days">连续 <strong>3</strong> 天</span>
+            <div class="fire-icon">🔥</div>
+        </div>
+    </div>
+    
+    <div class="progress-container">
+        <div class="progress-bar" style="--progress: 30%;">
+            <div class="progress-fill"></div>
+        </div>
+        <span class="progress-text">第7天/21天</span>
+    </div>
+    
+    <div class="daily-mission">
+        <div class="mission-card completed">
+            <div class="check-circle">✓</div>
+            <div class="mission-content">
+                <h5>用黑芝麻代替白糖</h5>
+                <p>早餐燕麦片调味</p>
+                <div class="mission-meta">
+                    <span class="difficulty">难度：★☆☆</span>
+                    <span class="science">依据：中国居民膳食指南</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mission-card current">
+            <div class="check-circle"></div>
+            <div class="mission-content">
+                <h5>午餐前喝200ml水</h5>
+                <p>减少过量进食</p>
+                <button class="btn-complete">标记完成</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="family-motivation">
+        <div class="avatar-group">
+            <div class="avatar" style="background-color: #3B82F6;">爸</div>
+            <div class="avatar" style="background-color: #10B981;">爷</div>
+        </div>
+        <p>全家正在共同改善<span class="highlight">钠摄入</span>习惯</p>
+    </div>
+</div>
+
+<style>
+/* 习惯追踪器样式 */
+.habit-tracker {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.habit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.habit-icon {
+    margin-right: 8px;
+}
+
+.streak-counter {
+    display: flex;
+    align-items: center;
+    background: #FFEDD5;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+.fire-icon {
+    margin-left: 4px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.progress-container {
+    margin: 12px 0;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #E2E8F0;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: var(--progress);
+    background: linear-gradient(to right, #3B82F6, #8B5CF6);
+    border-radius: 4px;
+    transition: width 0.5s;
+}
+
+.progress-text {
+    font-size: 12px;
+    color: #64748B;
+    display: block;
+    text-align: right;
+}
+
+.mission-card {
+    display: flex;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.mission-card.completed {
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+}
+
+.mission-card.current {
+    background: #EFF6FF;
+    border-left: 4px solid #3B82F6;
+}
+
+.check-circle {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #94A3B8;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.mission-card.completed .check-circle {
+    background: #10B981;
+    border-color: #10B981;
+    color: white;
+}
+
+.mission-content h5 {
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.mission-content p {
+    font-size: 13px;
+    color: #64748B;
+    margin-bottom: 6px;
+}
+
+.mission-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.difficulty {
+    color: #F59E0B;
+}
+
+.science {
+    color: #3B82F6;
+}
+
+.btn-complete {
+    background: #3B82F6;
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.family-motivation {
+    display: flex;
+    align-items: center;
+    background: #F8FAFC;
+    padding: 10px;
+    border-radius: 12px;
+    margin-top: 16px;
+}
+
+.avatar-group {
+    display: flex;
+    margin-right: 12px;
+}
+
+.avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    margin-left: -8px;
+    border: 2px solid white;
+}
+
+.highlight {
+    color: #3B82F6;
+    font-weight: 500;
+}
+</style>
+
+<script>
+// 习惯追踪交互
+document.querySelectorAll('.btn-complete').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const card = this.closest('.mission-card');
+        card.classList.add('completed');
+        
+        // 更新进度
+        const progressBar = document.querySelector('.progress-fill');
+        const currentWidth = parseInt(progressBar.style.width) || 0;
+        progressBar.style.width = `${currentWidth + 5}%`;
+        
+        // 更新连续天数
+        const streakCount = document.querySelector('.streak-counter strong');
+        streakCount.textContent = parseInt(streakCount.textContent) + 1;
+        
+        // 显示完成动画
+        this.innerHTML = '✓ 已完成';
+        setTimeout(() => {
+            card.querySelector('.check-circle').innerHTML = '✓';
+        }, 300);
+    });
+});
+
+// 模拟家庭数据更新
+function updateFamilyProgress() {
+    fetch('/api/family-progress')
+        .then(res => res.json())
+        .then(data => {
+            // 更新家庭成员头像状态
+        });
+}
+</script>
+		
+		<!-- 特色食材直供 -->
+<div class="supplier-section">
+    <h3 class="section-title">特色食材直供</h3>
+    
+    <!-- 分类标签 -->
+    <div class="category-tabs">
+        <div class="tab active" data-category="all">全部</div>
+        <div class="tab" data-category="weight-loss">减脂优选</div>
+        <div class="tab" data-category="growth">儿童长高</div>
+        <div class="tab" data-category="chronic">三高友好</div>
+        <div class="tab" data-category="vegetarian">素食主义</div>
+    </div>
+    
+    <!-- 食材展示区 -->
+    <div class="supplier-grid">
+        <!-- 示例卡片1 -->
+        <div class="supplier-card" data-categories="growth,vegetarian">
+            <div class="supplier-badge">基地直供</div>
+            <img src="https://example.com/rice.jpg" class="supplier-image">
+            <div class="supplier-info">
+                <h4>五常大米</h4>
+                <div class="supplier-tags">
+                    <span>儿童营养</span>
+                    <span>低GI</span>
+                </div>
+                <p class="supplier-desc">蛋白质含量高出普通大米30%</p>
+                <div class="supplier-footer">
+                    <span class="price">¥39.9/5kg</span>
+                    <button class="supplier-btn">查看详情</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 更多卡片... -->
+    </div>
+    
+    <div class="supplier-cta">
+        <p>优质供应商招募中，入驻即享流量扶持</p>
+        <button class="join-btn">立即加盟</button>
+    </div>
+</div>
+		
+    </div>
+    
+    <!-- 营养提示卡 -->
+    <div class="nutri-tip" id="nutriTip">
+        <div class="close-tip" id="closeTip">×</div>
+        <h4>🥦 西兰花营养小贴士</h4>
+        <p>钙含量47mg/100g（日需6%），维生素C含量是柠檬的2倍</p>
+        <p>冷知识：烹饪时间≤5分钟保留90%营养</p>
+        <p class="tip-source">来源：中国食物成分表第6版</p>
+    </div>
+    
+    <!-- 新增：AI助手悬浮按钮 -->
+    <div class="ai-assistant" id="aiAssistant" onclick="openAIChat()">
+        <div class="pulse-ring"></div>
+        <span>问AI营养师</span>
+    </div>
+    
+    <script>
+        // 营养提示卡交互
+        const nutriTip = document.getElementById('nutriTip');
+        const closeTip = document.getElementById('closeTip');
+        const foodCards = document.querySelectorAll('.food-card');
+        
+        // 点击食材卡片显示提示
+        foodCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const foodName = this.querySelector('h4').textContent;
+                showNutriTip(foodName);
+            });
+        });
+        
+        // 关闭提示卡
+        closeTip.addEventListener('click', function(e) {
+            e.stopPropagation();
+            nutriTip.classList.remove('active');
+        });
+        
+        // 点击提示卡外部关闭
+        document.addEventListener('click', function(e) {
+            if (!nutriTip.contains(e.target)) {
+                nutriTip.classList.remove('active');
+            }
+        });
+        
+        // 显示营养提示
+        function showNutriTip(foodName) {
+            const tipContent = nutriTip.querySelector('h4');
+            const tipDetails = nutriTip.querySelectorAll('p');
+            
+            // 模拟根据食物名称获取不同数据
+            if (foodName === '西兰花') {
+                tipContent.innerHTML = '🥦 西兰花营养小贴士';
+                tipDetails[0].textContent = '钙含量47mg/100g（日需6%），维生素C含量是柠檬的2倍';
+                tipDetails[1].innerHTML = '🔮 <strong>预测</strong>：每周3次，3个月后钙摄入达标率↑18%';
+                tipDetails[2].innerHTML = '<small>基于您孩子的历史摄入数据</small>';
+            } else if (foodName === '牛奶') {
+                tipContent.innerHTML = '🥛 牛奶营养小贴士';
+                tipDetails[0].textContent = '钙含量120mg/100ml（日需15%），优质蛋白质来源';
+                tipDetails[1].innerHTML = '🔮 <strong>预测</strong>：每天2杯，3个月后骨密度↑0.8%';
+                tipDetails[2].innerHTML = '<small>基于中国居民膳食指南2022</small>';
+            }
+            
+            // 增加分享按钮
+            nutriTip.innerHTML += `
+            <div class="share-tip">
+                <button onclick="navigator.clipboard.writeText('${foodName}营养小知识')">
+                    📋 复制知识卡片
+                </button>
+            </div>`;
+            
+            nutriTip.classList.add('active');
+        }
+        
+        // 模拟数据加载动画
+        setTimeout(() => {
+            document.querySelector('.arc-front').style.transform = 'rotate(162deg)';
+        }, 300);
+        
+        // 点击预警卡片跳转到详情页
+        document.getElementById('familyAlert')?.addEventListener('click', function() {
+            window.location.href = 'member-detail.html';
+        });
+        
+        // 情景模式处理
+        document.querySelectorAll('.scenario-tags .tag').forEach(tag => {
+            tag.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const scene = this.dataset.scene;
+                
+                // 根据场景调整推荐
+                if(scene === 'picky-eater') {
+                    alert('已启用AI挑食模式：\n- 智能隐藏孩子讨厌的食材\n- AI生成替代营养方案');
+                } else if(scene === 'low-salt') {
+                    alert('已启用AI限盐模式：\n- 过滤高钠食材\n- AI推荐天然调味方案');
+                }
+            });
+        });
+        
+        // 模拟成就进度更新
+        function updateProgress() {
+            const progress = localStorage.getItem('dietDays') || 0;
+            document.querySelector('.days').textContent = progress + '天';
+            document.querySelector('.fill').style.width = `${progress * 10}%`;
+        }
+        
+        // 新增：AI解决方案生成
+        function generateAISolution() {
+            document.getElementById('aiAlertCard').innerHTML = `
+                <div class="alert-icon">✅</div>
+                <div class="alert-content">
+                    <div class="alert-title">AI生成优化方案</div>
+                    <div class="alert-detail">
+                        <p>• 孩子：早餐加200ml牛奶（钙+240mg）</p>
+                        <p>• 爷爷：用香草代替酱油（钠-40%）</p>
+                    </div>
+                    <button class="ai-solution-btn" onclick="applySolution()">立即应用</button>
+                </div>
+            `;
+        }
+        
+        // 新增：AI助手对话
+        function openAIChat() {
+            // 模拟AI对话
+            const tip = document.getElementById('nutriTip');
+            tip.innerHTML = `
+                <div class="close-tip" id="closeTip">×</div>
+                <h4>🧠 AI营养师建议</h4>
+                <p>分析您家昨日饮食：</p>
+                <p>• 优质蛋白达标 ✅</p>
+                <p>• 膳食纤维不足 ❌（差12g）</p>
+                <p>• 钙摄入持续偏低趋势</p>
+                <button class="ai-solution-btn" style="margin-top:12px;" onclick="generateAISolution()">
+                    查看优化方案
+                </button>
+            `;
+            tip.classList.add('active');
+        }
+        
+        // 初始化AI预测标签
+        setTimeout(() => {
+            document.getElementById('aiPredictionLabel').innerHTML = 
+                'AI预测：维持当前饮食，3个月后钙缺口↑12%';
+        }, 1500);
+        
+        // 页面加载时调用
+        updateProgress();
+    </script>
+	<script>
+// 新增交互逻辑
+let selectedSolutions = [];
+
+// 方案选择处理
+document.querySelectorAll('.solution-card').forEach(card => {
+    card.addEventListener('click', function() {
+        this.classList.toggle('selected');
+        const solution = this.dataset.solution;
+        
+        if(this.classList.contains('selected')) {
+            selectedSolutions.push(solution);
+        } else {
+            selectedSolutions = selectedSolutions.filter(s => s !== solution);
+        }
+    });
+});
+
+// 更新推荐
+function updateRecommendations() {
+    if(selectedSolutions.length === 0) {
+        alert('请至少选择一个方案');
+        return;
+    }
+    
+    // 模拟AI推荐逻辑
+    let recommendedFoods = [];
+    let recommendedDishes = [];
+    
+    if(selectedSolutions.includes('picky-eater')) {
+        recommendedFoods.push({
+            name: '奶酪',
+            icon: '🧀',
+            desc: '钙含量: 720mg/100g',
+            tag: '高钙',
+            reason: '🤖 AI推荐：孩子喜欢的乳制品'
+        });
+        
+        recommendedDishes.push(
+            {name: '奶酪焗南瓜', image: 'https://example.com/dish1.jpg'},
+            {name: '牛奶布丁', image: 'https://example.com/dish2.jpg'}
+        );
+    }
+    
+    if(selectedSolutions.includes('low-salt')) {
+        recommendedFoods.push({
+            name: '香菇',
+            icon: '🍄',
+            desc: '低钠高鲜',
+            tag: '调味',
+            reason: '🤖 AI推荐：天然鲜味替代盐'
+        });
+        
+        recommendedDishes.push(
+            {name: '香菇蒸鸡', image: 'https://example.com/dish3.jpg'},
+            {name: '素炒三鲜', image: 'https://example.com/dish4.jpg'}
+        );
+    }
+    
+    // 更新食材推荐
+    const foodList = document.querySelector('.food-list');
+    foodList.innerHTML = recommendedFoods.map(food => `
+        <div class="food-card">
+            <div class="food-icon">${food.icon}</div>
+            <div class="food-info">
+                <h4>${food.name}</h4>
+                <p>${food.desc}</p>
+                <div class="ai-reason">${food.reason}</div>
+            </div>
+            <div class="food-tag">${food.tag}</div>
+        </div>
+    `).join('');
+    
+    // 更新菜品展示
+    const dishesGrid = document.querySelector('.dishes-grid');
+    dishesGrid.innerHTML = recommendedDishes.map(dish => `
+        <div class="dish-card">
+            <img src="${dish.image}" class="dish-image" alt="${dish.name}">
+            <div class="dish-label">${dish.name}</div>
+        </div>
+    `).join('');
+    
+    // 滚动到菜品区域
+    document.querySelector('.ai-dishes-showcase').scrollIntoView({
+        behavior: 'smooth'
+    });
+}
+// 分类切换
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelector('.tab.active').classList.remove('active');
+        this.classList.add('active');
+        
+        const category = this.dataset.category;
+        filterSuppliers(category);
+    });
+});
+
+function filterSuppliers(category) {
+    const cards = document.querySelectorAll('.supplier-card');
+    
+    cards.forEach(card => {
+        if(category === 'all' || card.dataset.categories.includes(category)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// 初始化显示全部
+filterSuppliers('all');
+</script>
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭营养驾驶舱</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+        }
+        
+        body {
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+            padding: 16px;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .dashboard-container {
+            padding: 16px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1E293B;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 14px;
+            background: #3B82F6;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+        
+        /* 成就横幅 */
+        .achievement-banner {
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            color: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .achievement-stars {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 60px;
+            opacity: 0.2;
+        }
+        
+        .achievement-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .achievement-title::before {
+            content: "🏆";
+            margin-right: 8px;
+            font-size: 24px;
+        }
+        
+        .achievement-desc {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+        
+        .share-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .share-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* 雷达图 */
+        .radar-container {
+            width: 100%;
+            height: 220px;
+            background: #F8FAFC;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        
+        .radar-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .radar-date {
+            font-size: 12px;
+            color: #64748B;
+            font-weight: normal;
+        }
+        
+        .radar-placeholder {
+            width: 100%;
+            height: 160px;
+            background: #E2E8F0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748B;
+            font-size: 12px;
+        }
+        
+        .radar-labels {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 8px;
+        }
+        
+        .radar-label {
+            font-size: 10px;
+            color: #64748B;
+            text-align: center;
+        }
+        
+        .radar-label.highlight {
+            color: #EF4444;
+            font-weight: 600;
+        }
+        
+        /* 对比卡片 */
+        .compare-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        
+        .compare-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .compare-title::before {
+            content: "📈";
+            margin-right: 6px;
+        }
+        
+        .improvement-tag {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: #ECFDF5;
+            color: #065F46;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        /* 快速补缺口按钮 */
+        .quick-fix-btn {
+            background: #FEF3C7;
+            color: #92400E;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 12px;
+            width: 100%;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-fix-btn:hover {
+            background: #FDE68A;
+        }
+        
+        .quick-fix-icon {
+            font-size: 16px;
+        }
+        
+        /* 家庭成员卡片 */
+        .family-members {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            scrollbar-width: none;
+        }
+        
+        .family-members::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .member-card {
+            min-width: 120px;
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        
+        .member-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #E0F2FE;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            font-size: 14px;
+        }
+        
+        .member-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .member-status {
+            font-size: 10px;
+            color: #64748B;
+            margin-bottom: 8px;
+        }
+        
+        .badges-container {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            background: #ECFDF5;
+            color: #065F46;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+            font-weight: 500;
+        }
+        
+        .badge-premium {
+            background: linear-gradient(135deg, #F59E0B, #EF4444);
+            color: white !important;
+        }
+        
+        /* 采购清单 */
+        .shopping-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .shopping-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .shopping-title::before {
+            content: "🏆";
+            margin-right: 6px;
+        }
+        
+        .shopping-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #F1F5F9;
+        }
+        
+        .shopping-item:last-child {
+            border-bottom: none;
+        }
+        
+        .shopping-desc {
+            font-size: 13px;
+            flex: 1;
+        }
+        
+        .shopping-suggestion {
+            font-size: 12px;
+            color: #3B82F6;
+            text-align: right;
+        }
+        
+        /* 时间轴 */
+        .timeline-container {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .timeline-title::before {
+            content: "⏳";
+            margin-right: 6px;
+        }
+        
+        .timeline-scroll {
+            overflow-x: auto;
+            display: flex;
+            gap: 12px;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+        
+        .timeline-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .timeline-item {
+            min-width: 160px;
+            background: #F8FAFC;
+            border-radius: 12px;
+            padding: 12px;
+        }
+        
+        .timeline-date {
+            font-size: 10px;
+            color: #64748B;
+            margin-bottom: 4px;
+        }
+        
+        .timeline-event {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        .timeline-result {
+            font-size: 11px;
+            color: #10B981;
+            font-weight: 500;
+        }
+        
+        /* 积分排行榜 */
+        .ranking-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .ranking-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .ranking-title::before {
+            content: "🏅";
+            margin-right: 6px;
+        }
+        
+        .score-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .family-score {
+            text-align: center;
+        }
+        
+        .score-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #3B82F6;
+        }
+        
+        .score-label {
+            font-size: 12px;
+            color: #64748B;
+        }
+        
+        .vs-label {
+            font-size: 12px;
+            color: #64748B;
+            align-self: center;
+        }
+        
+        .progress-container {
+            background: #F1F5F9;
+            border-radius: 8px;
+            height: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+            width: 65%;
+            border-radius: 8px;
+        }
+        
+        .progress-text {
+            font-size: 11px;
+            color: #64748B;
+            text-align: center;
+        }
+        
+        /* 提示信息 */
+        .ai-tip {
+            background: #FFFBEB;
+            color: #92400E;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 12px 0;
+            font-size: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        
+        .ai-tip-icon {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-container">
+            <!-- 成就横幅 -->
+            <div class="achievement-banner">
+                <div class="achievement-stars">✨✨✨</div>
+                <div class="achievement-title">营养守护者成就达成！</div>
+                <div class="achievement-desc">您已连续21天改善家庭饮食，钙摄入提升42%，钠摄入降低28%</div>
+                <button class="share-btn" onclick="shareAchievement()">
+                    <span>📸</span> 炫耀我的成就
+                </button>
+            </div>
+            
+            <!-- 本周营养雷达图 -->
+            <div class="radar-container">
+                <div class="radar-title">
+                    本周家庭营养评分
+                    <span class="radar-date">5月20日-5月26日</span>
+                </div>
+                <div class="radar-placeholder">
+                    [营养雷达图可视化]
+                </div>
+                <div class="radar-labels">
+                    <div class="radar-label highlight">钙 42 <span style="color:#10B981">↑18%</span></div>
+                    <div class="radar-label">铁 68 <span style="color:#10B981">↑5%</span></div>
+                    <div class="radar-label highlight">钠 83 <span style="color:#EF4444">↓12%</span></div>
+                    <div class="radar-label">膳食纤维 71 <span style="color:#10B981">↑9%</span></div>
+                    <div class="radar-label">优质蛋白 65 <span style="color:#10B981">↑7%</span></div>
+                </div>
+            </div>
+            
+            <!-- 对比卡片 -->
+            <div class="compare-card">
+                <div class="improvement-tag">进步显著</div>
+                <div class="compare-title">与上月对比</div>
+                <div style="display: flex; justify-content: space-between; text-align: center;">
+                    <div>
+                        <div style="font-size: 12px; color: #64748B;">上月平均</div>
+                        <div style="font-size: 32px; font-weight: 700; color: #EF4444;">58</div>
+                        <div style="font-size: 11px; color: #64748B;">营养总分</div>
+                    </div>
+                    <div style="align-self: center; font-size: 24px;">→</div>
+                    <div>
+                        <div style="font-size: 12px; color: #64748B;">本周得分</div>
+                        <div style="font-size: 32px; font-weight: 700; color: #10B981;">76</div>
+                        <div style="font-size: 11px; color: #64748B;">营养总分</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 快速补缺口按钮 -->
+            <button class="quick-fix-btn" onclick="navigateToFix('calcium')">
+                <span>⚠️ 钙缺口较大</span>
+                <span class="quick-fix-icon">一键补钙 →</span>
+            </button>
+            
+            <!-- 家庭成员卡片 -->
+            <h3 class="section-title">家庭营养天团</h3>
+            <div class="family-members">
+                <div class="member-card">
+                    <div class="member-header">
+                        <div class="member-avatar">👦</div>
+                        <div>
+                            <div class="member-name">小明 (8岁)</div>
+                            <div class="member-status">钙摄入 ↑35%</div>
+                        </div>
+                    </div>
+                    <div class="badges-container">
+                        <div class="badge badge-premium">补钙小能手</div>
+                        <div class="badge">不挑食</div>
+                    </div>
+                </div>
+                
+                <div class="member-card">
+                    <div class="member-header">
+                        <div class="member-avatar">👴</div>
+                        <div>
+                            <div class="member-name">爷爷 (65岁)</div>
+                            <div class="member-status">血压 ↓8mmHg</div>
+                        </div>
+                    </div>
+                    <div class="badges-container">
+                        <div class="badge badge-premium">限盐先锋</div>
+                        <div class="badge">连续打卡21天</div>
+                    </div>
+                </div>
+                
+                <div class="member-card">
+                    <div class="member-header">
+                        <div class="member-avatar">👩</div>
+                        <div>
+                            <div class="member-name">妈妈 (35岁)</div>
+                            <div class="member-status">铁摄入 ↑22%</div>
+                        </div>
+                    </div>
+                    <div class="badges-container">
+                        <div class="badge badge-premium">营养指挥官</div>
+                        <div class="badge">完美搭配</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 采购清单 -->
+            <div class="shopping-card">
+                <div class="shopping-title">🏆 成就奖励食材</div>
+                <div class="shopping-item">
+                    <div class="shopping-desc">为庆祝连续3周改善</div>
+                    <div class="shopping-suggestion">特推有机奶酪8折</div>
+                </div>
+                <div class="shopping-item">
+                    <div class="shopping-desc">限盐成就达成</div>
+                    <div class="shopping-suggestion">低钠酱油买一送一</div>
+                </div>
+            </div>
+            
+            <!-- 健康里程碑 -->
+            <div class="timeline-container">
+                <div class="timeline-title">荣耀时刻时间轴</div>
+                <div class="timeline-scroll">
+                    <div class="timeline-item">
+                        <div class="timeline-date">3月15日</div>
+                        <div class="timeline-event">开始使用本产品</div>
+                        <div class="timeline-result">营养总分58</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">4月2日</div>
+                        <div class="timeline-event">首次获得S级评价</div>
+                        <div class="timeline-result">总分 ↑ 至72</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">5月10日</div>
+                        <div class="timeline-event">超越90%用户</div>
+                        <div class="timeline-result">当前总分76</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 积分排行榜 -->
+            <div class="ranking-card">
+                <div class="ranking-title">🏅 家庭荣耀榜</div>
+                <div class="score-container">
+                    <div class="family-score">
+                        <div class="score-value">TOP 8%</div>
+                        <div class="score-label">全国排名</div>
+                    </div>
+                    <div class="vs-label">击败</div>
+                    <div class="family-score">
+                        <div class="score-value">92%</div>
+                        <div class="score-label">的用户</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 12px;">
+                    <button class="share-btn" style="color: #3B82F6; background: #E0F2FE;">
+                        <span>🥇</span> 炫耀我的排名
+                    </button>
+                </div>
+            </div>
+            
+            <!-- AI提示 -->
+            <div class="ai-tip">
+                <div class="ai-tip-icon">💡</div>
+                <div>芝麻酱的钙含量是牛奶的10倍，拌面时加1勺≈喝1杯牛奶。</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 分享成就功能
+        function shareAchievement() {
+            // 实际应用中会调用分享API
+            alert("生成精美的成就海报并打开分享界面！");
+            
+            // 模拟海报内容
+            const poster = `
+                🎉 营养守护者成就 🎉
+                
+                连续21天改善家庭饮食
+                ⭐ 钙摄入提升42%
+                ⭐ 钠摄入降低28%
+                ⭐ 击败全国92%的家庭
+                
+                #家庭营养管理 #健康成就
+            `;
+            console.log("生成的分享海报内容:\n", poster);
+        }
+        
+        // 导航到补缺口页面
+        function navigateToFix(nutrient) {
+            // 这里实际应用中会跳转到相应页面并预填参数
+            alert(`将跳转到补${nutrient}方案页面，并自动选择相关成员`);
+        }
+        
+        // 初始化雷达图（实际应用中会使用图表库）
+        function initRadarChart() {
+            console.log("初始化雷达图");
+        }
+        
+        // 页面加载时初始化
+        window.onload = function() {
+            initRadarChart();
+        };
+    </script>
+</body>
+</html>

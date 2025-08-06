@@ -1,0 +1,139 @@
+好的！我会用最详细的步骤指导你完成部署，无需任何技术背景，只需跟着操作即可。以下是**从零开始**的完整流程：
+
+---
+
+### **最终目标**  
+将你的「家庭营养管家Pro」网站部署到云端，包含：  
+1. **前端页面**（HTML/CSS/JS） → 托管在 Vercel（免费）  
+2. **数据库**（存储用户数据） → 使用 Supabase（免费）  
+3. **简单后端逻辑**（如AI预测） → 用 Vercel Edge Functions（免费）  
+
+---
+
+### **第一步：准备文件**
+1. **整理你的网站文件**  
+   - 确保所有HTML/CSS/JS文件在一个文件夹内（例如`nutrition-app`）。  
+   - 如果只有单文件（如`index.html`），直接新建文件夹放进去即可。  
+
+2. **示例结构**（你的文件夹应类似这样）：  
+   ```plaintext
+   nutrition-app/
+   ├── index.html          # 主页面
+   ├── styles.css          # 样式文件
+   ├── script.js           # 交互逻辑
+   └── images/             # 图片文件夹
+   ```
+
+---
+
+### **第二步：上传代码到GitHub**
+1. **注册GitHub账号**  
+   - 访问 [github.com](https://github.com) 点击 `Sign up` 注册。  
+
+2. **创建新仓库**  
+   - 登录后点击右上角 `+` → `New repository`。  
+   - 输入仓库名（如`nutrition-app`），选择 `Public`（免费），点击 `Create repository`。  
+
+3. **上传文件到GitHub**  
+   - 下载 [GitHub Desktop](https://desktop.github.com)（图形化工具，无需命令行）。  
+   - 安装后登录，选择 `Clone a repository` → 选刚创建的仓库。  
+   - 将你的`nutrition-app`文件夹内所有文件**拖入**GitHub仓库的本地文件夹。  
+   - 点击 `Commit to main` → `Push origin` 上传文件。  
+
+---
+
+### **第三步：部署前端到Vercel**
+1. **注册Vercel**  
+   - 访问 [vercel.com](https://vercel.com)，用GitHub账号登录。  
+
+2. **导入GitHub仓库**  
+   - 点击 `Add New` → `Project` → 选择你的 `nutrition-app` 仓库 → `Import`。  
+
+3. **自动部署**  
+   - 直接点击 `Deploy`，Vercel会自动检测HTML文件并部署。  
+   - 完成后会生成一个网址（如`nutrition-app.vercel.app`），这就是你的网站！  
+
+---
+
+### **第四步：设置数据库（Supabase）**
+1. **注册Supabase**  
+   - 访问 [supabase.com](https://supabase.com)，用GitHub账号登录。  
+
+2. **创建新项目**  
+   - 点击 `New Project` → 输入项目名（如`nutrition-db`），选择免费计划 → `Create project`。  
+
+3. **获取数据库连接信息**  
+   - 进入项目后，左侧菜单点击 `Settings` → `Project Settings` → 记录下：  
+     - `Project URL`（如`https://xxxxxxxxx.supabase.co`）  
+     - `anon/public` 的密钥（在 `API` 选项卡中）。  
+
+4. **创建数据表**（以存储用户饮食记录为例）  
+   - 左侧菜单点击 `Table Editor` → `New Table` → 输入表名 `diet_records`。  
+   - 添加字段（点击 `+ Column`）：  
+     - `user_id`（类型 `text`）  
+     - `food_item`（类型 `text`）  
+     - `calcium_mg`（类型 `number`）  
+
+---
+
+### **第五步：连接前端和数据库**
+1. **在前端代码中调用Supabase**  
+   - 在 `index.html` 的 `<head>` 中添加Supabase客户端库：  
+     ```html
+     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+     ```
+   - 在 `script.js` 中初始化Supabase（替换为你的Project URL和密钥）：  
+     ```javascript
+     const supabaseUrl = 'https://xxxxxxxxx.supabase.co';
+     const supabaseKey = '你的anon-public密钥';
+     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+     // 示例：插入数据到数据库
+     async function saveDietRecord(userId, food, calcium) {
+       const { data, error } = await supabase
+         .from('diet_records')
+         .insert([{ user_id: userId, food_item: food, calcium_mg: calcium }]);
+       console.log(data);
+     }
+     ```
+
+2. **重新部署到Vercel**  
+   - 在GitHub Desktop中提交代码修改 → 推送（Push）到GitHub。  
+   - Vercel会自动检测更新并重新部署。  
+
+---
+
+### **第六步：添加AI预测功能（可选）**
+1. **用Vercel Edge Functions**  
+   - 在项目根目录新建文件夹 `api` → 创建文件 `predict.js`：  
+     ```javascript
+     export default function (request) {
+       // 简单的AI预测逻辑（示例：返回随机营养评分）
+       const score = Math.floor(Math.random() * 100);
+       return new Response(`AI预测营养评分: ${score}`);
+     }
+     ```
+   - 部署后通过 `nutrition-app.vercel.app/api/predict` 访问。  
+
+---
+
+### **最终效果**
+- **网站地址**：`https://nutrition-app.vercel.app`  
+- **数据库管理**：`https://app.supabase.com` 查看数据  
+- **AI接口**：`https://nutrition-app.vercel.app/api/predict`  
+
+---
+
+### **常见问题**
+1. **如何更新网站内容？**  
+   - 修改本地文件 → 用GitHub Desktop提交并推送 → Vercel自动更新。  
+
+2. **数据库数据如何备份？**  
+   - Supabase后台点击 `Settings` → `Backups` 可导出SQL。  
+
+3. **域名自定义（如用`nutrition.com`）？**  
+   - 在Vercel项目中点击 `Settings` → `Domains` 绑定（需购买域名）。  
+
+---
+
+按以上步骤操作后，你的「家庭营养管家Pro」就能完全运行在云端了！如果有任何一步卡住，随时告诉我具体问题，我会继续帮你排查。

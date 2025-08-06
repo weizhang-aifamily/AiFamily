@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>全家营养菜单 · 智能版</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; }
+body { background: #f5f5f5; color: #333; line-height: 1.6; }
+.header { background: #2ecc71; color: #fff; padding: 15px; text-align: center; font-size: 18px; position: relative; }
+.card { background: #fff; margin: 12px; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 8px; background: #2ecc71; color: #fff; font-size: 16px; margin-top: 8px; text-align: center; cursor: pointer; transition: all 0.3s; }
+.btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+.btn-secondary { background: #95a5a6; }
+.btn-small { padding: 6px 10px; font-size: 12px; display: inline-flex; align-items: center; }
+.btn-icon { margin-right: 5px; }
+ul { list-style: none; padding-left: 0; }
+li { margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+.progress-container { display: flex; align-items: center; gap: 8px; width: 70%; }
+.progress-bar { height: 8px; border-radius: 4px; background: #e0e0e0; flex-grow: 1; overflow: hidden; }
+.progress { height: 100%; }
+.nutrient-tag { font-size: 12px; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+.protein { background: #ffecec; color: #e74c3c; }
+.fiber { background: #fff5e6; color: #f39c12; }
+.calcium { background: #e6f3ff; color: #3498db; }
+.sodium { background: #e8f8f0; color: #2ecc71; }
+.ai-tag { background: #e8f8f0; color: #2ecc71; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-bottom: 5px; display: inline-block; }
+.recipe-cards { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; }
+.recipe-card { min-width: 160px; padding: 12px; border-radius: 8px; background: #f9f9f9; flex-shrink: 0; }
+.bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; padding: 10px; background: #fff; border-top: 1px solid #eee; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+.bottom-bar .btn { margin: 0; }
+.tutorial { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
+.tutorial-content { max-width: 300px; text-align: center; }
+.tutorial-steps { margin: 20px 0; }
+.tutorial-close { margin-top: 20px; padding: 8px 20px; background: #2ecc71; border: none; border-radius: 20px; color: white; }
+.food-item { display: flex; align-items: center; gap: 8px; }
+.food-icon { font-size: 18px; }
+.empty-state { color: #95a5a6; text-align: center; padding: 20px 0; }
+</style>
+</head>
+<body>
+<div class="header">
+  今日全家菜单 · <span id="personText">4</span> 人
+  <button class="btn-small" style="position: absolute; right: 15px; top: 15px; background: rgba(255,255,255,0.2);" onclick="showTutorial()">?</button>
+</div>
+
+<!-- 新手引导浮层 
+<div id="tutorial" class="tutorial hidden">
+  <div class="tutorial-content">
+    <h3>使用指南</h3>
+    <div class="tutorial-steps">
+      <p>1. 查看今日营养缺口</p>
+      <p>2. 选择AI推荐菜谱</p>
+      <p>3. 生成完整菜单</p>
+    </div>
+    <button class="tutorial-close" onclick="hideTutorial()">我知道了</button>
+  </div>
+</div>
+-->
+<!-- ① 今日营养目标 -->
+<div class="card">
+  <h3>今日营养目标</h3>
+  <ul>
+    <li>
+      <div class="food-item">
+        <span class="food-icon">🍗</span>
+        <span>蛋白质</span>
+        <span class="nutrient-tag protein" id="gapProtein">+25g</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div id="progProtein" class="progress" style="width:0%;background:#e74c3c"></div>
+        </div>
+        <button class="btn-small btn-secondary" onclick="openFoodModal('protein')">添加</button>
+      </div>
+    </li>
+    <li>
+      <div class="food-item">
+        <span class="food-icon">🥦</span>
+        <span>膳食纤维</span>
+        <span class="nutrient-tag fiber" id="gapFiber">+8g</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div id="progFiber" class="progress" style="width:0%;background:#f39c12"></div>
+        </div>
+        <button class="btn-small btn-secondary" onclick="openFoodModal('fiber')">添加</button>
+      </div>
+    </li>
+    <li>
+      <div class="food-item">
+        <span class="food-icon">🥛</span>
+        <span>钙</span>
+        <span class="nutrient-tag calcium" id="gapCalcium">+200mg</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div id="progCalcium" class="progress" style="width:0%;background:#3498db"></div>
+        </div>
+        <button class="btn-small btn-secondary" onclick="openFoodModal('calcium')">添加</button>
+      </div>
+    </li>
+    <li>
+      <div class="food-item">
+        <span class="food-icon">🧂</span>
+        <span>钠</span>
+        <span class="nutrient-tag sodium" id="gapSodium">80%</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div id="progSodium" class="progress" style="width:80%;background:#2ecc71"></div>
+        </div>
+        <button class="btn-small btn-secondary" onclick="openFoodModal('sodium')">添加</button>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- ② AI 推荐菜谱 -->
+<div class="card">
+  <h3>AI 推荐菜谱</h3>
+  <div class="recipe-cards">
+    <div class="recipe-card">
+      <div class="ai-tag">AI推荐</div>
+      <strong>长高版</strong>
+      <p>🍗 鸡胸 120g<br>🥦 西兰花 150g</p>
+      <button class="btn" id="r0" onclick="addRecipe('长高版',['鸡胸 120 g','西兰花 150 g'],this)">
+        <span class="btn-icon">➕</span> 加入菜单
+      </button>
+    </div>
+    <div class="recipe-card">
+      <div class="ai-tag">AI推荐</div>
+      <strong>抗氧化版</strong>
+      <p>🥑 牛油果 80g<br>🫐 蓝莓 100g</p>
+      <button class="btn" id="r1" onclick="addRecipe('抗氧化版',['牛油果 80 g','蓝莓 100 g'],this)">
+        <span class="btn-icon">➕</span> 加入菜单
+      </button>
+    </div>
+    <div class="recipe-card">
+      <div class="ai-tag">AI推荐</div>
+      <strong>隐形蔬菜版</strong>
+      <p>🍔 蔬菜牛肉饼 120g<br>🍅 番茄酱 20g</p>
+      <button class="btn" id="r2" onclick="addRecipe('隐形蔬菜版',['蔬菜牛肉饼 120 g','番茄酱 20 g'],this)">
+        <span class="btn-icon">➕</span> 加入菜单
+      </button>
+    </div>
+  </div>
+  <button class="btn btn-secondary" style="margin-top: 12px;" onclick="showCustomFood()">
+    <span class="btn-icon">🔍</span> 找不到想要的？手动添加食材
+  </button>
+</div>
+
+<!-- ③ 已选食材 -->
+<div class="card">
+  <h3>已选食材</h3>
+  <ul id="recipeList">
+    <li class="empty-state">暂无食材，请从上方添加</li>
+  </ul>
+</div>
+
+<!-- ④ 今日菜谱 -->
+<div class="card">
+  <h3>今日菜谱</h3>
+  <div id="todayRecipe" class="empty-state">暂无菜谱，请先选择食材</div>
+</div>
+
+<!-- 底部操作栏 -->
+<div class="bottom-bar">
+  <button class="btn" id="generateBtn" onclick="generateRecipe()" disabled>生成完整菜谱</button>
+</div>
+
+<script>
+/* ========= 常量 ========= */
+const TARGET = { protein: 70, fiber: 20, calcium: 1000, sodium: 1500 };
+const FOOD = {
+  '鸡胸 120 g': { protein: 23, fiber: 0, calcium: 8, sodium: 65 },
+  '西兰花 150 g': { protein: 5, fiber: 5, calcium: 50, sodium: 20 },
+  '牛油果 80 g': { protein: 2, fiber: 5, calcium: 15, sodium: 10 },
+  '蓝莓 100 g': { protein: 1, fiber: 2, calcium: 10, sodium: 5 },
+  '蔬菜牛肉饼 120 g': { protein: 25, fiber: 3, calcium: 20, sodium: 40 },
+  '番茄酱 20 g': { protein: 0, fiber: 1, calcium: 2, sodium: 1 }
+};
+let selected = [];
+let usedRecipes = new Set();
+
+/* ========= 新手引导 ========= */
+function showTutorial() {
+  document.getElementById('tutorial').classList.remove('hidden');
+}
+function hideTutorial() {
+  document.getElementById('tutorial').classList.add('hidden');
+}
+
+/* ========= 实时缺口 & 进度 ========= */
+function updateGap() {
+  let total = { protein: 0, fiber: 0, calcium: 0, sodium: 0 };
+  selected.forEach(f => Object.keys(total).forEach(k => total[k] += f[k]));
+  
+  Object.keys(total).forEach(k => {
+    const gap = TARGET[k] - total[k];
+    const ratio = Math.min(100, (total[k] / TARGET[k]) * 100);
+    const displayGap = k === 'calcium' ? `${gap.toFixed(0)}mg` : 
+                      k === 'sodium' ? `${ratio.toFixed(0)}%` : `${gap.toFixed(1)}g`;
+    
+    document.getElementById(`gap${k[0].toUpperCase() + k.slice(1)}`).innerText = displayGap;
+    document.getElementById(`prog${k[0].toUpperCase() + k.slice(1)}`).style.width = `${ratio}%`;
+  });
+
+  // 更新生成按钮状态
+  document.getElementById('generateBtn').disabled = selected.length === 0;
+}
+
+/* ========= 食材弹层 ========= */
+function openFoodModal(type) { 
+  alert(`将打开${type}食材选择弹层（此处为示例，实际需实现弹层逻辑）`); 
+}
+function showCustomFood() {
+  alert("将展开手动添加食材界面（此处为示例）");
+}
+
+/* ========= 添加/删除食材 ========= */
+function addFood(name) {
+  selected.push({ name, ...FOOD[name] });
+  renderList();
+  updateGap();
+  generateRecipe();
+}
+
+function removeFood(index) {
+  selected.splice(index, 1);
+  renderList();
+  updateGap();
+  generateRecipe();
+}
+
+/* ========= 添加菜谱 ========= */
+function addRecipe(name, items, btn) {
+  if (usedRecipes.has(name)) return;
+  
+  items.forEach(item => {
+    if (!selected.find(s => s.name === item)) {
+      selected.push({ name: item, ...FOOD[item] });
+    }
+  });
+  
+  usedRecipes.add(name);
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-icon">✔️</span> 已添加';
+  btn.classList.add('btn-secondary');
+  
+  renderList();
+  updateGap();
+  generateRecipe();
+}
+
+/* ========= 渲染列表 ========= */
+function renderList() {
+  const ul = document.getElementById('recipeList');
+  ul.innerHTML = '';
+  
+  if (selected.length === 0) {
+    ul.innerHTML = '<li class="empty-state">暂无食材，请从上方添加</li>';
+    return;
+  }
+  
+  selected.forEach((item, idx) => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div class="food-item">
+        <span>${item.name}</span>
+      </div>
+      <button class="btn-small btn-secondary" onclick="removeFood(${idx})">
+        <span class="btn-icon">✕</span> 删除
+      </button>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+/* ========= 生成菜谱 ========= */
+function generateRecipe() {
+  const names = selected.map(s => s.name);
+  const recipeEl = document.getElementById('todayRecipe');
+  
+  if (names.length === 0) {
+    recipeEl.innerHTML = '<div class="empty-state">暂无菜谱，请先选择食材</div>';
+  } else {
+    recipeEl.innerHTML = `
+      <ul style="padding-left: 15px;">
+        ${names.map(item => `<li>${item}</li>`).join('')}
+      </ul>
+      <p style="margin-top: 10px; color: #2ecc71;">✔️ 营养均衡度: ${calculateScore()}%</p>
+    `;
+  }
+}
+
+function calculateScore() {
+  // 简化的营养评分逻辑（实际应根据缺口计算）
+  return Math.min(100, Math.floor(selected.length * 15 + 30));
+}
+
+/* ========= 初始化 ========= */
+document.addEventListener('DOMContentLoaded', () => {
+  renderList();
+  updateGap();
+  // 首次访问显示引导
+  if (!localStorage.getItem('tutorialShown')) {
+    hideTutorial();
+    //localStorage.setItem('tutorialShown', 'true');
+  }
+});
+</script>
+</body>
+</html>

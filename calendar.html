@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>DietPro 日历仪表盘 Demo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC"}
+body{background:#f5f5f5}
+.header{background:#2ecc71;color:#fff;padding:12px;text-align:center;font-size:18px}
+.calendar{background:#fff;margin:12px;border-radius:12px;overflow:hidden}
+.weekday{display:flex;background:#eee;font-size:12px}
+.weekday>div{flex:1;text-align:center;padding:6px 0}
+.days{display:flex;flex-wrap:wrap}
+.days>div{flex:0 0 14.285%;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #f0f0f0;font-size:12px;cursor:pointer;position:relative}
+.today{background:#d1f2eb;font-weight:bold}
+.green{background:#2ecc71;color:#fff}
+.yellow{background:#f39c12;color:#fff}
+.red{background:#e74c3c;color:#fff}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center}
+.modal-content{background:#fff;border-radius:12px;padding:20px;width:80%;max-width:320px}
+.btn{display:block;width:100%;padding:10px;border:none;border-radius:8px;background:#2ecc71;color:#fff;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="header">
+  <span onclick="prevMonth()">◀</span>
+  <span id="monthTitle">2025-07</span>
+  <span onclick="nextMonth()">▶</span>
+</div>
+
+<div class="calendar">
+  <div class="weekday">
+    <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+  </div>
+  <div class="days" id="daysContainer"></div>
+</div>
+
+<!-- 点击弹层 -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modalDate">7 月 28 日</h3>
+    <p>摄入 <span id="modalKcal">1850</span> kcal</p>
+    <p>缺口：蛋白质 <span id="modalGap">+5</span> g</p>
+    <p>体重：<span id="modalWeight">68.4</span> kg ↓0.3 kg</p>
+    <p>菜单：<span id="modalMenu">鸡胸+西兰花</span></p>
+	    <!-- 新增：未来事件标记 -->
+    <div id="eventSection" class="hidden">
+      <input id="eventTitle" placeholder="添加未来事件（如聚餐、健身）" />
+    </div>
+    <button class="btn" onclick="saveEvent()">保存事件</button>
+    <button class="btn-secondary" onclick="closeModal()">关闭</button>
+    <button class="btn" onclick="copyToFuture()">复制到下周一</button>
+    <button class="btn-secondary" onclick="closeModal()">关闭</button>
+  </div>
+</div>
+
+<script>
+let today = new Date();
+let current = new Date();
+const MOCK = {}; // 本地数据
+
+function renderCalendar() {
+  const first = new Date(current.getFullYear(), current.getMonth(), 1);
+  const last = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+  const startDay = first.getDay();
+  const days = last.getDate();
+  const container = document.getElementById('daysContainer');
+  container.innerHTML = '';
+
+  // 生成空格
+  for (let i = 0; i < startDay; i++) {
+    container.appendChild(document.createElement('div'));
+  }
+  // 生成日期
+  for (let d = 1; d <= days; d++) {
+    const cell = document.createElement('div');
+    const dateStr = `${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const info = MOCK[dateStr] || {kcal:0,gap:0,color:'white',menu:'未记录'};
+    cell.innerHTML = `<b>${d}</b><small>${info.kcal} kcal</small>`;
+    cell.className = info.color;
+    if (dateStr === today.toISOString().slice(0,10)) cell.classList.add('today');
+    cell.onclick = () => openModal(dateStr, info);
+    container.appendChild(cell);
+  }
+}
+
+function openModal(dateStr, info) {
+  document.getElementById('modalDate').innerText = dateStr;
+  document.getElementById('modalKcal').innerText = info.kcal;
+  document.getElementById('modalGap').innerText = info.gap;
+  document.getElementById('modalWeight').innerText = (Math.random()*3+68).toFixed(1);
+  document.getElementById('modalMenu').innerText = info.menu;
+  document.getElementById('modal').style.display='flex';
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+function prevMonth(){current.setMonth(current.getMonth()-1);renderCalendar();}
+function nextMonth(){current.setMonth(current.getMonth()+1);renderCalendar();}
+function copyToFuture(){
+  const nextMon = new Date(current);
+  nextMon.setDate(nextMon.getDate()+7);
+  const key = nextMon.toISOString().slice(0,10);
+  MOCK[key] = {kcal:1850,gap:5,color:'green',menu:'复制自 7-28'};
+  alert('已复制菜单到 '+key);
+  closeModal();
+}
+
+// 模拟 30 天数据
+for(let i=0;i<30;i++){
+  const d = new Date();
+  d.setDate(d.getDate()-i);
+  const key = d.toISOString().slice(0,10);
+  MOCK[key] = {kcal:1850+i*20,gap:5-i,color:i%3===0?'green':i%3===1?'yellow':'red',menu:'鸡胸+西兰花'};
+}
+renderCalendar();
+</script>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你的营养健康测评</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+        }
+        body {
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 16px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2ecc71, #3498db);
+            color: white;
+            padding: 24px 16px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            margin: 16px 0;
+            border-radius: 3px;
+        }
+        .progress {
+            height: 100%;
+            width: 0%;
+            background: white;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .question-card {
+            padding: 20px 16px;
+            display: none;
+        }
+        .question-card.active {
+            display: block;
+        }
+        .question-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2c3e50;
+        }
+        .option {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .option:hover {
+            background: #e2e8f0;
+        }
+        .option.selected {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: #3b82f6;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn:hover:not(:disabled) {
+            background: #2563eb;
+        }
+        .result-card {
+            padding: 24px 16px;
+            text-align: center;
+            display: none;
+        }
+        .result-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2ecc71;
+        }
+        .risk-item {
+            display: flex;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .risk-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fee2e2;
+            color: #dc2626;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+        .risk-content {
+            text-align: left;
+            flex-grow: 1;
+        }
+        .risk-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .risk-desc {
+            font-size: 13px;
+            color: #64748b;
+        }
+        .cta-card {
+            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+            border: 1px solid #a7f3d0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 24px;
+        }
+        .cta-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #065f46;
+        }
+        .cta-desc {
+            font-size: 14px;
+            color: #047857;
+            margin-bottom: 16px;
+        }
+        .qr-code {
+            width: 120px;
+            height: 120px;
+            margin: 12px auto;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 12px;
+        }
+        .disclaimer {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 24px;
+            padding: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 测评引导页 -->
+        <div class="header">
+            <h1>你的营养健康测评</h1>
+            <p>1分钟了解你的营养短板</p>
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+        </div>
+
+        <!-- 问题1 -->
+        <div class="question-card active" id="q1">
+            <div class="question-title">1. 你的年龄段是？</div>
+            <div class="option" onclick="selectOption(1, this)">18岁以下</div>
+            <div class="option" onclick="selectOption(1, this)">18-30岁</div>
+            <div class="option" onclick="selectOption(1, this)">31-45岁</div>
+            <div class="option" onclick="selectOption(1, this)">46-60岁</div>
+            <div class="option" onclick="selectOption(1, this)">60岁以上</div>
+            <button class="btn" id="btn1" disabled onclick="nextQuestion(1)">下一题</button>
+        </div>
+
+        <!-- 问题2 -->
+        <div class="question-card" id="q2">
+            <div class="question-title">2. 你的主要健康目标是？</div>
+            <div class="option" onclick="selectOption(2, this)">维持健康</div>
+            <div class="option" onclick="selectOption(2, this)">减脂减肥</div>
+            <div class="option" onclick="selectOption(2, this)">增肌塑形</div>
+            <div class="option" onclick="selectOption(2, this)">改善慢性病（三高/痛风等）</div>
+            <div class="option" onclick="selectOption(2, this)">孕期/哺乳期营养</div>
+            <button class="btn" id="btn2" disabled onclick="nextQuestion(2)">下一题</button>
+        </div>
+
+        <!-- 问题3 -->
+        <div class="question-card" id="q3">
+            <div class="question-title">3. 你每天的蔬菜摄入量大约是？</div>
+            <div class="option" onclick="selectOption(3, this)">很少吃蔬菜</div>
+            <div class="option" onclick="selectOption(3, this)">约100g（半碗）</div>
+            <div class="option" onclick="selectOption(3, this)">约300g（1.5碗）</div>
+            <div class="option" onclick="selectOption(3, this)">500g以上（2碗以上）</div>
+            <button class="btn" id="btn3" disabled onclick="nextQuestion(3)">下一题</button>
+        </div>
+
+        <!-- 问题4 -->
+        <div class="question-card" id="q4">
+            <div class="question-title">4. 你每周吃几次深加工食品（香肠/方便面等）？</div>
+            <div class="option" onclick="selectOption(4, this)">几乎不吃</div>
+            <div class="option" onclick="selectOption(4, this)">1-2次</div>
+            <div class="option" onclick="selectOption(4, this)">3-5次</div>
+            <div class="option" onclick="selectOption(4, this)">几乎每天吃</div>
+            <button class="btn" id="btn4" disabled onclick="showResult()">查看结果</button>
+        </div>
+
+        <!-- 结果页 -->
+        <div class="result-card" id="result">
+            <div class="result-title">你的营养健康报告</div>
+            
+            <div class="risk-item">
+                <div class="risk-icon">高</div>
+                <div class="risk-content">
+                    <div class="risk-name">膳食纤维不足风险 78%</div>
+                    <div class="risk-desc">可能引发便秘、肠道菌群失衡</div>
+                </div>
+            </div>
+            
+            <div class="risk-item">
+                <div class="risk-icon">中</div>
+                <div class="risk-content">
+                    <div class="risk-name">优质蛋白不足风险 45%</div>
+                    <div class="risk-desc">可能影响肌肉维持和免疫功能</div>
+                </div>
+            </div>
+            
+            <div class="risk-item">
+                <div class="risk-icon">低</div>
+                <div class="risk-content">
+                    <div class="risk-name">维生素D不足风险 32%</div>
+                    <div class="risk-desc">可能影响钙吸收和骨骼健康</div>
+                </div>
+            </div>
+
+            <div class="cta-card">
+                <div class="cta-title">获取你的完整解决方案</div>
+                <div class="cta-desc">基于中国居民膳食指南的个性化饮食计划</div>
+                <div class="qr-code">扫码下载APP</div>
+                <button class="btn" onclick="location.href='https://yourdomain.com/download'">立即获取</button>
+            </div>
+
+            <div class="disclaimer">
+                *本测评基于一般人群数据，结果仅供参考。个体差异请咨询专业营养师或医生。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 当前问题索引
+        let currentQuestion = 1;
+        const totalQuestions = 4;
+        const answers = {};
+        
+        // 选择选项
+        function selectOption(qNum, element) {
+            // 移除同问题其他选项的选中状态
+            const options = document.querySelectorAll(`#q${qNum} .option`);
+            options.forEach(opt => opt.classList.remove('selected'));
+            
+            // 添加当前选中状态
+            element.classList.add('selected');
+            
+            // 启用下一题按钮
+            document.getElementById(`btn${qNum}`).disabled = false;
+            
+            // 记录答案
+            answers[qNum] = element.textContent;
+        }
+        
+        // 下一题
+        function nextQuestion(currentQ) {
+            document.getElementById(`q${currentQ}`).classList.remove('active');
+            document.getElementById(`q${currentQ + 1}`).classList.add('active');
+            currentQuestion++;
+            
+            // 更新进度条
+            updateProgress();
+        }
+        
+        // 显示结果
+        function showResult() {
+            document.getElementById(`q${totalQuestions}`).classList.remove('active');
+            document.getElementById('result').classList.add('active');
+            
+            // 根据答案生成报告（此处为静态示例，实际应对接算法）
+            generateReport();
+            
+            // 进度条100%
+            document.getElementById('progress').style.width = '100%';
+        }
+        
+        // 更新进度条
+        function updateProgress() {
+            const progress = (currentQuestion / totalQuestions) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+        }
+        
+        // 生成报告（示例逻辑）
+        function generateReport() {
+            // 实际开发中这里应对接后端计算逻辑
+            console.log('用户答案:', answers);
+            
+            // 示例：根据蔬菜摄入量判断纤维风险
+            if (answers[3] && answers[3].includes('很少') || answers[3].includes('半碗')) {
+                // 高风险逻辑
+            }
+        }
+    </script>
+</body>
+</html>

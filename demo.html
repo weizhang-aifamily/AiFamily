@@ -1,0 +1,286 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>DietPro 全功能交互 Demo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",Helvetica,Arial}
+body{background:#f5f5f5;color:#222}
+.header{background:#2ecc71;color:#fff;padding:12px 16px;font-size:18px;text-align:center}
+.tab-bar{display:flex;background:#fff;border-bottom:1px solid #ddd}
+.tab{flex:1;text-align:center;padding:10px 0;font-size:14px;cursor:pointer}
+.tab.active{background:#2ecc71;color:#fff}
+.page{display:none;padding:12px}
+.page.active{display:block}
+.card{background:#fff;margin:12px 0;border-radius:12px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+.btn{display:block;width:100%;padding:12px;border:none;border-radius:8px;background:#2ecc71;color:#fff;font-size:16px;margin-top:8px}
+.btn-secondary{background:#95a5a6}
+input,select,textarea{width:100%;padding:8px;margin-top:4px;border:1px solid #ccc;border-radius:6px}
+ul{list-style:none;padding-left:0}
+li{margin:4px 0}
+.slider-container{display:flex;align-items:center}
+.slider{flex:1;margin:0 8px}
+.scroll-x{display:flex;overflow-x:auto;gap:12px;padding-bottom:8px}
+.swiper-card{min-width:240px;background:#f9f9f9;border-radius:10px;padding:10px}
+.bottom-bar{position:fixed;bottom:0;left:0;width:100%;display:flex;gap:4px;padding:8px;background:#fff;border-top:1px solid #ddd}
+.bottom-bar .btn{flex:1}
+.drag{float:right;cursor:move;color:#aaa}
+</style>
+</head>
+<body>
+
+<!-- 顶部 Tab 导航 -->
+<div class="tab-bar">
+  <span class="tab active" onclick="showPage('welcome')">01 欢迎</span>
+  <span class="tab" onclick="showPage('login')">02 登录</span>
+  <span class="tab" onclick="showPage('profile')">03 档案</span>
+  <span class="tab" onclick="showPage('goal')">04 目标</span>
+  <span class="tab" onclick="showPage('family')">05 家庭</span>
+  <span class="tab" onclick="showPage('pref')">06 偏好</span>
+  <span class="tab" onclick="showPage('menu')">07 菜单</span>
+  <span class="tab" onclick="showPage('detail')">08 详情</span>
+  <span class="tab" onclick="showPage('share')">09 分配</span>
+  <span class="tab" onclick="showPage('record')">10 记录</span>
+  <span class="tab" onclick="showPage('miss')">11 漏餐</span>
+  <span class="tab" onclick="showPage('achieve')">12 成就</span>
+  <span class="tab" onclick="showPage('setting')">13 设置</span>
+  <span class="tab" onclick="showPage('help')">14 帮助</span>
+</div>
+
+<!-- 01 欢迎&隐私 -->
+<div class="page active" id="welcome">
+  <div class="header">欢迎使用 DietPro</div>
+  <div class="card">
+    <p>个性化饮食管家，全家共享健康</p>
+    <p>?? 我们承诺：</p>
+    <ul>
+      <li>不售卖个人健康数据</li>
+      <li>可随时一键注销账号</li>
+      <li>14 岁以下需监护人同意</li>
+    </ul>
+    <button class="btn" onclick="showPage('login')">同意并继续</button>
+    <button class="btn-secondary">仅浏览</button>
+  </div>
+</div>
+
+<!-- 02 登录 -->
+<div class="page" id="login">
+  <div class="header">登录 / 注册</div>
+  <div class="card">
+    <input placeholder="手机号">
+    <input placeholder="验证码">
+    <button class="btn">发送验证码</button>
+    <button class="btn-secondary" onclick="showPage('profile')">微信一键登录</button>
+    <button class="btn-secondary" onclick="showPage('profile')">游客模式</button>
+  </div>
+</div>
+
+<!-- 03 个人档案 -->
+<div class="page" id="profile">
+  <div class="header">建立你的档案</div>
+  <div class="card">
+    <input placeholder="昵称">
+    <input type="date" placeholder="生日">
+    <input type="number" placeholder="身高 cm">
+    <input type="number" placeholder="体重 kg">
+    <select><option>♂ 男</option><option>♀ 女</option><option>其他</option></select>
+    <label>用餐场景</label>
+    <select id="modeSelect">
+      <option value="single">单身</option>
+      <option value="family" selected>家庭 4 人</option>
+    </select>
+    <button class="btn" onclick="showPage('goal')">下一步</button>
+  </div>
+</div>
+
+<!-- 04 目标 -->
+<div class="page" id="goal">
+  <div class="header">选择你的目标</div>
+  <div class="card">
+    <label><input type="checkbox"> 减脂</label><br>
+    <label><input type="checkbox"> 增肌</label><br>
+    <label><input type="checkbox"> 维持体重</label><br>
+    <label><input type="checkbox"> 控糖 / 控尿酸 / 孕期</label>
+    <button class="btn" onclick="showPage('family')">下一步</button>
+  </div>
+</div>
+
+<!-- 05 家庭管理 -->
+<div class="page" id="family">
+  <div class="header">创建/加入家庭</div>
+  <div class="card">
+    <p>我的家庭：幸福四口之家</p>
+    <ul>
+      <li>?? 爸爸</li><li>?? 妈妈</li><li>?? 大宝</li><li>?? 小宝</li>
+    </ul>
+    <button class="btn">邀请成员</button>
+    <button class="btn-secondary" onclick="showPage('pref')">跳过</button>
+  </div>
+</div>
+
+<!-- 06 偏好&禁忌 -->
+<div class="page" id="pref">
+  <div class="header">饮食偏好 & 禁忌</div>
+  <div class="card">
+    <label><input type="checkbox">花生</label>
+    <label><input type="checkbox">海鲜</label>
+    <label><input type="checkbox">乳糖</label>
+    <label>语言</label>
+    <select><option>简体中文</option><option>English</option></select>
+    <button class="btn" onclick="showPage('menu')">保存</button>
+  </div>
+</div>
+
+<!-- 07 今日菜单 -->
+<!-- 07 今日全家菜单页（与 ASCII 完全对应） -->
+<div class="page active" id="menu">
+  <div class="header">今日全家菜单 · 4 人家庭</div>
+
+  <!-- ① 今日缺口 & 推荐套餐 -->
+  <div class="card">
+    <h3>今日缺口（实时计算）</h3>
+    <ul>
+      <li>🔴 蛋白质 +25 g</li>
+      <li>🔴 膳食纤维 +8 g</li>
+      <li>🔴 钙 +200 mg</li>
+      <li>⚠️ 钠 ≤ 300 mg（已用 80%）</li>
+    </ul>
+    <button class="btn-secondary">查看完整 DRIs 表</button>
+
+    <div class="card">
+    <h3>AI 推荐套餐</h3>
+    <div class="scroll-x">
+      <div class="swiper-card">
+        <strong>套餐 A · 长高版</strong><br>
+        鸡胸 120 g + 西兰花 150 g<br>
+        <button class="btn">一键采用</button>
+      </div>
+      <div class="swiper-card">
+        <strong>套餐 B · 抗氧化版</strong><br>
+        牛油果 80 g + 蓝莓 100 g<br>
+        <button class="btn">一键采用</button>
+      </div>
+    </div>
+  </div>
+    <button class="btn-secondary">换一批推荐</button>
+    <button class="btn-secondary">进入自选食材超市</button>
+  </div>
+
+  <!-- ② 已选食谱（可拖拽/替换） -->
+  <div class="card">
+    <h4>已选食谱（可拖拽排序）</h4>
+    <ul>
+      <li>🥣 糙米饭 400 g ≈ 4 碗</li>
+      <li>🐟 清蒸鲈鱼 480 g ≈ 4 手掌</li>
+      <li>🥦 西兰花 600 g ≈ 4 拳头</li>
+    </ul>
+    <button class="btn-secondary">拖拽排序</button>
+    <button class="btn-secondary">替换食材</button>
+    <button class="btn-secondary">删除</button>
+  </div>
+
+  <!-- 底部按钮 & 免责声明 -->
+  <div class="card">
+    <button class="btn">生成购物清单</button>
+    <button class="btn-secondary">分享菜单</button>
+    <button class="btn">一键确认</button>
+    <p style="font-size:12px;color:#999;text-align:center;margin-top:8px">
+      本建议不能替代医生处方，如有疑问请咨询专业医师
+    </p>
+  </div>
+</div>
+
+<!-- 08 食物详情 -->
+<div class="page" id="detail">
+  <div class="header">鸡胸肉 150 g</div>
+  <div class="card">
+    <p>≈ 扑克牌大小厚 1 片</p>
+    <p>蛋白 45 g 高 | 脂肪 3 g 低</p>
+    <button class="btn">加入购物清单</button>
+  </div>
+</div>
+
+<!-- 09 家庭共餐分配 -->
+<div class="page" id="share">
+  <div class="header">家庭共餐分配</div>
+  <div class="card">
+    <p>番茄炒蛋 400 g</p>
+    <div class="slider-container">
+      <label>妈妈</label><input type="range" min="0" max="100" value="40" class="slider"><span>40%</span>
+    </div>
+    <button class="btn" onclick="equalShare()">一键均分</button>
+  </div>
+</div>
+
+<!-- 10 极速记录 -->
+<div class="page" id="record">
+  <div class="header">极速记录</div>
+  <div class="card">
+    <button class="btn">?? 拍照</button>
+    <button class="btn">?? 语音</button>
+    <button class="btn">?? 扫码</button>
+    <button class="btn-secondary">手动输入</button>
+  </div>
+</div>
+
+<!-- 11 漏餐估算 -->
+<div class="page" id="miss">
+  <div class="header">漏传午餐？</div>
+  <div class="card">
+    <p>系统估算：550 kcal ±10%</p>
+    <button class="btn">接受估算</button>
+    <button class="btn-secondary">手动输入</button>
+    <button class="btn-secondary">跳过</button>
+  </div>
+</div>
+
+<!-- 12 成就中心 -->
+<div class="page" id="achieve">
+  <div class="header">成就中心</div>
+  <div class="card">
+    <p>?? 14 天不缺膳食纤维 ??</p>
+    <p>?? 全家 7 天零外卖 ??</p>
+    <button class="btn">会员订阅 9.9/月</button>
+  </div>
+</div>
+
+<!-- 13 设置 -->
+<div class="page" id="setting">
+  <div class="header">设置</div>
+  <div class="card">
+    <button class="btn-secondary">数据备份到微信</button>
+    <button class="btn-secondary">语言切换：中/英</button>
+    <button class="btn-secondary">导出 PDF 报告</button>
+    <button class="btn">退出登录</button>
+  </div>
+</div>
+
+<!-- 14 帮助 -->
+<div class="page" id="help">
+  <div class="header">帮助中心</div>
+  <div class="card">
+    <button class="btn-secondary">常见问题</button>
+    <button class="btn-secondary">?? 营养师 在线</button>
+    <button class="btn-secondary">意见反馈</button>
+  </div>
+</div>
+
+<script>
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  [...document.querySelectorAll('.tab')].find(t=>t.innerText.includes(id.slice(-2)))?.classList.add('active');
+}
+function equalShare(){
+  document.querySelectorAll('#share .slider').forEach(s=>{s.value=25; s.nextElementSibling.innerText='25%';});
+}
+document.getElementById('modeSelect').addEventListener('change', e=>{
+  const p = e.target.value==='single'?1:4;
+  document.getElementById('personText').innerText=p;
+  [...document.querySelectorAll('.unit')].forEach(u=>u.innerText=p);
+});
+</script>
+</body>
+</html>
