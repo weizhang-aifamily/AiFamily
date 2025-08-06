@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭食慧AiFamily</title>
+    <style>
+        /* 全局样式 - 简化版 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+        }
+        body {
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+            padding-bottom: 88px; /* 为底部固定按钮留空间 */
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        /* 新增：底部固定主按钮 */
+        .fixed-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 500px;
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== 头部模块 - 简化版 ==================== -->
+    <div id="header-module">
+        <div class="container">
+            <style>
+                /* 简化头部样式 */
+                .header {
+                    background: white;
+                    color: #1E293B;
+                    padding: 24px 16px;
+                    text-align: center;
+                    position: relative;
+                }
+                
+                .header h1 {
+                    font-size: 22px;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: #3B82F6;
+                }
+                
+                .header p {
+                    font-size: 14px;
+                    color: #64748B;
+                    margin-bottom: 16px;
+                }
+                
+                .family-score {
+                    width: 180px;
+                    height: 180px;
+                    margin: 0 auto 20px;
+                    position: relative;
+                }
+                
+                .score-value {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 32px;
+                    font-weight: 700;
+                    color: #1E293B;
+                }
+                
+                .score-label {
+                    position: absolute;
+                    bottom: -20px;
+                    left: 0;
+                    right: 0;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #64748B;
+                }
+
+                /* 新增：可滑动卡片容器 */
+                .card-slider {
+                    display: flex;
+                    overflow-x: auto;
+                    gap: 12px;
+                    padding: 0 16px 16px;
+                    scrollbar-width: none;
+                }
+                .card-slider::-webkit-scrollbar { display: none; }
+                
+                .info-card {
+                    min-width: 70%;
+                    background: #F8FAFC;
+                    border-radius: 12px;
+                    padding: 12px;
+                    flex-shrink: 0;
+                }
+                .info-card h4 {
+                    font-size: 14px;
+                    margin-bottom: 6px;
+                    color: #1E293B;
+                }
+                .info-card p {
+                    font-size: 12px;
+                    color: #64748B;
+                }
+            </style>
+
+            <div class="header">
+                <h1>家庭营养管家Pro</h1>
+                <p>科学管理 · 智能营养</p>
+                
+                <!-- 简化后的评分圆环 -->
+                <div class="family-score">
+                    <svg width="180" height="180" viewBox="0 0 180 180">
+                        <circle cx="90" cy="90" r="80" stroke="#E0F2FE" stroke-width="12" fill="none"/>
+                        <circle cx="90" cy="90" r="80" stroke="#3B82F6" stroke-width="12" fill="none" 
+                                stroke-dasharray="502" stroke-dashoffset="180" transform="rotate(-90 90 90)"
+                                style="animation: rotateArc 1.2s ease-out forwards;"/>
+                    </svg>
+                    <div class="score-value">82</div>
+                    <div class="score-label">家庭营养指数</div>
+                </div>
+                
+                <!-- 新增：可滑动信息卡片 -->
+                <div class="card-slider">
+                    <div class="info-card">
+                        <h4>AI预测分析</h4>
+                        <p>维持当前饮食，3个月后钙缺口↑12%</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>本周成就</h4>
+                        <p>给家人加了 4 次高钙食材、减盐 1.8 g、摄入铁提升 28%。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== AI推荐模块 ==================== -->
+    <div id="ai-recommendation-module">
+        <style>
+            /* AI推荐特有样式 */
+            .dishes-grid { min-height: 120px; }
+            .food-list { min-height: 180px; }
+            
+            /* 基础样式 */
+            body {
+                background: #f8fafc;
+                color: #1e293b;
+                line-height: 1.6;
+                padding: 16px;
+            }
+            
+            .container {
+                max-width: 500px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 24px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+                overflow: hidden;
+            }
+            
+            /* AI解决方案容器 */
+            .ai-solutions-container {
+                padding: 16px;
+            }
+            
+            .section-title {
+                font-size: 16px;
+                font-weight: 600;
+                margin-bottom: 12px;
+                color: #1E293B;
+                display: flex;
+                align-items: center;
+            }
+            
+            .section-title::before {
+                content: "";
+                display: inline-block;
+                width: 4px;
+                height: 14px;
+                background: #3B82F6;
+                margin-right: 8px;
+                border-radius: 2px;
+            }
+            
+            /* 成员营养状态 - 优化选择样式 */
+            .member-status {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+            
+            .status-card {
+                background: white;
+                border-radius: 12px;
+                padding: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                flex: 1;
+                min-width: 120px;
+                border-left: 4px solid;
+                cursor: pointer;
+                transition: all 0.2s;
+                position: relative;
+            }
+            
+            .status-card.selected {
+                box-shadow: 0 0 0 2px #3B82F6;
+                background-color: #F0F7FF;
+            }
+            
+            .status-card.child { border-color: #3B82F6; }
+            .status-card.elder { border-color: #93C5FD; }
+            .status-card.adult { border-color: #60A5FA; }
+            
+            .status-header {
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            
+            .status-avatar {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background: #E0F2FE;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 8px;
+                font-size: 12px;
+            }
+            
+            .status-title {
+                font-size: 14px;
+                font-weight: 500;
+            }
+            
+            .status-detail {
+                font-size: 12px;
+                color: #64748B;
+            }
+            
+            /* 选择标记 */
+            .selection-marker {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: #3B82F6;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 10px;
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+            
+            .status-card.selected .selection-marker {
+                opacity: 1;
+            }
+            
+            /* 方案选择 - 缩小区域并优化布局 */
+            .solution-selection {
+                margin: 16px 0;
+            }
+            
+            .solution-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            
+            .ai-solutions-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px; /* 缩小间距 */
+            }
+            
+            .solution-card {
+                background: white;
+                border-radius: 8px; /* 更小的圆角 */
+                padding: 10px; /* 更小的内边距 */
+                text-align: center;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+                border: 1px solid #E0F2FE;
+                transition: all 0.2s;
+                cursor: pointer;
+                position: relative;
+            }
+            
+            .solution-card.selected {
+                border: 1px solid #3B82F6;
+                background: #F0F7FF;
+            }
+            
+            .solution-card.recommended::after {
+                content: "AI推荐";
+                position: absolute;
+                top: -4px;
+                right: 4px;
+                background: #EF4444;
+                color: white;
+                padding: 1px 4px;
+                border-radius: 8px;
+                font-size: 9px;
+            }
+            
+            .solution-icon {
+                font-size: 20px; /* 更小的图标 */
+                margin-bottom: 4px;
+            }
+            
+            .solution-card h4 {
+                font-size: 13px; /* 更小的字体 */
+                margin-bottom: 2px;
+            }
+            
+            .solution-card p {
+                font-size: 10px; /* 更小的字体 */
+                color: #64748B;
+            }
+                    /* 新增：底部固定主按钮 */
+        .fixed-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 500px;
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            z-index: 100;
+        }
+            /* 推荐按钮 */
+            .ai-recommend-btn {
+                background: linear-gradient(135deg, #3B82F6, #2563EB);
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 12px;
+                width: 100%;
+                font-size: 14px;
+                margin-top: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+            
+            .ai-recommend-btn:hover {
+                transform: translateY(-2px);
+            }
+            
+            /* 菜品展示 */
+            .ai-dishes-showcase {
+                margin-top: 20px;
+            }
+            
+            .dishes-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            
+            .dishes-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+                background: #F8FAFC;
+                border-radius: 12px;
+                padding: 12px;
+            }
+            
+            .dish-card {
+                aspect-ratio: 1;
+                border-radius: 8px;
+                overflow: hidden;
+                position: relative;
+                background: white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            }
+            
+            .dish-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                background: #E2E8F0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #64748B;
+                font-size: 12px;
+                text-align: center;
+            }
+            
+            .dish-label {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(0,0,0,0.6);
+                color: white;
+                padding: 4px;
+                font-size: 10px;
+                text-align: center;
+            }
+            
+            /* 食材清单 */
+            .food-list {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                margin-top: 16px;
+                background: #F8FAFC;
+                border-radius: 12px;
+                padding: 12px;
+            }
+            
+            .food-card {
+                background: white;
+                border-radius: 10px;
+                padding: 10px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+                display: flex;
+                align-items: center;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .food-card::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, #10B981, #3B82F6);
+            }
+            
+            .food-icon {
+                width: 28px;
+                height: 28px;
+                background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+                border-radius: 6px;
+                margin-right: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #047857;
+                font-size: 14px;
+            }
+            
+            .food-info {
+                flex: 1;
+            }
+            
+            .food-info h4 {
+                font-size: 13px;
+                font-weight: 500;
+                margin-bottom: 2px;
+            }
+            
+            .food-info p {
+                font-size: 10px;
+                color: #64748B;
+            }
+            
+            .ai-reason {
+                font-size: 9px;
+                color: #64748B;
+                margin-top: 4px;
+                background: #F1F5F9;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+            
+            .food-tag {
+                background: #E0F2FE;
+                color: #1E40AF;
+                padding: 2px 6px;
+                border-radius: 8px;
+                font-size: 9px;
+                font-weight: 500;
+            }
+            
+            /* 提示信息 */
+            .ai-tip {
+                background: #FFFBEB;
+                color: #92400E;
+                padding: 10px;
+                border-radius: 10px;
+                margin: 12px 0;
+                font-size: 12px;
+                display: flex;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            
+            .ai-tip-icon {
+                font-size: 14px;
+            }
+            
+            /* 选择标题 */
+            .selection-title {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            
+            .select-all {
+                font-size: 12px;
+                color: #3B82F6;
+                cursor: pointer;
+            }
+            
+            /* 推荐区域标题 */
+            .recommendation-title {
+                font-size: 14px;
+                font-weight: 600;
+                color: #3B82F6;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+            }
+            
+            .recommendation-title::before {
+                content: "✨";
+                margin-right: 6px;
+            }
+        </style>
+
+        <div class="container">
+            <div class="ai-solutions-container">
+                <button class="ai-recommend-btn" onclick="updateRecommendations()">
+                    <span>🔁</span> 选择成员、饮食方案，AI推荐菜品
+                </button>
+                <br>
+                <!-- 家庭成员选择 -->
+                <div class="selection-title">
+                        <h3 class="section-title">家庭成员</h3>
+                    </div>
+                <div class="member-status">
+                    <div class="status-card child selected" data-member="child">
+                        <div class="selection-marker">✓</div>
+                        <div class="status-header">
+                            <div class="status-avatar">👦</div>
+                            <div class="status-title">小明 (8岁)</div>
+                        </div>
+                        <div class="status-detail">
+                            <p>钙不足: 23%</p>
+                            <p>维生素D: 达标</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card elder selected" data-member="elder">
+                        <div class="selection-marker">✓</div>
+                        <div class="status-header">
+                            <div class="status-avatar">👴</div>
+                            <div class="status-title">爷爷 (65岁)</div>
+                        </div>
+                        <div class="status-detail">
+                            <p>钠超标: 57%</p>
+                            <p>血压: 偏高</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card adult selected" data-member="adult">
+                        <div class="selection-marker">✓</div>
+                        <div class="status-header">
+                            <div class="status-avatar">👩</div>
+                            <div class="status-title">妈妈 (35岁)</div>
+                        </div>
+                        <div class="status-detail">
+                            <p>铁不足: 12%</p>
+                            <p>BMI: 正常</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 方案选择 -->
+                <div class="solution-selection">
+                    <div class="selection-title">
+                        <h3 class="section-title">饮食方案</h3>
+                    </div>
+                    
+                    <div class="ai-solutions-grid">
+                        <div class="solution-card selected recommended" data-solution="picky-eater">
+                            <div class="solution-icon">👶</div>
+                            <h4>挑食方案</h4>
+                        </div>
+                        
+                        <div class="solution-card" data-solution="low-salt">
+                            <div class="solution-icon">🧂</div>
+                            <h4>限盐方案</h4>
+                        </div>
+                        
+                        <div class="solution-card" data-solution="high-calcium">
+                            <div class="solution-icon">🦴</div>
+                            <h4>高钙方案</h4>
+                        </div>
+                        
+                        <div class="solution-card" data-solution="low-fat">
+                            <div class="solution-icon">🥑</div>
+                            <h4>低脂方案</h4>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 食材清单 -->
+                <div class="ai-dishes-showcase">
+                    <div class="recommendation-title">推荐食材清单</div>
+					<span class="select-all" onclick="toggleAllSolutions()">菜品生成</span>
+                    <div class="food-list" id="foodList">
+                        <!-- 默认显示初始推荐 -->
+                        <div class="food-card">
+                            <div class="food-icon">🧀</div>
+                            <div class="food-info">
+                                <h4>奶酪</h4>
+                                <p>钙含量: 720mg/100g</p>
+                                <div class="ai-reason">🤖 AI推荐：孩子喜欢的乳制品，补钙效果佳</div>
+                            </div>
+                            <div class="food-tag">高钙</div>
+                        </div>
+                        <div class="food-card">
+                            <div class="food-icon">🍄</div>
+                            <div class="food-info">
+                                <h4>香菇</h4>
+                                <p>低钠高鲜</p>
+                                <div class="ai-reason">🤖 AI推荐：天然鲜味替代盐，适合老年人</div>
+                            </div>
+                            <div class="food-tag">调味</div>
+                        </div>
+                        <div class="food-card">
+                            <div class="food-icon">🥬</div>
+                            <div class="food-info">
+                                <h4>菠菜</h4>
+                                <p>铁含量: 2.7mg/100g</p>
+                                <div class="ai-reason">🤖 AI推荐：富含铁元素，适合成年女性</div>
+                            </div>
+                            <div class="food-tag">补铁</div>
+                        </div>
+                        <div class="food-card">
+                            <div class="food-icon">🥕</div>
+                            <div class="food-info">
+                                <h4>胡萝卜</h4>
+                                <p>维生素A丰富</p>
+                                <div class="ai-reason">🤖 AI推荐：可切碎隐藏在其他食物中</div>
+                            </div>
+                            <div class="food-tag">隐藏食材</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- AI提示 -->
+                <div class="ai-tip">
+                    <div class="ai-tip-icon">💡</div>
+                    <div>菠菜里的草酸会阻碍铁吸收，焯水 30 秒即可去除 60% 草酸。</div>
+                </div>
+                <!-- 推荐菜品 -->
+                <div class="ai-dishes-showcase">
+                    <div class="recommendation-title">为您生成的菜品</div>
+                        <span class="select-all" onclick="toggleAllSolutions()">换一批</span>
+                    <div class="dishes-grid" id="dishesGrid">
+                        <!-- 默认显示初始推荐 -->
+                        <div class="dish-card">
+                            <div class="dish-image">奶酪焗南瓜</div>
+                            <div class="dish-label">奶酪焗南瓜</div>
+                        </div>
+                        <div class="dish-card">
+                            <div class="dish-image">牛奶布丁</div>
+                            <div class="dish-label">牛奶布丁</div>
+                        </div>
+                        <div class="dish-card">
+                            <div class="dish-image">香菇蒸鸡</div>
+                            <div class="dish-label">香菇蒸鸡</div>
+                        </div>
+                    </div>
+                </div>
+                
+
+                <button class="ai-recommend-btn" onclick="updateRecommendations()">
+                    <span>🔁</span> 生成家庭海报
+                </button>			
+            </div>
+        </div>
+        
+        <script>
+            // 初始化选中的方案和成员
+            let selectedSolutions = ['picky-eater'];
+            let selectedMembers = ['child', 'elder', 'adult'];
+            
+            // 成员选择处理
+            document.querySelectorAll('.status-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    this.classList.toggle('selected');
+                    const member = this.dataset.member;
+                    
+                    if(this.classList.contains('selected')) {
+                        if(!selectedMembers.includes(member)) {
+                            selectedMembers.push(member);
+                        }
+                    } else {
+                        selectedMembers = selectedMembers.filter(m => m !== member);
+                    }
+                });
+            });
+            
+            // 方案选择处理
+            document.querySelectorAll('.solution-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    // 如果点击的是已选中的推荐方案，则不取消选择
+                    if(this.classList.contains('recommended') && this.classList.contains('selected')) {
+                        return;
+                    }
+                    
+                    this.classList.toggle('selected');
+                    const solution = this.dataset.solution;
+                    
+                    if(this.classList.contains('selected')) {
+                        if(!selectedSolutions.includes(solution)) {
+                            selectedSolutions.push(solution);
+                        }
+                    } else {
+                        selectedSolutions = selectedSolutions.filter(s => s !== solution);
+                    }
+                });
+            });
+            
+            // 全选/取消全选成员
+            function toggleAllMembers() {
+                const allSelected = selectedMembers.length === 3;
+                
+                document.querySelectorAll('.status-card').forEach(card => {
+                    const member = card.dataset.member;
+                    
+                    if(allSelected) {
+                        card.classList.remove('selected');
+                        selectedMembers = selectedMembers.filter(m => m !== member);
+                    } else {
+                        card.classList.add('selected');
+                        if(!selectedMembers.includes(member)) {
+                            selectedMembers.push(member);
+                        }
+                    }
+                });
+            }
+            
+            // 全选/取消全选方案
+            function toggleAllSolutions() {
+                const allSelected = selectedSolutions.length === 4;
+                
+                document.querySelectorAll('.solution-card').forEach(card => {
+                    const solution = card.dataset.solution;
+                    
+                    if(allSelected) {
+                        // 保留推荐方案的选择状态
+                        if(!card.classList.contains('recommended')) {
+                            card.classList.remove('selected');
+                            selectedSolutions = selectedSolutions.filter(s => s !== solution);
+                        }
+                    } else {
+                        card.classList.add('selected');
+                        if(!selectedSolutions.includes(solution)) {
+                            selectedSolutions.push(solution);
+                        }
+                    }
+                });
+            }
+            
+            // 更新推荐
+            function updateRecommendations() {
+                // 根据选择的成员和方案生成推荐
+                let recommendedFoods = [];
+                let recommendedDishes = [];
+                
+                // 根据成员生成推荐
+                if(selectedMembers.includes('child')) {
+                    recommendedFoods.push({
+                        name: '奶酪',
+                        icon: '🧀',
+                        desc: '钙含量: 720mg/100g',
+                        tag: '高钙',
+                        reason: '🤖 AI推荐：孩子喜欢的乳制品，补钙效果佳'
+                    });
+                    
+                    recommendedDishes.push(
+                        {name: '奶酪焗南瓜', image: 'https://example.com/dish1.jpg'},
+                        {name: '牛奶布丁', image: 'https://example.com/dish2.jpg'}
+                    );
+                }
+                
+                if(selectedMembers.includes('elder')) {
+                    recommendedFoods.push({
+                        name: '香菇',
+                        icon: '🍄',
+                        desc: '低钠高鲜',
+                        tag: '调味',
+                        reason: '🤖 AI推荐：天然鲜味替代盐，适合老年人'
+                    });
+                    
+                    recommendedDishes.push(
+                        {name: '香菇蒸鸡', image: 'https://example.com/dish3.jpg'},
+                        {name: '素炒三鲜', image: 'https://example.com/dish4.jpg'}
+                    );
+                }
+                
+                if(selectedMembers.includes('adult')) {
+                    recommendedFoods.push({
+                        name: '菠菜',
+                        icon: '🥬',
+                        desc: '铁含量: 2.7mg/100g',
+                        tag: '补铁',
+                        reason: '🤖 AI推荐：富含铁元素，适合成年女性'
+                    });
+                    
+                    recommendedDishes.push(
+                        {name: '蒜蓉菠菜', image: 'https://example.com/dish5.jpg'},
+                        {name: '菠菜蛋汤', image: 'https://example.com/dish6.jpg'}
+                    );
+                }
+                
+                // 根据方案生成推荐
+                if(selectedSolutions.includes('picky-eater')) {
+                    recommendedFoods.push({
+                        name: '胡萝卜',
+                        icon: '🥕',
+                        desc: '维生素A丰富',
+                        tag: '隐藏食材',
+                        reason: '🤖 AI推荐：可切碎隐藏在其他食物中'
+                    });
+                }
+                
+                if(selectedSolutions.includes('low-salt')) {
+                    recommendedFoods.push({
+                        name: '柠檬',
+                        icon: '🍋',
+                        desc: '天然调味',
+                        tag: '低钠',
+                        reason: '🤖 AI推荐：用酸味替代咸味'
+                    });
+                    
+                    recommendedDishes.push(
+                        {name: '柠檬蒸鱼', image: 'https://example.com/dish7.jpg'}
+                    );
+                }
+                
+                if(selectedSolutions.includes('high-calcium')) {
+                    recommendedFoods.push({
+                        name: '芝麻酱',
+                        icon: '🌰',
+                        desc: '钙含量: 1170mg/100g',
+                        tag: '高钙',
+                        reason: '🤖 AI推荐：钙含量是牛奶的10倍'
+                    });
+                    
+                    recommendedDishes.push(
+                        {name: '麻酱菠菜', image: 'https://example.com/dish8.jpg'}
+                    );
+                }
+                
+                if(selectedSolutions.includes('low-fat')) {
+                    recommendedFoods.push({
+                        name: '鸡胸肉',
+                        icon: '🍗',
+                        desc: '低脂高蛋白',
+                        tag: '减脂',
+                        reason: '🤖 AI推荐：优质蛋白质来源，脂肪含量低'
+                    });
+                    
+                    recommendedDishes.push(
+                        {name: '凉拌鸡丝', image: 'https://example.com/dish9.jpg'}
+                    );
+                }
+                
+                // 更新食材推荐
+                const foodList = document.getElementById('foodList');
+                foodList.innerHTML = recommendedFoods.map(food => `
+                    <div class="food-card">
+                        <div class="food-icon">${food.icon}</div>
+                        <div class="food-info">
+                            <h4>${food.name}</h4>
+                            <p>${food.desc}</p>
+                            <div class="ai-reason">${food.reason}</div>
+                        </div>
+                        <div class="food-tag">${food.tag}</div>
+                    </div>
+                `).join('');
+                
+                // 更新菜品展示
+                const dishesGrid = document.getElementById('dishesGrid');
+                dishesGrid.innerHTML = recommendedDishes.map(dish => `
+                    <div class="dish-card">
+                        <div class="dish-image">${dish.name}</div>
+                        <div class="dish-label">${dish.name}</div>
+                    </div>
+                `).join('');
+                
+                // 滚动到菜品区域
+                document.querySelector('.ai-dishes-showcase').scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
+            
+            // 初始化显示
+            window.onload = function() {
+                // 默认显示推荐内容
+                updateRecommendations();
+            };
+            
+            window.dispatchEvent(new Event('resize'));
+        </script>
+    </div>
+
+    <!-- ==================== 习惯追踪模块 ==================== -->
+    <div id="habit-tracker-module">
+	<div class="container">
+        <style>
+            /* 习惯追踪器样式 */
+            .habit-tracker {
+                background: white;
+                border-radius: 16px;
+                padding: 16px;
+                margin: 16px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            }
+
+            .habit-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+
+            .habit-icon {
+                margin-right: 8px;
+            }
+
+            .streak-counter {
+                display: flex;
+                align-items: center;
+                background: #FFEDD5;
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-size: 14px;
+            }
+
+            .fire-icon {
+                margin-left: 4px;
+                animation: pulse 1.5s infinite;
+            }
+
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.2); }
+                100% { transform: scale(1); }
+            }
+
+            .progress-container {
+                margin: 12px 0;
+            }
+
+            .progress-bar {
+                height: 8px;
+                background: #E2E8F0;
+                border-radius: 4px;
+                margin-bottom: 6px;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .progress-fill {
+                height: 100%;
+                width: var(--progress, 30%);
+                background: linear-gradient(to right, #3B82F6, #8B5CF6);
+                border-radius: 4px;
+                transition: width 0.5s;
+            }
+
+            .progress-text {
+                font-size: 12px;
+                color: #64748B;
+                display: block;
+                text-align: right;
+            }
+
+            .mission-card {
+                display: flex;
+                padding: 12px;
+                margin-bottom: 8px;
+                border-radius: 12px;
+                transition: all 0.3s;
+            }
+
+            .mission-card.completed {
+                background: #F0FDF4;
+                border-left: 4px solid #10B981;
+            }
+
+            .mission-card.current {
+                background: #EFF6FF;
+                border-left: 4px solid #3B82F6;
+            }
+
+            .check-circle {
+                width: 24px;
+                height: 24px;
+                border: 2px solid #94A3B8;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 12px;
+                flex-shrink: 0;
+            }
+
+            .mission-card.completed .check-circle {
+                background: #10B981;
+                border-color: #10B981;
+                color: white;
+            }
+
+            .mission-content h5 {
+                font-size: 15px;
+                margin-bottom: 4px;
+            }
+
+            .mission-content p {
+                font-size: 13px;
+                color: #64748B;
+                margin-bottom: 6px;
+            }
+
+            .mission-meta {
+                display: flex;
+                gap: 10px;
+                font-size: 12px;
+            }
+
+            .difficulty {
+                color: #F59E0B;
+            }
+
+            .science {
+                color: #3B82F6;
+            }
+
+            .btn-complete {
+                background: #3B82F6;
+                color: white;
+                border: none;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 12px;
+                margin-top: 6px;
+            }
+
+            .family-motivation {
+                display: flex;
+                align-items: center;
+                background: #F8FAFC;
+                padding: 10px;
+                border-radius: 12px;
+                margin-top: 16px;
+            }
+
+            .avatar-group {
+                display: flex;
+                margin-right: 12px;
+            }
+
+            .avatar {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 12px;
+                margin-left: -8px;
+                border: 2px solid white;
+            }
+
+            .highlight {
+                color: #3B82F6;
+                font-weight: 500;
+            }
+        </style>
+
+        <!-- 21天营养习惯 -->
+        <div class="habit-tracker">
+            <div class="habit-header">
+                <h4><span class="habit-icon">🏆</span> 21天营养习惯</h4>
+                <div class="streak-counter">
+                    <span class="days">连续 <strong>3</strong> 天</span>
+                    <div class="fire-icon">🔥</div>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 30%;"></div>
+                </div>
+                <span class="progress-text">第7天/21天</span>
+            </div>
+            
+            <div class="daily-mission">
+                <div class="mission-card completed">
+                    <div class="check-circle">✓</div>
+                    <div class="mission-content">
+                        <h5>用黑芝麻代替白糖</h5>
+                        <p>早餐燕麦片调味</p>
+                        <div class="mission-meta">
+                            <span class="difficulty">难度：★☆☆</span>
+                            <span class="science">依据：中国居民膳食指南</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mission-card current">
+                    <div class="check-circle"></div>
+                    <div class="mission-content">
+                        <h5>午餐前喝200ml水</h5>
+                        <p>减少过量进食</p>
+                        <button class="btn-complete">标记完成</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="family-motivation">
+                <div class="avatar-group">
+                    <div class="avatar" style="background-color: #3B82F6;">爸</div>
+                    <div class="avatar" style="background-color: #10B981;">爷</div>
+                </div>
+                <p>全家正在共同改善<span class="highlight">钠摄入</span>习惯</p>
+            </div>
+        </div>
+
+        <script>
+            // 习惯追踪交互
+            document.querySelectorAll('.btn-complete').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const card = this.closest('.mission-card');
+                    card.classList.add('completed');
+                    
+                    // 更新进度
+                    const progressBar = document.querySelector('.progress-fill');
+                    const currentWidth = parseInt(progressBar.style.width) || 0;
+                    progressBar.style.width = `${currentWidth + 5}%`;
+                    
+                    // 更新连续天数
+                    const streakCount = document.querySelector('.streak-counter strong');
+                    streakCount.textContent = parseInt(streakCount.textContent) + 1;
+                    
+                    // 显示完成动画
+                    this.innerHTML = '✓ 已完成';
+                    setTimeout(() => {
+                        card.querySelector('.check-circle').innerHTML = '✓';
+                    }, 300);
+                });
+            });
+
+            // 模拟家庭数据更新
+            function updateFamilyProgress() {
+                // 这里可以添加实际的数据获取逻辑
+                console.log('更新家庭进度数据...');
+            }
+
+            // 初始化
+            updateFamilyProgress();
+            window.dispatchEvent(new Event('resize'));
+        </script>
+    </div>
+	</div>
+    <!-- ==================== 供应商模块 ==================== -->
+    <div id="supplier-module">
+	<div class="container">
+        <style>
+            /* 供应商特有样式 */
+            .supplier-section {
+                padding: 16px;
+                background: #f8fafc;
+                margin-top: 20px;
+                border-radius: 0 0 24px 24px;
+            }
+
+            .category-tabs {
+                display: flex;
+                overflow-x: auto;
+                gap: 8px;
+                padding: 12px 0;
+                margin-bottom: 16px;
+                scrollbar-width: none; /* Firefox */
+            }
+
+            .category-tabs::-webkit-scrollbar {
+                display: none; /* Chrome/Safari */
+            }
+
+            .tab {
+                padding: 6px 12px;
+                background: #E0F2FE;
+                border-radius: 16px;
+                font-size: 12px;
+                white-space: nowrap;
+                cursor: pointer;
+            }
+
+            .tab.active {
+                background: #3B82F6;
+                color: white;
+            }
+
+            .supplier-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .supplier-card {
+                background: white;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                position: relative;
+            }
+
+            .supplier-badge {
+                position: absolute;
+                top: 8px;
+                left: 8px;
+                background: rgba(255,255,255,0.9);
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-size: 10px;
+            }
+
+            .supplier-image {
+                width: 100%;
+                height: 120px;
+                object-fit: cover;
+            }
+
+            .supplier-info {
+                padding: 12px;
+            }
+
+            .supplier-tags {
+                display: flex;
+                gap: 4px;
+                margin: 6px 0;
+                flex-wrap: wrap;
+            }
+
+            .supplier-tags span {
+                background: #F1F5F9;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 10px;
+                color: #64748B;
+            }
+
+            .supplier-desc {
+                font-size: 12px;
+                color: #666;
+                margin: 8px 0;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            .supplier-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .price {
+                font-weight: bold;
+                color: #EF4444;
+                font-size: 14px;
+            }
+
+            .supplier-btn {
+                background: #ECFDF5;
+                color: #047857;
+                border: none;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+            }
+
+            .supplier-cta {
+                text-align: center;
+                margin-top: 24px;
+                padding: 16px;
+                background: white;
+                border-radius: 12px;
+            }
+
+            .join-btn {
+                background: linear-gradient(135deg, #10B981, #3B82F6);
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 24px;
+                margin-top: 12px;
+                font-weight: bold;
+            }
+        </style>
+
+        <!-- 特色食材直供 -->
+        <div class="supplier-section">
+            <h3 class="section-title">特色食材直供</h3>
+            
+            <!-- 分类标签 -->
+            <div class="category-tabs">
+                <div class="tab active" data-category="all">全部</div>
+                <div class="tab" data-category="weight-loss">减脂优选</div>
+                <div class="tab" data-category="growth">儿童长高</div>
+                <div class="tab" data-category="chronic">三高友好</div>
+                <div class="tab" data-category="vegetarian">素食主义</div>
+            </div>
+            
+            <!-- 食材展示区 -->
+            <div class="supplier-grid">
+                <!-- 示例卡片1 -->
+                <div class="supplier-card" data-categories="growth,vegetarian">
+                    <div class="supplier-badge">基地直供</div>
+                    <img src="https://via.placeholder.com/300x200?text=五常大米" class="supplier-image">
+                    <div class="supplier-info">
+                        <h4>五常大米</h4>
+                        <div class="supplier-tags">
+                            <span>儿童营养</span>
+                            <span>低GI</span>
+                        </div>
+                        <p class="supplier-desc">蛋白质含量高出普通大米30%，适合儿童生长发育期食用</p>
+                        <div class="supplier-footer">
+                            <span class="price">¥39.9/5kg</span>
+                            <button class="supplier-btn">查看详情</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 示例卡片2 -->
+                <div class="supplier-card" data-categories="weight-loss,chronic">
+                    <div class="supplier-badge">有机认证</div>
+                    <img src="https://via.placeholder.com/300x200?text=有机藜麦" class="supplier-image">
+                    <div class="supplier-info">
+                        <h4>有机藜麦</h4>
+                        <div class="supplier-tags">
+                            <span>高蛋白</span>
+                            <span>低GI</span>
+                        </div>
+                        <p class="supplier-desc">蛋白质含量高达14%，富含9种必需氨基酸，适合减脂控糖人群</p>
+                        <div class="supplier-footer">
+                            <span class="price">¥59.9/500g</span>
+                            <button class="supplier-btn">查看详情</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 示例卡片3 -->
+                <div class="supplier-card" data-categories="growth">
+                    <div class="supplier-badge">钙强化</div>
+                    <img src="https://via.placeholder.com/300x200?text=高钙牛奶" class="supplier-image">
+                    <div class="supplier-info">
+                        <h4>高钙牛奶</h4>
+                        <div class="supplier-tags">
+                            <span>儿童</span>
+                            <span>钙+30%</span>
+                        </div>
+                        <p class="supplier-desc">每100ml含钙150mg，特别添加维生素D促进钙吸收</p>
+                        <div class="supplier-footer">
+                            <span class="price">¥69.9/12盒</span>
+                            <button class="supplier-btn">查看详情</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 示例卡片4 -->
+                <div class="supplier-card" data-categories="chronic,vegetarian">
+                    <div class="supplier-badge">低钠</div>
+                    <img src="https://via.placeholder.com/300x200?text=低钠酱油" class="supplier-image">
+                    <div class="supplier-info">
+                        <h4>低钠酱油</h4>
+                        <div class="supplier-tags">
+                            <span>钠-50%</span>
+                            <span>三高友好</span>
+                        </div>
+                        <p class="supplier-desc">钠含量比普通酱油低50%，鲜味不减，适合高血压人群</p>
+                        <div class="supplier-footer">
+                            <span class="price">¥29.9/500ml</span>
+                            <button class="supplier-btn">查看详情</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="supplier-cta">
+                <p>优质供应商招募中，入驻即享流量扶持</p>
+                <button class="join-btn">立即加盟</button>
+            </div>
+        </div>
+
+        <script>
+            // 分类切换
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelector('.tab.active').classList.remove('active');
+                    this.classList.add('active');
+                    
+                    const category = this.dataset.category;
+                    filterSuppliers(category);
+                });
+            });
+
+            function filterSuppliers(category) {
+                const cards = document.querySelectorAll('.supplier-card');
+                
+                cards.forEach(card => {
+                    if(category === 'all' || card.dataset.categories.includes(category)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+            // 初始化显示
+            filterSuppliers('all');
+            window.dispatchEvent(new Event('resize'));
+        </script>
+    </div>
+	</div>
+    <!-- 全局脚本 -->
+    <script>
+        // 这里放置需要在所有模块加载后执行的全局脚本
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成');
+        });
+    </script>
+</body>
+</html>
