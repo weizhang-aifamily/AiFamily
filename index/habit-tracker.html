@@ -1,0 +1,260 @@
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21天营养习惯 - 家庭营养管家Pro</title>
+    <style>
+        /* 习惯追踪器样式 */
+        .habit-tracker {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .habit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .habit-icon {
+            margin-right: 8px;
+        }
+
+        .streak-counter {
+            display: flex;
+            align-items: center;
+            background: #FFEDD5;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .fire-icon {
+            margin-left: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .progress-container {
+            margin: 12px 0;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #E2E8F0;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: var(--progress, 30%);
+            background: linear-gradient(to right, #3B82F6, #8B5CF6);
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #64748B;
+            display: block;
+            text-align: right;
+        }
+
+        .mission-card {
+            display: flex;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .mission-card.completed {
+            background: #F0FDF4;
+            border-left: 4px solid #10B981;
+        }
+
+        .mission-card.current {
+            background: #EFF6FF;
+            border-left: 4px solid #3B82F6;
+        }
+
+        .check-circle {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #94A3B8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .mission-card.completed .check-circle {
+            background: #10B981;
+            border-color: #10B981;
+            color: white;
+        }
+
+        .mission-content h5 {
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .mission-content p {
+            font-size: 13px;
+            color: #64748B;
+            margin-bottom: 6px;
+        }
+
+        .mission-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .difficulty {
+            color: #F59E0B;
+        }
+
+        .science {
+            color: #3B82F6;
+        }
+
+        .btn-complete {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .family-motivation {
+            display: flex;
+            align-items: center;
+            background: #F8FAFC;
+            padding: 10px;
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+
+        .avatar-group {
+            display: flex;
+            margin-right: 12px;
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            margin-left: -8px;
+            border: 2px solid white;
+        }
+
+        .highlight {
+            color: #3B82F6;
+            font-weight: 500;
+        }
+    </style>
+
+    <!-- 21天营养习惯 -->
+    <div class="habit-tracker">
+        <div class="habit-header">
+            <h4><span class="habit-icon">🏆</span> 21天营养习惯</h4>
+            <div class="streak-counter">
+                <span class="days">连续 <strong>3</strong> 天</span>
+                <div class="fire-icon">🔥</div>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 30%;"></div>
+            </div>
+            <span class="progress-text">第7天/21天</span>
+        </div>
+        
+        <div class="daily-mission">
+            <div class="mission-card completed">
+                <div class="check-circle">✓</div>
+                <div class="mission-content">
+                    <h5>用黑芝麻代替白糖</h5>
+                    <p>早餐燕麦片调味</p>
+                    <div class="mission-meta">
+                        <span class="difficulty">难度：★☆☆</span>
+                        <span class="science">依据：中国居民膳食指南</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mission-card current">
+                <div class="check-circle"></div>
+                <div class="mission-content">
+                    <h5>午餐前喝200ml水</h5>
+                    <p>减少过量进食</p>
+                    <button class="btn-complete">标记完成</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="family-motivation">
+            <div class="avatar-group">
+                <div class="avatar" style="background-color: #3B82F6;">爸</div>
+                <div class="avatar" style="background-color: #10B981;">爷</div>
+            </div>
+            <p>全家正在共同改善<span class="highlight">钠摄入</span>习惯</p>
+        </div>
+    </div>
+
+    <script>
+        // 习惯追踪交互
+        document.querySelectorAll('.btn-complete').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const card = this.closest('.mission-card');
+                card.classList.add('completed');
+                
+                // 更新进度
+                const progressBar = document.querySelector('.progress-fill');
+                const currentWidth = parseInt(progressBar.style.width) || 0;
+                progressBar.style.width = `${currentWidth + 5}%`;
+                
+                // 更新连续天数
+                const streakCount = document.querySelector('.streak-counter strong');
+                streakCount.textContent = parseInt(streakCount.textContent) + 1;
+                
+                // 显示完成动画
+                this.innerHTML = '✓ 已完成';
+                setTimeout(() => {
+                    card.querySelector('.check-circle').innerHTML = '✓';
+                }, 300);
+            });
+        });
+
+        // 模拟家庭数据更新
+        function updateFamilyProgress() {
+            // 这里可以添加实际的数据获取逻辑
+            console.log('更新家庭进度数据...');
+        }
+
+        // 初始化
+        updateFamilyProgress();
+		window.dispatchEvent(new Event('resize'));
+    </script>

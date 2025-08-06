@@ -1,0 +1,108 @@
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>营养时间轴 - 家庭营养管家Pro</title>
+    <style>
+        /* 时间轴特有样式 */
+        .nutri-timeline {
+            padding: 16px;
+            margin: 16px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .timeline-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1E293B;
+        }
+        
+        .timeline-status {
+            background: #E0F7FA;
+            color: #06B6D4;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .timeline-status::before {
+            content: "⏳";
+            margin-right: 4px;
+        }
+        
+        .wave-progress {
+            height: 6px;
+            background: #E0F2FE;
+            border-radius: 3px;
+            margin: 12px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .wave-fill {
+            height: 100%;
+            width: 65%;
+            background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+            border-radius: 3px;
+            position: relative;
+            animation: wave 2s linear infinite;
+        }
+        
+        @keyframes wave {
+            0% { background-position-x: 0; }
+            100% { background-position-x: 40px; }
+        }
+        
+        .timeline-marks {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #64748B;
+        }
+		        
+        /* 提示信息 */
+        .ai-tip {
+            background: #FFFBEB;
+            color: #92400E;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 12px 0;
+            font-size: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        
+        .ai-tip-icon {
+            font-size: 14px;
+        }
+    </style>
+
+    <!-- 营养时间轴 -->
+    <div class="nutri-timeline">
+        <div class="timeline-header">
+            <h3>营养时间轴</h3>
+            <div class="timeline-status">补钙窗口期 剩余2h</div>
+        </div>
+        
+        <div class="wave-progress">
+            <div class="wave-fill"></div>
+        </div>
+        
+        <div class="timeline-marks">
+            <span>早餐</span>
+            <span>午餐</span>
+            <span>晚餐</span>
+            <span>加餐</span>
+        </div>
+    </div>

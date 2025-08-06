@@ -1,0 +1,261 @@
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特色食材直供 - 家庭营养管家Pro</title>
+    <style>
+        /* 供应商特有样式 */
+        .supplier-section {
+            padding: 16px;
+            background: #f8fafc;
+            margin-top: 20px;
+            border-radius: 0 0 24px 24px;
+        }
+
+        .category-tabs {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 12px 0;
+            margin-bottom: 16px;
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .category-tabs::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+
+        .tab {
+            padding: 6px 12px;
+            background: #E0F2FE;
+            border-radius: 16px;
+            font-size: 12px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background: #3B82F6;
+            color: white;
+        }
+
+        .supplier-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .supplier-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .supplier-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+        }
+
+        .supplier-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .supplier-info {
+            padding: 12px;
+        }
+
+        .supplier-tags {
+            display: flex;
+            gap: 4px;
+            margin: 6px 0;
+            flex-wrap: wrap;
+        }
+
+        .supplier-tags span {
+            background: #F1F5F9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: #64748B;
+        }
+
+        .supplier-desc {
+            font-size: 12px;
+            color: #666;
+            margin: 8px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .supplier-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .price {
+            font-weight: bold;
+            color: #EF4444;
+            font-size: 14px;
+        }
+
+        .supplier-btn {
+            background: #ECFDF5;
+            color: #047857;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .supplier-cta {
+            text-align: center;
+            margin-top: 24px;
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+        }
+
+        .join-btn {
+            background: linear-gradient(135deg, #10B981, #3B82F6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 24px;
+            margin-top: 12px;
+            font-weight: bold;
+        }
+    </style>
+
+    <!-- 特色食材直供 -->
+    <div class="supplier-section">
+        <h3 class="section-title">特色食材直供</h3>
+        
+        <!-- 分类标签 -->
+        <div class="category-tabs">
+            <div class="tab active" data-category="all">全部</div>
+            <div class="tab" data-category="weight-loss">减脂优选</div>
+            <div class="tab" data-category="growth">儿童长高</div>
+            <div class="tab" data-category="chronic">三高友好</div>
+            <div class="tab" data-category="vegetarian">素食主义</div>
+        </div>
+        
+        <!-- 食材展示区 -->
+        <div class="supplier-grid">
+            <!-- 示例卡片1 -->
+            <div class="supplier-card" data-categories="growth,vegetarian">
+                <div class="supplier-badge">基地直供</div>
+                <img src="https://via.placeholder.com/300x200?text=五常大米" class="supplier-image">
+                <div class="supplier-info">
+                    <h4>五常大米</h4>
+                    <div class="supplier-tags">
+                        <span>儿童营养</span>
+                        <span>低GI</span>
+                    </div>
+                    <p class="supplier-desc">蛋白质含量高出普通大米30%，适合儿童生长发育期食用</p>
+                    <div class="supplier-footer">
+                        <span class="price">¥39.9/5kg</span>
+                        <button class="supplier-btn">查看详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 示例卡片2 -->
+            <div class="supplier-card" data-categories="weight-loss,chronic">
+                <div class="supplier-badge">有机认证</div>
+                <img src="https://via.placeholder.com/300x200?text=有机藜麦" class="supplier-image">
+                <div class="supplier-info">
+                    <h4>有机藜麦</h4>
+                    <div class="supplier-tags">
+                        <span>高蛋白</span>
+                        <span>低GI</span>
+                    </div>
+                    <p class="supplier-desc">蛋白质含量高达14%，富含9种必需氨基酸，适合减脂控糖人群</p>
+                    <div class="supplier-footer">
+                        <span class="price">¥59.9/500g</span>
+                        <button class="supplier-btn">查看详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 示例卡片3 -->
+            <div class="supplier-card" data-categories="growth">
+                <div class="supplier-badge">钙强化</div>
+                <img src="https://via.placeholder.com/300x200?text=高钙牛奶" class="supplier-image">
+                <div class="supplier-info">
+                    <h4>高钙牛奶</h4>
+                    <div class="supplier-tags">
+                        <span>儿童</span>
+                        <span>钙+30%</span>
+                    </div>
+                    <p class="supplier-desc">每100ml含钙150mg，特别添加维生素D促进钙吸收</p>
+                    <div class="supplier-footer">
+                        <span class="price">¥69.9/12盒</span>
+                        <button class="supplier-btn">查看详情</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 示例卡片4 -->
+            <div class="supplier-card" data-categories="chronic,vegetarian">
+                <div class="supplier-badge">低钠</div>
+                <img src="https://via.placeholder.com/300x200?text=低钠酱油" class="supplier-image">
+                <div class="supplier-info">
+                    <h4>低钠酱油</h4>
+                    <div class="supplier-tags">
+                        <span>钠-50%</span>
+                        <span>三高友好</span>
+                    </div>
+                    <p class="supplier-desc">钠含量比普通酱油低50%，鲜味不减，适合高血压人群</p>
+                    <div class="supplier-footer">
+                        <span class="price">¥29.9/500ml</span>
+                        <button class="supplier-btn">查看详情</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="supplier-cta">
+            <p>优质供应商招募中，入驻即享流量扶持</p>
+            <button class="join-btn">立即加盟</button>
+        </div>
+    </div>
+
+    <script>
+        // 分类切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelector('.tab.active').classList.remove('active');
+                this.classList.add('active');
+                
+                const category = this.dataset.category;
+                filterSuppliers(category);
+            });
+        });
+
+        function filterSuppliers(category) {
+            const cards = document.querySelectorAll('.supplier-card');
+            
+            cards.forEach(card => {
+                if(category === 'all' || card.dataset.categories.includes(category)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // 初始化显示全部
+        filterSuppliers('all');
+		window.dispatchEvent(new Event('resize'));
+    </script>

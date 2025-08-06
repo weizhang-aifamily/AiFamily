@@ -1,0 +1,194 @@
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>核心功能 - 家庭营养管家Pro</title>
+    <style>
+        /* 核心功能特有样式 */
+        .core-functions {
+            padding: 0 16px 16px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1E293B;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 14px;
+            background: #3B82F6;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+        
+        .func-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .func-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+        
+        .func-card:active {
+            transform: scale(0.98);
+        }
+        
+        .func-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #E0F2FE, #BFDBFE);
+            border-radius: 12px;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1E40AF;
+            font-size: 18px;
+        }
+        
+        .func-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .func-card p {
+            font-size: 11px;
+            color: #64748B;
+        }
+
+        .recommendation {
+            padding: 0 16px 20px;
+        }
+        
+        .food-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .food-card {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .food-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10B981, #3B82F6);
+        }
+        
+        .food-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            border-radius: 8px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #047857;
+            font-size: 16px;
+        }
+        
+        .food-info {
+            flex: 1;
+        }
+        
+        .food-info h4 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        
+        .food-info p {
+            font-size: 11px;
+            color: #64748B;
+        }
+        
+        .food-tag {
+            background: #E0F2FE;
+            color: #1E40AF;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .fridge-scan {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #E0F2FE;
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            width: fit-content;
+            cursor: pointer;
+        }
+
+        .scan-icon {
+            font-size: 16px;
+        }
+
+        .scan-text {
+            font-size: 14px;
+            color: #1E40AF;
+        }
+    </style>
+
+    <!-- 核心功能 -->
+    <div class="core-functions">
+        <h3 class="section-title">核心功能</h3>
+        
+        <div class="func-grid">
+            <div class="func-card">
+                <div class="func-icon">🍎</div>
+                <h4>智能食谱</h4>
+                <p>个性化推荐</p>
+            </div>
+            
+            <div class="func-card">
+                <div class="func-icon">📊</div>
+                <h4>健康预测</h4>
+                <p>AI趋势分析</p>
+            </div>
+            
+            <div class="func-card">
+                <div class="func-icon">🏃</div>
+                <h4>运动计划</h4>
+                <p>匹配营养</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openFridgeScan() {
+            alert('打开相机扫描冰箱食材...');
+            // 实际应用中这里会调用相机API
+        }
+		window.dispatchEvent(new Event('resize'));
+    </script>

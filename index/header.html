@@ -1,0 +1,178 @@
+<div class="header-content" style="padding:16px">
+    <style>
+        /* 头部特有样式 */
+        .header {
+            background: linear-gradient(135deg, #2ecc71, #3498db);
+            color: white;
+            padding: 24px 16px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::after {
+            content: "";
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            width: 200%;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+            font-weight: 600;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .family-score {
+            position: relative;
+            width: 180px;
+            height: 90px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        
+        .score-dial {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .score-arc {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            position: absolute;
+            clip: rect(0, 180px, 180px, 90px);
+        }
+        
+        .arc-back {
+            width: 100%;
+            height: 100%;
+            border: 12px solid #E0F2FE;
+            border-radius: 50%;
+            position: absolute;
+            clip: rect(0, 180px, 180px, 90px);
+        }
+        
+        .arc-front {
+            width: 100%;
+            height: 100%;
+            border: 12px solid #3B82F6;
+            border-radius: 50%;
+            position: absolute;
+            clip: rect(0, 90px, 180px, 0);
+            transform: rotate(0deg);
+            animation: rotateArc 1.5s ease-out forwards;
+        }
+        
+        @keyframes rotateArc {
+            to { transform: rotate(162deg); }
+        }
+        
+        .score-value {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            z-index: 3;
+        }
+        
+        .score-label {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        #aiPredictionLabel {
+            position: absolute;
+            bottom: -35px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            color: #3B82F6;
+            font-weight: 500;
+            background: rgba(255,255,255,0.2);
+            padding: 2px;
+            border-radius: 4px;
+            width: 80%;
+            margin: 0 auto;
+        }
+        
+        .scientific-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin: 10px auto;
+            width: fit-content;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+
+    <!-- 顶部家庭状态栏 -->
+    <div class="header">
+        <h1>家庭营养管家Pro</h1>
+        <p>科学管理 · 智能营养</p>
+        
+        <!-- 家庭评分仪表盘 -->
+        <div class="family-score">
+            <div class="score-dial">
+                <div class="score-arc">
+                    <div class="arc-back"></div>
+                    <div class="arc-front"></div>
+                </div>
+                <div class="score-value">82</div>
+                <div class="score-label">家庭营养指数</div>
+                <div id="aiPredictionLabel">AI分析中...</div>
+                <div class="scientific-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L3 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-9-3z" fill="#3B82F6"/>
+                        <path d="M12 12l3-3m-3 3l-3-3m3 3v6" stroke="white" stroke-width="2"/>
+                    </svg>
+                    <span>AI算法通过三甲医院临床验证</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据加载动画
+        setTimeout(() => {
+            document.querySelector('.arc-front').style.transform = 'rotate(162deg)';
+        }, 300);
+        
+        // 初始化AI预测标签
+        setTimeout(() => {
+            document.getElementById('aiPredictionLabel').innerHTML = 
+                'AI预测：维持当前饮食，3个月后钙缺口↑12%';
+        }, 1500);
+		window.dispatchEvent(new Event('resize'));
+    </script>
+</div>
