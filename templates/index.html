@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>用户列表</title>
+</head>
+<body>
+    <h1>用户数据</h1>
+
+    <!-- 搜索表单 -->
+    <form method="POST" action="/search">
+        <input type="text" name="keyword" placeholder="输入用户名">
+        <button type="submit">搜索</button>
+    </form>
+
+    <!-- 数据表格 -->
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>用户名</th>
+            <th>邮箱</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.user_id }}</td>
+            <td>{{ user.user_name }}</td>
+            <td>{{ user.user_email }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
