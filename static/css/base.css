@@ -1,0 +1,54 @@
+/* 从index.html提取的公共样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+
+body {
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
+    padding-bottom: 88px;
+}
+
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.header {
+    background: white;
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 22px;
+    color: #3B82F6;
+    margin-bottom: 8px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.section-title::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 14px;
+    background: #3B82F6;
+    margin-right: 8px;
+    border-radius: 2px;
+}

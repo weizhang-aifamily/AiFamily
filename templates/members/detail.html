@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成员健康 - 益家</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/members.css">
+</head>
+<body>
+    <!-- 顶部容器 -->
+    <div class="container">
+        <div class="header">
+            <h1 id="pageTitle">健康报告</h1>
+            <button class="back-btn" onclick="history.back()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 成员基本信息 -->
+    <div class="container">
+        <div class="member-basic">
+            <div class="avatar" id="memberAvatar">小</div>
+            <div class="member-info">
+                <h2 id="memberName">小明</h2>
+                <p id="memberDetail">8岁 | 身高: 130cm | 体重: 28kg</p>
+                <div class="health-tags" id="healthTags">
+                    <!-- 动态生成健康标签 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 营养摄入概览 -->
+    <div class="container">
+        <div class="section">
+            <h3 class="section-title">营养摄入概览</h3>
+            <div class="nutrition-grid" id="nutritionGrid">
+                <!-- 动态生成营养数据 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 饮食分析与排名 -->
+    <div class="container">
+        <div class="section">
+            <h3 class="section-title">饮食分析与排名</h3>
+            <div class="diet-analysis">
+                <div class="food-ranking" id="foodRanking">
+                    <!-- 动态生成饮食排名 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/members.js"></script>
+</body>
+</html>

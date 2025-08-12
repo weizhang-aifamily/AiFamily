@@ -1,8 +1,13 @@
-from flask import Flask, render_template, request
-from dbconnect.dbconn import db  # 导入数据库实例
+from flask import Flask, render_template, request, jsonify
+from dbconnect.dbconn import db
+from routes.member_routes import member_bp
 
 app = Flask(__name__)
 
+# 注册蓝图
+app.register_blueprint(member_bp)
+
+# 保留原有的基本路由
 @app.route('/')
 def index():
     users = db.query("SELECT * FROM testdb")
