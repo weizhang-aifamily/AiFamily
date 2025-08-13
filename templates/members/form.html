@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${isEdit ? '编辑' : '添加'}成员 - 益家</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/members.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>${isEdit ? '编辑成员' : '添加新成员'}</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <form id="memberForm" class="member-form">
+            <input type="hidden" id="memberId" value="${member?.member_id || ''}">
+
+            <div class="form-group">
+                <label for="name">姓名</label>
+                <input type="text" id="name" required value="${member?.name || ''}">
+            </div>
+
+            <div class="form-group">
+                <label for="relation">家庭关系</label>
+                <select id="relation" required>
+                    <option value="">请选择</option>
+                    <option value="father" ${member?.relation === 'father' ? 'selected' : ''}>父亲</option>
+                    <option value="mother" ${member?.relation === 'mother' ? 'selected' : ''}>母亲</option>
+                    <option value="child" ${member?.relation === 'child' ? 'selected' : ''}>孩子</option>
+                    <option value="grandparent" ${member?.relation === 'grandparent' ? 'selected' : ''}>祖父母</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="birthDate">出生日期</label>
+                <input type="date" id="birthDate" required value="${member?.birth_date || ''}">
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="cancel-btn" onclick="history.back()">取消</button>
+                <button type="submit" class="submit-btn">保存</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('memberForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const memberData = {
+                name: document.getElementById('name').value,
+                relation: document.getElementById('relation').value,
+                birth_date: document.getElementById('birthDate').value,
+                family_id: 1 // 默认家庭ID
+            };
+
+            const memberId = document.getElementById('memberId').value;
+            const url = memberId ? `/api/members/${memberId}` : '/api/members';
+            const method = memberId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(memberData)
+                });
+
+                if (response.ok) {
+                    alert('保存成功！');
+                    location.href = '/members';
+                } else {
+                    const error = await response.json();
+                    alert(`保存失败: ${error.message}`);
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('网络错误，请重试');
+            }
+        });
+    </script>
+</body>
+</html>

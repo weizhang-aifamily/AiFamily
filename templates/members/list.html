@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭成员 - 益家</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/members.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>家庭成员</h1>
+            <p>管理您的家庭健康档案</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="member-actions">
+            <button class="primary-btn" onclick="location.href='/members/add'">
+                <span>+</span> 添加成员
+            </button>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索家庭成员...">
+                <button onclick="searchMembers()">搜索</button>
+            </div>
+        </div>
+
+        <div class="member-list" id="memberList">
+            <!-- 动态加载成员列表 -->
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <script src="/static/js/members.js"></script>
+    <script>
+        // 初始加载成员列表
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchMembers();
+        });
+
+        async function fetchMembers() {
+            try {
+                const response = await fetch('/members');
+                const data = await response.json();
+                renderMemberList(data.data);
+            } catch (error) {
+                console.error('加载成员列表失败:', error);
+            }
+        }
+
+        function renderMemberList(members) {
+            const container = document.getElementById('memberList');
+            container.innerHTML = members.map(member => `
+                <div class="member-card" data-id="${member.member_id}">
+                    <div class="avatar">${member.name.charAt(0)}</div>
+                    <div class="member-info">
+                        <h3>${member.name}</h3>
+                        <p>${member.relation} · ${calculateAge(member.birth_date)}岁</p>
+                    </div>
+                    <button class="detail-btn"
+                            onclick="location.href='/members/${member.member_id}'">详情</button>
+                </div>
+            `).join('');
+        }
+
+        function calculateAge(birthDate) {
+            // 实现年龄计算逻辑
+            return new Date().getFullYear() - new Date(birthDate).getFullYear();
+        }
+    </script>
+</body>
+</html>
