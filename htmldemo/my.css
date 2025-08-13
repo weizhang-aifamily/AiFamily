@@ -1,0 +1,478 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+
+body {
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
+    padding: 16px;
+}
+
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.dashboard-container {
+    padding: 16px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1E293B;
+    display: flex;
+    align-items: center;
+}
+
+.section-title::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 14px;
+    background: #3B82F6;
+    margin-right: 8px;
+    border-radius: 2px;
+}
+
+/* Achievement Banner */
+.achievement-banner {
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    color: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.achievement-stars {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 60px;
+    opacity: 0.2;
+}
+
+.achievement-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.achievement-title::before {
+    content: "🏆";
+    margin-right: 8px;
+    font-size: 24px;
+}
+
+.achievement-desc {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+}
+
+.share-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.share-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Radar Chart */
+.radar-container {
+    width: 100%;
+    height: 220px;
+    background: #F8FAFC;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.radar-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.radar-date {
+    font-size: 12px;
+    color: #64748B;
+    font-weight: normal;
+}
+
+.radar-placeholder {
+    width: 100%;
+    height: 160px;
+    background: #E2E8F0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748B;
+    font-size: 12px;
+}
+
+.radar-labels {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 8px;
+}
+
+.radar-label {
+    font-size: 10px;
+    color: #64748B;
+    text-align: center;
+}
+
+.radar-label.highlight {
+    color: #EF4444;
+    font-weight: 600;
+}
+
+/* Compare Card */
+.compare-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.compare-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.compare-title::before {
+    content: "📈";
+    margin-right: 6px;
+}
+
+.improvement-tag {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: #ECFDF5;
+    color: #065F46;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Quick Fix Button */
+.quick-fix-btn {
+    background: #FEF3C7;
+    color: #92400E;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
+    width: 100%;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quick-fix-btn:hover {
+    background: #FDE68A;
+}
+
+.quick-fix-icon {
+    font-size: 16px;
+}
+
+/* Family Members */
+.family-members {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+}
+
+.family-members::-webkit-scrollbar {
+    display: none;
+}
+
+.member-card {
+    min-width: 120px;
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.member-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #E0F2FE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.member-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.member-status {
+    font-size: 10px;
+    color: #64748B;
+    margin-bottom: 8px;
+}
+
+.badges-container {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    background: #ECFDF5;
+    color: #065F46;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 500;
+}
+
+.badge-premium {
+    background: linear-gradient(135deg, #F59E0B, #EF4444);
+    color: white !important;
+}
+
+/* Shopping List */
+.shopping-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.shopping-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.shopping-title::before {
+    content: "🏆";
+    margin-right: 6px;
+}
+
+.shopping-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #F1F5F9;
+}
+
+.shopping-item:last-child {
+    border-bottom: none;
+}
+
+.shopping-desc {
+    font-size: 13px;
+    flex: 1;
+}
+
+.shopping-suggestion {
+    font-size: 12px;
+    color: #3B82F6;
+    text-align: right;
+}
+
+/* Timeline */
+.timeline-container {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.timeline-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.timeline-title::before {
+    content: "⏳";
+    margin-right: 6px;
+}
+
+.timeline-scroll {
+    overflow-x: auto;
+    display: flex;
+    gap: 12px;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+}
+
+.timeline-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.timeline-item {
+    min-width: 160px;
+    background: #F8FAFC;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.timeline-date {
+    font-size: 10px;
+    color: #64748B;
+    margin-bottom: 4px;
+}
+
+.timeline-event {
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.timeline-result {
+    font-size: 11px;
+    color: #10B981;
+    font-weight: 500;
+}
+
+/* Ranking Card */
+.ranking-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.ranking-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.ranking-title::before {
+    content: "🏅";
+    margin-right: 6px;
+}
+
+.score-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.family-score {
+    text-align: center;
+}
+
+.score-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #3B82F6;
+}
+
+.score-label {
+    font-size: 12px;
+    color: #64748B;
+}
+
+.vs-label {
+    font-size: 12px;
+    color: #64748B;
+    align-self: center;
+}
+
+.progress-container {
+    background: #F1F5F9;
+    border-radius: 8px;
+    height: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+    width: 65%;
+    border-radius: 8px;
+}
+
+.progress-text {
+    font-size: 11px;
+    color: #64748B;
+    text-align: center;
+}
+
+/* AI Tip */
+.ai-tip {
+    background: #FFFBEB;
+    color: #92400E;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 12px 0;
+    font-size: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.ai-tip-icon {
+    font-size: 14px;
+}

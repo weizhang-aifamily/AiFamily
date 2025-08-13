@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>益家-AiFamily</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ==================== 头部模块 - 简化版 ==================== -->
+    <div id="header-module">
+        <div class="container">
+            <div class="header">
+                <h1>益家-AiFamily</h1>
+                <p>科学管理 · 智能营养</p>
+                
+                <!-- 简化后的评分圆环 -->
+                <div class="family-score">
+                    <svg width="180" height="180" viewBox="0 0 180 180">
+                        <circle cx="90" cy="90" r="80" stroke="#E0F2FE" stroke-width="12" fill="none"/>
+                        <circle cx="90" cy="90" r="80" stroke="#3B82F6" stroke-width="12" fill="none" 
+                                stroke-dasharray="502" stroke-dashoffset="180" transform="rotate(-90 90 90)"
+                                style="animation: rotateArc 1.2s ease-out forwards;"/>
+                    </svg>
+                    <div class="score-value">82</div>
+                    <div class="score-label">家庭营养指数</div>
+                </div>
+                
+                <!-- 新增：可滑动信息卡片 -->
+                <div class="card-slider">
+                    <div class="info-card">
+                        <h4>AI预测分析</h4>
+                        <p>维持当前饮食，3个月后钙缺口↑12%</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>本周成就</h4>
+                        <p>给家人加了 4 次高钙食材、减盐 1.8 g、摄入铁提升 28%。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== AI推荐模块 ==================== -->
+    <div id="ai-recommendation-module">
+        <div class="container">
+            <div class="ai-solutions-container">
+                <button class="ai-recommend-btn" onclick="updateRecommendations()">
+                    <span>🔁</span> 选择成员、饮食方案，AI推荐菜品
+                </button>
+                <br>
+                <!-- 家庭成员选择 -->
+                <div class="selection-title">
+                        <h3 class="section-title">家庭成员</h3>
+                    </div>
+                <div class="member-status">
+                    <div class="status-card child selected" data-member="child">
+                        <div class="selection-marker">✓</div>
+                        <div class="status-header">
+                            <div class="status-avatar">👦</div>
+                            <div class="status-title">小明 (8岁)</div>
+                        </div>
+                        <div class="status-detail">
+                            <p>钙不足: 23%</p>
+                            <p>维生素D: 达标</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card elder selected" data-member="elder">
+                        <div class="selection-marker">✓</div>
+                        <div class="status-header">
+                            <div class="status-avatar">👴</div>
+                            <div class="status-title">爷爷 (65岁)</div>
+                        </div>
+                        <div class="status-detail">
+                            <p>钠超标: 57%</p>
+                            <p>血压: 偏高</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card adult selected" data-member="adult">
+                        <div class="selection-marker">✓</div>
+                        <div class="status-header">
+                            <div class="status-avatar">👩</div>
+                            <div class="status-title">妈妈 (35岁)</div>
+                        </div>
+                        <div class="status-detail">
+                            <p>铁不足: 12%</p>
+                            <p>BMI: 正常</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 方案选择 -->
+                <div class="solution-selection">
+                    <div class="selection-title">
+                        <h3 class="section-title">饮食方案</h3>
+                    </div>
+                    
+                    <div class="ai-solutions-grid">
+                        <div class="solution-card selected recommended" data-solution="picky-eater">
+                            <div class="solution-icon">👶</div>
+                            <h4>挑食方案</h4>
+                        </div>
+                        
+                        <div class="solution-card" data-solution="low-salt">
+                            <div class="solution-icon">🧂</div>
+                            <h4>限盐方案</h4>
+                        </div>
+                        
+                        <div class="solution-card" data-solution="high-calcium">
+                            <div class="solution-icon">🦴</div>
+                            <h4>高钙方案</h4>
+                        </div>
+                        
+                        <div class="solution-card" data-solution="low-fat">
+                            <div class="solution-icon">🥑</div>
+                            <h4>低脂方案</h4>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 食材清单 -->
+                <div class="ai-dishes-showcase">
+                    <div class="recommendation-title">推荐食材清单</div>
+                    <span class="select-all" onclick="toggleAllSolutions()">菜品生成</span>
+                    <div class="food-list" id="foodList">
+                        <!-- 默认显示初始推荐 -->
+                        <div class="food-card">
+                            <div class="food-icon">🧀</div>
+                            <div class="food-info">
+                                <h4>奶酪</h4>
+                                <p>钙含量: 720mg/100g</p>
+                                <div class="ai-reason">🤖 AI推荐：孩子喜欢的乳制品，补钙效果佳</div>
+                            </div>
+                            <div class="food-tag">高钙</div>
+                        </div>
+                        <div class="food-card">
+                            <div class="food-icon">🍄</div>
+                            <div class="food-info">
+                                <h4>香菇</h4>
+                                <p>低钠高鲜</p>
+                                <div class="ai-reason">🤖 AI推荐：天然鲜味替代盐，适合老年人</div>
+                            </div>
+                            <div class="food-tag">调味</div>
+                        </div>
+                        <div class="food-card">
+                            <div class="food-icon">🥬</div>
+                            <div class="food-info">
+                                <h4>菠菜</h4>
+                                <p>铁含量: 2.7mg/100g</p>
+                                <div class="ai-reason">🤖 AI推荐：富含铁元素，适合成年女性</div>
+                            </div>
+                            <div class="food-tag">补铁</div>
+                        </div>
+                        <div class="food-card">
+                            <div class="food-icon">🥕</div>
+                            <div class="food-info">
+                                <h4>胡萝卜</h4>
+                                <p>维生素A丰富</p>
+                                <div class="ai-reason">🤖 AI推荐：可切碎隐藏在其他食物中</div>
+                            </div>
+                            <div class="food-tag">隐藏食材</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- AI提示 -->
+                <div class="ai-tip">
+                    <div class="ai-tip-icon">💡</div>
+                    <div>菠菜里的草酸会阻碍铁吸收，焯水 30 秒即可去除 60% 草酸。</div>
+                </div>
+                <!-- 推荐菜品 -->
+                <div class="ai-dishes-showcase">
+                    <div class="recommendation-title">为您生成的菜品</div>
+                        <span class="select-all" onclick="toggleAllSolutions()">换一批</span>
+                    <div class="dishes-grid" id="dishesGrid">
+                        <!-- 默认显示初始推荐 -->
+                        <div class="dish-card">
+                            <div class="dish-image">奶酪焗南瓜</div>
+                            <div class="dish-label">奶酪焗南瓜</div>
+                        </div>
+                        <div class="dish-card">
+                            <div class="dish-image">牛奶布丁</div>
+                            <div class="dish-label">牛奶布丁</div>
+                        </div>
+                        <div class="dish-card">
+                            <div class="dish-image">香菇蒸鸡</div>
+                            <div class="dish-label">香菇蒸鸡</div>
+                        </div>
+                    </div>
+                </div>
+                
+
+                <button class="ai-recommend-btn" onclick="updateRecommendations()">
+                    <span>🔁</span> 生成家庭海报
+                </button>			
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 习惯追踪模块 ==================== -->
+    <div id="habit-tracker-module">
+        <div class="container">
+            <!-- 21天营养习惯 -->
+            <div class="habit-tracker">
+                <div class="habit-header">
+                    <h4><span class="habit-icon">🏆</span> 21天营养习惯</h4>
+                    <div class="streak-counter">
+                        <span class="days">连续 <strong>3</strong> 天</span>
+                        <div class="fire-icon">🔥</div>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 30%;"></div>
+                    </div>
+                    <span class="progress-text">第7天/21天</span>
+                </div>
+                
+                <div class="daily-mission">
+                    <div class="mission-card completed">
+                        <div class="check-circle">✓</div>
+                        <div class="mission-content">
+                            <h5>用黑芝麻代替白糖</h5>
+                            <p>早餐燕麦片调味</p>
+                            <div class="mission-meta">
+                                <span class="difficulty">难度：★☆☆</span>
+                                <span class="science">依据：中国居民膳食指南</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mission-card current">
+                        <div class="check-circle"></div>
+                        <div class="mission-content">
+                            <h5>午餐前喝200ml水</h5>
+                            <p>减少过量进食</p>
+                            <button class="btn-complete">标记完成</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="family-motivation">
+                    <div class="avatar-group">
+                        <div class="avatar" style="background-color: #3B82F6;">爸</div>
+                        <div class="avatar" style="background-color: #10B981;">爷</div>
+                    </div>
+                    <p>全家正在共同改善<span class="highlight">钠摄入</span>习惯</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 供应商模块 ==================== -->
+    <div id="supplier-module">
+        <div class="container">
+            <!-- 特色食材直供 -->
+            <div class="supplier-section">
+                <h3 class="section-title">特色食材直供</h3>
+                
+                <!-- 分类标签 -->
+                <div class="category-tabs">
+                    <div class="tab active" data-category="all">全部</div>
+                    <div class="tab" data-category="weight-loss">减脂优选</div>
+                    <div class="tab" data-category="growth">儿童长高</div>
+                    <div class="tab" data-category="chronic">三高友好</div>
+                    <div class="tab" data-category="vegetarian">素食主义</div>
+                </div>
+                
+                <!-- 食材展示区 -->
+                <div class="supplier-grid">
+                    <!-- 示例卡片1 -->
+                    <div class="supplier-card" data-categories="growth,vegetarian">
+                        <div class="supplier-badge">基地直供</div>
+                        <img src="https://via.placeholder.com/300x200?text=五常大米" class="supplier-image">
+                        <div class="supplier-info">
+                            <h4>五常大米</h4>
+                            <div class="supplier-tags">
+                                <span>儿童营养</span>
+                                <span>低GI</span>
+                            </div>
+                            <p class="supplier-desc">蛋白质含量高出普通大米30%，适合儿童生长发育期食用</p>
+                            <div class="supplier-footer">
+                                <span class="price">¥39.9/5kg</span>
+                                <button class="supplier-btn">查看详情</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 示例卡片2 -->
+                    <div class="supplier-card" data-categories="weight-loss,chronic">
+                        <div class="supplier-badge">有机认证</div>
+                        <img src="https://via.placeholder.com/300x200?text=有机藜麦" class="supplier-image">
+                        <div class="supplier-info">
+                            <h4>有机藜麦</h4>
+                            <div class="supplier-tags">
+                                <span>高蛋白</span>
+                                <span>低GI</span>
+                            </div>
+                            <p class="supplier-desc">蛋白质含量高达14%，富含9种必需氨基酸，适合减脂控糖人群</p>
+                            <div class="supplier-footer">
+                                <span class="price">¥59.9/500g</span>
+                                <button class="supplier-btn">查看详情</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 示例卡片3 -->
+                    <div class="supplier-card" data-categories="growth">
+                        <div class="supplier-badge">钙强化</div>
+                        <img src="https://via.placeholder.com/300x200?text=高钙牛奶" class="supplier-image">
+                        <div class="supplier-info">
+                            <h4>高钙牛奶</h4>
+                            <div class="supplier-tags">
+                                <span>儿童</span>
+                                <span>钙+30%</span>
+                            </div>
+                            <p class="supplier-desc">每100ml含钙150mg，特别添加维生素D促进钙吸收</p>
+                            <div class="supplier-footer">
+                                <span class="price">¥69.9/12盒</span>
+                                <button class="supplier-btn">查看详情</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 示例卡片4 -->
+                    <div class="supplier-card" data-categories="chronic,vegetarian">
+                        <div class="supplier-badge">低钠</div>
+                        <img src="https://via.placeholder.com/300x200?text=低钠酱油" class="supplier-image">
+                        <div class="supplier-info">
+                            <h4>低钠酱油</h4>
+                            <div class="supplier-tags">
+                                <span>钠-50%</span>
+                                <span>三高友好</span>
+                            </div>
+                            <p class="supplier-desc">钠含量比普通酱油低50%，鲜味不减，适合高血压人群</p>
+                            <div class="supplier-footer">
+                                <span class="price">¥29.9/500ml</span>
+                                <button class="supplier-btn">查看详情</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="supplier-cta">
+                    <p>优质供应商招募中，入驻即享流量扶持</p>
+                    <button class="join-btn">立即加盟</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部固定按钮 -->
+    <button class="fixed-btn">生成家庭营养报告</button>
+
+    <script src="scripts.js"></script>
+</body>
+</html>

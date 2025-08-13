@@ -1,0 +1,355 @@
+/* Base Styles */
+:root {
+    --primary-color: #4CAF50;
+    --warning-color: #FF9800;
+    --danger-color: #F44336;
+    --info-color: #2196F3;
+    --text-color: #333;
+    --text-light: #666;
+    --bg-color: #f5f7fa;
+    --card-bg: #ffffff;
+}
+
+body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Card Styles */
+.card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.card-title {
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+}
+
+.card-title .subtitle {
+    font-size: 12px;
+    color: var(--text-light);
+    font-weight: normal;
+}
+
+/* Member Header */
+.member-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.member-info {
+    flex: 1;
+}
+
+.member-name {
+    margin: 0;
+    font-size: 20px;
+}
+
+.member-meta {
+    font-size: 14px;
+    color: var(--text-light);
+    margin: 5px 0;
+}
+
+.health-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+.tag-success {
+    background-color: #E8F5E9;
+    color: #2E7D32;
+}
+
+.tag-warning {
+    background-color: #FFF3E0;
+    color: #E65100;
+}
+
+.tag-danger {
+    background-color: #FFEBEE;
+    color: #C62828;
+}
+
+/* Nutrient Indicators */
+.nutrient-container {
+    margin-bottom: 10px;
+}
+
+.nutrient-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.nutrient-name {
+    display: flex;
+    align-items: center;
+}
+
+.nutrient-value {
+    font-weight: 500;
+}
+
+.nutrient-bar {
+    height: 8px;
+    background: #E0E0E0;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.nutrient-fill {
+    height: 100%;
+    border-radius: 4px;
+}
+
+/* Diet Analysis */
+.diet-analysis {
+    margin-bottom: 20px;
+}
+
+.analysis-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.analysis-icon {
+    margin-right: 5px;
+    font-size: 16px;
+}
+
+.analysis-content {
+    font-size: 14px;
+    padding-left: 20px;
+    margin-bottom: 10px;
+}
+
+/* Food Ranking */
+.food-ranking {
+    margin-top: 15px;
+}
+
+.food-item {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.food-item:last-child {
+    border-bottom: none;
+}
+
+.food-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: #E3F2FD;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    color: var(--info-color);
+    flex-shrink: 0;
+}
+
+.food-info {
+    flex: 1;
+}
+
+.food-name {
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+.food-meta {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.food-frequency {
+    font-size: 12px;
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+/* Buttons */
+.btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.btn-outline {
+    background: none;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Tabs */
+.tab-container {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.tab {
+    padding: 8px 15px;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-light);
+}
+
+.tab.active {
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Goal Progress */
+.goal-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.goal-info {
+    flex: 1;
+}
+
+.goal-title {
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.goal-desc {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.goal-progress {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.progress-success {
+    color: var(--primary-color);
+}
+
+.progress-warning {
+    color: var(--warning-color);
+}
+
+.progress-danger {
+    color: var(--danger-color);
+}
+
+/* Chart Placeholder */
+.chart-placeholder {
+    text-align: center;
+    padding: 30px 0;
+    color: #999;
+    background: #f9f9f9;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+/* Slider Container */
+.slider-container {
+    position: relative;
+    margin-bottom: 15px;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.slider-wrapper {
+    display: flex;
+    transition: transform 0.3s ease;
+}
+
+.slider-slide {
+    min-width: 100%;
+    background: var(--card-bg);
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.slider-nav {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.slider-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ddd;
+    margin: 0 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.slider-dot.active {
+    background: var(--primary-color);
+}

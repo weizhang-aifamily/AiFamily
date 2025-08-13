@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭营养驾驶舱</title>
+    <link rel="stylesheet" href="my.css">
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-container">
+            <!-- 成就横幅 -->
+            <div class="achievement-banner">
+                <div class="achievement-stars">✨✨✨</div>
+                <div class="achievement-title">营养守护者成就达成！</div>
+                <div class="achievement-desc">您已连续21天改善家庭饮食，钙摄入提升42%，钠摄入降低28%</div>
+                <button class="share-btn" onclick="shareAchievement()">
+                    <span>📸</span> 炫耀我的成就
+                </button>
+            </div>
+            
+            <!-- 本周营养雷达图 -->
+            <div class="radar-container">
+                <div class="radar-title">
+                    本周家庭营养评分
+                    <span class="radar-date">5月20日-5月26日</span>
+                </div>
+                <div class="radar-placeholder">
+                    [营养雷达图可视化]
+                </div>
+                <div class="radar-labels">
+                    <div class="radar-label highlight">钙 42 <span style="color:#10B981">↑18%</span></div>
+                    <div class="radar-label">铁 68 <span style="color:#10B981">↑5%</span></div>
+                    <div class="radar-label highlight">钠 83 <span style="color:#EF4444">↓12%</span></div>
+                    <div class="radar-label">膳食纤维 71 <span style="color:#10B981">↑9%</span></div>
+                    <div class="radar-label">优质蛋白 65 <span style="color:#10B981">↑7%</span></div>
+                </div>
+            </div>
+            
+            <!-- 对比卡片 -->
+            <div class="compare-card">
+                <div class="improvement-tag">进步显著</div>
+                <div class="compare-title">与上月对比</div>
+                <div style="display: flex; justify-content: space-between; text-align: center;">
+                    <div>
+                        <div style="font-size: 12px; color: #64748B;">上月平均</div>
+                        <div style="font-size: 32px; font-weight: 700; color: #EF4444;">58</div>
+                        <div style="font-size: 11px; color: #64748B;">营养总分</div>
+                    </div>
+                    <div style="align-self: center; font-size: 24px;">→</div>
+                    <div>
+                        <div style="font-size: 12px; color: #64748B;">本周得分</div>
+                        <div style="font-size: 32px; font-weight: 700; color: #10B981;">76</div>
+                        <div style="font-size: 11px; color: #64748B;">营养总分</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 快速补缺口按钮 -->
+            <button class="quick-fix-btn" onclick="navigateToFix('calcium')">
+                <span>⚠️ 钙缺口较大</span>
+                <span class="quick-fix-icon">一键补钙 →</span>
+            </button>
+            
+            <!-- 家庭成员卡片 -->
+            <h3 class="section-title">家庭营养天团</h3>
+            <div class="family-members">
+                <div class="member-card">
+                    <div class="member-header">
+                        <div class="member-avatar">👦</div>
+                        <div>
+                            <div class="member-name">小明 (8岁)</div>
+                            <div class="member-status">钙摄入 ↑35%</div>
+                        </div>
+                    </div>
+                    <div class="badges-container">
+                        <div class="badge badge-premium">补钙小能手</div>
+                        <div class="badge">不挑食</div>
+                    </div>
+                </div>
+                
+                <div class="member-card">
+                    <div class="member-header">
+                        <div class="member-avatar">👴</div>
+                        <div>
+                            <div class="member-name">爷爷 (65岁)</div>
+                            <div class="member-status">血压 ↓8mmHg</div>
+                        </div>
+                    </div>
+                    <div class="badges-container">
+                        <div class="badge badge-premium">限盐先锋</div>
+                        <div class="badge">连续打卡21天</div>
+                    </div>
+                </div>
+                
+                <div class="member-card">
+                    <div class="member-header">
+                        <div class="member-avatar">👩</div>
+                        <div>
+                            <div class="member-name">妈妈 (35岁)</div>
+                            <div class="member-status">铁摄入 ↑22%</div>
+                        </div>
+                    </div>
+                    <div class="badges-container">
+                        <div class="badge badge-premium">营养指挥官</div>
+                        <div class="badge">完美搭配</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 采购清单 -->
+            <div class="shopping-card">
+                <div class="shopping-title">🏆 成就奖励食材</div>
+                <div class="shopping-item">
+                    <div class="shopping-desc">为庆祝连续3周改善</div>
+                    <div class="shopping-suggestion">特推有机奶酪8折</div>
+                </div>
+                <div class="shopping-item">
+                    <div class="shopping-desc">限盐成就达成</div>
+                    <div class="shopping-suggestion">低钠酱油买一送一</div>
+                </div>
+            </div>
+            
+            <!-- 健康里程碑 -->
+            <div class="timeline-container">
+                <div class="timeline-title">荣耀时刻时间轴</div>
+                <div class="timeline-scroll">
+                    <div class="timeline-item">
+                        <div class="timeline-date">3月15日</div>
+                        <div class="timeline-event">开始使用本产品</div>
+                        <div class="timeline-result">营养总分58</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">4月2日</div>
+                        <div class="timeline-event">首次获得S级评价</div>
+                        <div class="timeline-result">总分 ↑ 至72</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">5月10日</div>
+                        <div class="timeline-event">超越90%用户</div>
+                        <div class="timeline-result">当前总分76</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 积分排行榜 -->
+            <div class="ranking-card">
+                <div class="ranking-title">🏅 家庭荣耀榜</div>
+                <div class="score-container">
+                    <div class="family-score">
+                        <div class="score-value">TOP 8%</div>
+                        <div class="score-label">全国排名</div>
+                    </div>
+                    <div class="vs-label">击败</div>
+                    <div class="family-score">
+                        <div class="score-value">92%</div>
+                        <div class="score-label">的用户</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 12px;">
+                    <button class="share-btn" style="color: #3B82F6; background: #E0F2FE;">
+                        <span>🥇</span> 炫耀我的排名
+                    </button>
+                </div>
+            </div>
+            
+            <!-- AI提示 -->
+            <div class="ai-tip">
+                <div class="ai-tip-icon">💡</div>
+                <div>芝麻酱的钙含量是牛奶的10倍，拌面时加1勺≈喝1杯牛奶。</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="my.js"></script>
+</body>
+</html>

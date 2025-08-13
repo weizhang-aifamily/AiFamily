@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小明详情 - 家庭营养管家Pro</title>
+    <link rel="stylesheet" href="member-detail.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Member Header -->
+        <div class="member-header">
+            <div class="avatar">明</div>
+            <div class="member-info">
+                <h1 class="member-name">小明</h1>
+                <div class="member-meta">
+                    <span>8岁</span>
+                    <span style="margin: 0 10px">|</span>
+                    <span>身高: 130cm</span>
+                    <span style="margin: 0 10px">|</span>
+                    <span>体重: 28kg</span>
+                </div>
+                <div>
+                    <span class="health-tag tag-success">BMI正常</span>
+                    <span class="health-tag tag-warning">钙不足</span>
+                    <span class="health-tag tag-danger">钠超标</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slider Container - Nutrition Overview and Diet Analysis -->
+        <div class="slider-container">
+            <div class="slider-wrapper" id="nutritionSlider">
+                <!-- Slide 1 - Nutrition Overview -->
+                <div class="slider-slide">
+                    <div class="card-title">
+                        <span>营养摄入概览</span>
+                        <span class="subtitle">近7天平均值</span>
+                    </div>
+                    
+                    <!-- Macronutrients -->
+                    <div class="nutrient-container">
+                        <div class="nutrient-header">
+                            <span class="nutrient-name">能量</span>
+                            <span class="nutrient-value">1450/1800 kcal (81%)</span>
+                        </div>
+                        <div class="nutrient-bar">
+                            <div class="nutrient-fill" style="width:81%; background:var(--primary-color);"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="nutrient-container">
+                        <div class="nutrient-header">
+                            <span class="nutrient-name">蛋白质</span>
+                            <span class="nutrient-value">48/60g (80%)</span>
+                        </div>
+                        <div class="nutrient-bar">
+                            <div class="nutrient-fill" style="width:80%; background:var(--primary-color);"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Minerals -->
+                    <div class="nutrient-container">
+                        <div class="nutrient-header">
+                            <span class="nutrient-name">钙</span>
+                            <span class="nutrient-value">650/800mg (81%)</span>
+                        </div>
+                        <div class="nutrient-bar">
+                            <div class="nutrient-fill" style="width:81%; background:var(--primary-color);"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="nutrient-container">
+                        <div class="nutrient-header">
+                            <span class="nutrient-name">铁</span>
+                            <span class="nutrient-value">8/10mg (80%)</span>
+                        </div>
+                        <div class="nutrient-bar">
+                            <div class="nutrient-fill" style="width:80%; background:var(--primary-color);"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="nutrient-container">
+                        <div class="nutrient-header">
+                            <span class="nutrient-name">锌</span>
+                            <span class="nutrient-value">6/8mg (75%)</span>
+                        </div>
+                        <div class="nutrient-bar">
+                            <div class="nutrient-fill" style="width:75%; background:var(--primary-color);"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="nutrient-container">
+                        <div class="nutrient-header">
+                            <span class="nutrient-name">钠</span>
+                            <span class="nutrient-value">2200/1500mg (147%)</span>
+                        </div>
+                        <div class="nutrient-bar">
+                            <div class="nutrient-fill" style="width:100%; background:var(--danger-color);"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Slide 2 - Diet Analysis and Ranking -->
+                <div class="slider-slide">
+                    <div class="card-title">
+                        <span>饮食分析与排名</span>
+                        <button class="btn btn-sm">快速记录</button>
+                    </div>
+                    
+                    <!-- Food Ranking -->
+                    <div class="tab-container">
+                        <div class="tab active">菜品排名</div>
+                        <div class="tab">食材排名</div>
+                    </div>
+                    
+                    <div class="food-ranking">
+                        <div class="food-item">
+                            <div class="food-icon">🍗</div>
+                            <div class="food-info">
+                                <div class="food-name">炸鸡</div>
+                                <div class="food-meta">高钠(1200mg/份) | 高热量(450kcal)</div>
+                            </div>
+                            <div class="food-frequency">本周3次</div>
+                        </div>
+                        
+                        <div class="food-item">
+                            <div class="food-icon">🍟</div>
+                            <div class="food-info">
+                                <div class="food-name">薯条</div>
+                                <div class="food-meta">高钠(800mg/份) | 高脂肪</div>
+                            </div>
+                            <div class="food-frequency">本周2次</div>
+                        </div>
+                        
+                        <div class="food-item">
+                            <div class="food-icon">🍚</div>
+                            <div class="food-info">
+                                <div class="food-name">白米饭</div>
+                                <div class="food-meta">碳水化合物 | 低纤维</div>
+                            </div>
+                            <div class="food-frequency">本周7次</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Slider Navigation Dots -->
+            <div class="slider-nav">
+                <div class="slider-dot active" data-index="0"></div>
+                <div class="slider-dot" data-index="1"></div>
+            </div>
+        </div>
+
+        <!-- Diet Recommendations -->
+        <div class="card">
+            <div class="card-title">
+                <span>饮食推荐</span>
+                <button class="btn btn-sm">快速记录</button>
+            </div>
+            
+            <div style="display: flex; margin-bottom: 15px;">
+                <!-- Image Area -->
+                <div style="flex: 1; margin-right: 15px; background: #f5f7fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <div style="text-align: center; padding: 20px; color: #999;">
+                        <div style="font-size: 40px;">🍽️</div>
+                        <div>饮食推荐示意图</div>
+                    </div>
+                </div>
+                
+                <!-- Text Recommendations -->
+                <div style="flex: 1;">
+                    <!-- Sodium Over Intake Advice -->
+                    <div style="margin-bottom: 15px;">
+                        <div style="font-size: 14px; color: #F44336; margin-bottom: 5px; display: flex; align-items: center;">
+                            <span style="margin-right: 5px;">⚠️</span>
+                            <span>钠摄入超标分析</span>
+                        </div>
+                        <div style="font-size: 14px; padding-left: 20px;">
+                            <p style="margin: 5px 0;">• 近期炸鸡食用频率较高 (每周3次)</p>
+                            <p style="margin: 5px 0;">• 零食中薯片、膨化食品含钠量高</p>
+                            <p style="margin: 5px 0;">• 建议用低钠酱油替代普通酱油</p>
+                            <p style="margin: 5px 0;">• 午餐前喝200ml水减少过量进食</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Vitamin D Advice -->
+                    <div>
+                        <div style="font-size: 14px; color: #FF9800; margin-bottom: 5px; display: flex; align-items: center;">
+                            <span style="margin-right: 5px;">💡</span>
+                            <span>维生素D补充建议</span>
+                        </div>
+                        <div style="font-size: 14px; padding-left: 20px;">
+                            <p style="margin: 5px 0;">• 近期鱼类摄入不足 (每周仅0.5次)</p>
+                            <p style="margin: 5px 0;">• 建议增加三文鱼、蛋黄、蘑菇等食材</p>
+                            <p style="margin: 5px 0;">• 每天保证30分钟户外活动</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Salmon Recommendation -->
+            <div style="background: #f9f9f9; border-radius: 8px; padding: 10px; margin-top: 10px;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 40px; height: 40px; border-radius: 8px; background-color: #E3F2FD; display: flex; align-items: center; justify-content: center; margin-right: 10px; color: #2196F3;">
+                        🐟
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">三文鱼</div>
+                        <div style="font-size: 12px; color: #666;">100g含维生素D 8.5μg</div>
+                    </div>
+                    <button style="background: none; border: 1px solid #4CAF50; color: #4CAF50; border-radius: 4px; padding: 5px 10px; font-size: 12px; display: flex; align-items: center;">
+                        <span style="margin-right: 5px;">+</span>
+                        <span>加入食材清单</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Nutrition Trends -->
+        <div class="card">
+            <div class="card-title">
+                <span>营养趋势</span>
+                <span class="subtitle">过去30天变化</span>
+            </div>
+            
+            <div class="chart-placeholder">
+                [钙摄入量趋势图]
+            </div>
+            
+            <div class="chart-placeholder">
+                [钠摄入量趋势图]
+            </div>
+        </div>
+
+        <!-- Nutrition Goals -->
+        <div class="card">
+            <div class="card-title">
+                <span>营养目标</span>
+                <button class="btn btn-sm btn-outline">+ 添加目标</button>
+            </div>
+            
+            <div class="goal-item">
+                <div class="goal-info">
+                    <div class="goal-title">增加维生素D摄入</div>
+                    <div class="goal-desc">目标: 每周2次富含VD食物 (鱼类、蛋黄等)</div>
+                </div>
+                <div class="goal-progress progress-warning">本周1/2</div>
+            </div>
+            
+            <div class="goal-item">
+                <div class="goal-info">
+                    <div class="goal-title">减少钠摄入</div>
+                    <div class="goal-desc">目标: 每日钠≤1500mg</div>
+                </div>
+                <div class="goal-progress progress-danger">今日147%</div>
+            </div>
+            
+            <div class="goal-item">
+                <div class="goal-info">
+                    <div class="goal-title">增加蔬菜摄入</div>
+                    <div class="goal-desc">目标: 每日≥300g蔬菜</div>
+                </div>
+                <div class="goal-progress progress-success">达标率85%</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="member-detail.js"></script>
+</body>
+</html>
