@@ -1,0 +1,189 @@
+/* 基础样式 */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+}
+
+.header {
+    color: #3B82F6;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* 家庭成员卡片样式 */
+.health-overview {
+    background: #F8FAFC;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.family-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.member-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    width: calc(50% - 30px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.member-card.active {
+    border-left: 4px solid #3B82F6;
+}
+
+.member-name {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.health-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.stat-item {
+    font-size: 14px;
+}
+
+.normal {
+    color: #10B981;
+}
+
+.high {
+    color: #EF4444;
+}
+
+.percent {
+    color: #6B7280;
+}
+
+/* 饮食方案样式 */
+.diet-plan-section {
+    background: #F8FAFC;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.nutrition-supply {
+    margin-bottom: 25px;
+}
+
+.supply-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.supply-list li {
+    padding: 5px 0;
+}
+
+/* 推荐食材表格 */
+.food-comparison table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.food-comparison th,
+.food-comparison td {
+    border: 1px solid #E5E7EB;
+    padding: 8px;
+    text-align: left;
+}
+
+.food-comparison th {
+    background-color: #F3F4F6;
+}
+
+/* 生成的菜品样式 */
+.generated-dishes {
+    margin-top: 25px;
+}
+
+.refresh-btn {
+    background: #3B82F6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.dish-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.dish-item {
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+/* 方案选择区域 */
+.plan-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f5f7fa;
+    border-radius: 8px;
+}
+
+.plan-card {
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    width: calc(33% - 20px);
+}
+
+.plan-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.plan-card.selected {
+    background: #3B82F6;
+    color: white;
+    border-left: 4px solid #1D4ED8;
+}
+
+.plan-card h4 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+}
+
+.plan-card p {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* 内容区域 */
+.plan-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dish-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}

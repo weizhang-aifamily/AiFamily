@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>营养报告 - 益家AiFamily</title>
+    <link rel="stylesheet" href="css/nutrition-report.css">
+        <script src="js/load-components.js" defer></script>
+    <script src="js/load-components-in.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部模块 -->
+        <div class="header-module">
+            <h1>营养报告</h1>
+            <p>科学分析 · 健康洞察</p>
+        </div>
+
+        <!-- 家庭成员切换 + 报告周期选择 -->
+        <div class="filter-controls">
+            <div class="member-selector">
+                <div class="member-tabs">
+                    <div class="member-tab active" data-member-id="1">
+                        <div class="member-avatar">小</div>
+                        <div class="member-name">小明</div>
+                    </div>
+                    <div class="member-tab" data-member-id="2">
+                        <div class="member-avatar">妈</div>
+                        <div class="member-name">妈妈</div>
+                    </div>
+                    <div class="member-tab" data-member-id="3">
+                        <div class="member-avatar">爸</div>
+                        <div class="member-name">爸爸</div>
+                    </div>
+                    <!-- 添加按钮 -->
+                    <div class="member-add-btn">
+                        <span>+</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="period-selector">
+                <select id="periodSelect" class="period-select">
+                    <option value="week">最近一周</option>
+                    <option value="month" selected>最近一月</option>
+                    <option value="quarter">最近三月</option>
+                </select>
+            </div>
+
+            <button class="export-btn" id="exportBtn">
+                <span>📤</span> 导出报告
+            </button>
+        </div>
+
+        <!-- 报告概览卡片 -->
+        <div class="metrics-container">
+            <!-- 热量卡片 -->
+            <div class="metric-card energy-card" data-type="calories">
+                <div class="card-header">
+                    <div class="metric-icon">🔥</div>
+                    <h3>平均每日热量</h3>
+                </div>
+                <div class="card-body">
+                    <div class="main-value">
+                        <span class="value">0</span>
+                        <span class="unit">大卡</span>
+                    </div>
+                    <div class="comparison">
+                        <div class="progress-ring">
+                            <svg width="60" height="60">
+                                <circle class="ring-bg" cx="30" cy="30" r="25"/>
+                                <circle class="ring-fill" cx="30" cy="30" r="25"/>
+                            </svg>
+                            <span class="percentage">0%</span>
+                        </div>
+                        <div class="comparison-info">
+                            <div class="rank-badge">暂无数据</div>
+                            <div class="benchmark">
+                                <span class="label">同龄平均:</span>
+                                <span class="value">0大卡</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="benefit-tip">
+                        <span class="icon">💡</span>
+                        加载中...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 膳食纤维卡片 -->
+            <div class="metric-card fiber-card" data-type="fiber">
+                <div class="card-header">
+                    <div class="metric-icon">🌾</div>
+                    <h3>膳食纤维</h3>
+                </div>
+                <div class="card-body">
+                    <div class="main-value">
+                        <span class="value">0</span>
+                        <span class="unit">g</span>
+                    </div>
+                    <div class="comparison">
+                        <div class="progress-ring">
+                            <svg width="60" height="60">
+                                <circle class="ring-bg" cx="30" cy="30" r="25"/>
+                                <circle class="ring-fill" cx="30" cy="30" r="25"/>
+                            </svg>
+                            <span class="percentage">0%</span>
+                        </div>
+                        <div class="comparison-info">
+                            <div class="rank-badge">暂无数据</div>
+                            <div class="benchmark">
+                                <span class="label">同龄平均:</span>
+                                <span class="value">0g</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="benefit-tip">
+                        <span class="icon">💡</span>
+                        加载中...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 钠摄入卡片 -->
+            <div class="metric-card sodium-card" data-type="sodium">
+                <div class="card-header">
+                    <div class="metric-icon">🧂</div>
+                    <h3>钠摄入</h3>
+                </div>
+                <div class="card-body">
+                    <div class="main-value">
+                        <span class="value">0</span>
+                        <span class="unit">mg</span>
+                    </div>
+                    <div class="comparison">
+                        <div class="progress-ring">
+                            <svg width="60" height="60">
+                                <circle class="ring-bg" cx="30" cy="30" r="25"/>
+                                <circle class="ring-fill" cx="30" cy="30" r="25"/>
+                            </svg>
+                            <span class="percentage">0%</span>
+                        </div>
+                        <div class="comparison-info">
+                            <div class="rank-badge">暂无数据</div>
+                            <div class="benchmark">
+                                <span class="label">同龄平均:</span>
+                                <span class="value">0mg</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="benefit-tip">
+                        <span class="icon">💡</span>
+                        加载中...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 营养趋势图 -->
+        <div class="report-section">
+            <div class="section-header">
+                <h3>营养趋势</h3>
+                <div class="section-actions">
+                    <button class="chart-btn active" data-type="calories">热量</button>
+                    <button class="chart-btn" data-type="protein">蛋白质</button>
+                    <button class="chart-btn" data-type="sodium">钠</button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-placeholder" id="mainChart">
+                    [热量趋势图表]
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #3B82F6;"></span>
+                        <span>实际摄入</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #E5E7EB;"></span>
+                        <span>推荐值</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 营养缺口/超标分析 -->
+        <div class="report-section">
+            <div class="section-header">
+                <h3>营养分析</h3>
+            </div>
+            <div class="analysis-grid">
+                <div class="analysis-card warning">
+                    <div class="analysis-header">
+                        <span class="analysis-icon">⚠️</span>
+                        <h4>钙摄入不足</h4>
+                    </div>
+                    <div class="analysis-content">
+                        <p>平均每日摄入 650mg，低于推荐值 800mg</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 81%;"></div>
+                        </div>
+                        <div class="analysis-suggestion">
+                            <strong>建议：</strong>增加奶制品、豆制品摄入
+                        </div>
+                    </div>
+                </div>
+                <div class="analysis-card success">
+                    <div class="analysis-header">
+                        <span class="analysis-icon">✅</span>
+                        <h4>蛋白质达标</h4>
+                    </div>
+                    <div class="analysis-content">
+                        <p>平均每日摄入 68g，符合推荐量</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="analysis-card danger">
+                    <div class="analysis-header">
+                        <span class="analysis-icon">❗</span>
+                        <h4>维生素D不足</h4>
+                    </div>
+                    <div class="analysis-content">
+                        <p>平均每日摄入 3.2μg，低于推荐值 10μg</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 32%;"></div>
+                        </div>
+                        <div class="analysis-suggestion">
+                            <strong>建议：</strong>每周增加2次深海鱼类，每日晒太阳20分钟
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 饮食分析与排名 -->
+        <div class="report-section">
+            <div class="section-header">
+                <h3>饮食分析与排名</h3>
+                <button class="btn btn-sm" id="quickRecordBtn">快速记录</button>
+            </div>
+
+            <!-- Tab切换 -->
+            <div class="tab-container">
+                <div class="tab active" data-type="dishes">菜品排名</div>
+                <div class="tab" data-type="ingredients">食材排名</div>
+            </div>
+
+            <!-- 排名内容容器 -->
+            <div class="food-ranking" id="foodRankingContainer">
+                <!-- 内容将通过JS动态加载 -->
+            </div>
+        </div>
+
+        <!-- 底部操作按钮 -->
+        <div class="action-buttons">
+            <button class="action-btn primary" id="improvePlanBtn">
+                <span>✨</span> 获取改善方案
+            </button>
+            <button class="action-btn secondary" id="shareBtn">
+                <span>📤</span> 分享报告
+            </button>
+        </div>
+    </div>
+
+    <script src="js/nutrition-report.js"></script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+-- ===============================================================
+--  0. 统一前缀：全部表名保持原样，新增表直接 CREATE
+-- ===============================================================
+
+-- 1. 家庭成员
+CREATE OR REPLACE TABLE family_member (
+  member_id   INT AUTO_INCREMENT PRIMARY KEY,
+  family_id   INT NOT NULL,
+  name        VARCHAR(50) NOT NULL,
+  avatar      VARCHAR(10)  NULL COMMENT 'Emoji 头像',
+  gender      TINYINT(1)   NOT NULL COMMENT '0=女 1=男 2=其他',
+  birth_date  DATE NOT NULL,
+  relation    VARCHAR(20)  NOT NULL COMMENT '父亲/母亲/儿子...',
+  is_primary  TINYINT(1)   DEFAULT 0,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  is_deleted  TINYINT(1)   DEFAULT 0,
+  oxygen_level   DECIMAL(5,2) DEFAULT NULL,
+  blood_pressure VARCHAR(20)  DEFAULT NULL,
+  birth_rate     DECIMAL(5,2) DEFAULT NULL,
+  INDEX idx_family (family_id),
+  INDEX idx_primary (family_id, is_primary),
+  INDEX idx_deleted (is_deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='家庭成员基础信息表';
+
+-- 2. 健康标签类型（系统+自定义）
+CREATE OR REPLACE TABLE health_metric_type (
+  metric_id   INT AUTO_INCREMENT PRIMARY KEY,
+  metric_code VARCHAR(50) NOT NULL UNIQUE,
+  metric_name VARCHAR(50) NOT NULL,
+  unit        VARCHAR(20) NOT NULL,
+  normal_range VARCHAR(100) DEFAULT NULL,
+  description VARCHAR(255) DEFAULT NULL,
+  is_system   TINYINT(1) DEFAULT 1,
+  display_order INT DEFAULT 0,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='健康指标类型表';
+
+-- 3. 成员健康标签实例
+CREATE OR REPLACE TABLE member_health_metric (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  member_id   INT NOT NULL,
+  metric_id   INT NOT NULL,
+  metric_value DECIMAL(10,2) NOT NULL,
+  measure_time DATETIME NOT NULL,
+  data_source  VARCHAR(20) DEFAULT 'MANUAL',
+  status       VARCHAR(20) DEFAULT NULL,
+  version      INT DEFAULT 1,
+  create_time  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_member_metric_time (member_id, metric_id, measure_time),
+  INDEX idx_member_time (member_id, measure_time),
+  CONSTRAINT fk_mhm_member FOREIGN KEY (member_id) REFERENCES family_member(member_id),
+  CONSTRAINT fk_mhm_metric  FOREIGN KEY (metric_id)  REFERENCES health_metric_type(metric_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成员健康指标记录表';
+
+-- 4. 饮食需求标签（动态）
+CREATE OR REPLACE TABLE diet_need_tag (
+  need_id   INT AUTO_INCREMENT PRIMARY KEY,
+  need_code VARCHAR(50) NOT NULL UNIQUE,
+  need_name VARCHAR(50) NOT NULL,
+  description VARCHAR(255),
+  INDEX idx_code (need_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='饮食需求标签表';
+
+-- 5. 需求规则（健康标签 + 人口属性 → 饮食需求）
+CREATE OR REPLACE TABLE need_rule (
+  rule_id        INT AUTO_INCREMENT PRIMARY KEY,
+  metric_code    VARCHAR(50) NOT NULL,
+  age_min        INT DEFAULT 0,
+  age_max        INT DEFAULT 200,
+  gender         TINYINT(1) DEFAULT NULL COMMENT 'NULL=不限',
+  fitness_goal   VARCHAR(20) DEFAULT NULL,
+  lose_weight    TINYINT(1) DEFAULT 0,
+  need_code      VARCHAR(50) NOT NULL,
+  INDEX idx_metric (metric_code),
+  INDEX idx_need   (need_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='需求规则表';
+
+-- 6. 成员当前生效的饮食需求（可手动微调）
+CREATE OR REPLACE TABLE member_diet_need (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  member_id  INT NOT NULL,
+  need_code  VARCHAR(50) NOT NULL,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_member_need (member_id, need_code),
+  CONSTRAINT fk_mdn_member FOREIGN KEY (member_id) REFERENCES family_member(member_id),
+  CONSTRAINT fk_mdn_need   FOREIGN KEY (need_code) REFERENCES diet_need_tag(need_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成员饮食需求实例表';
+
+-- 7. 食材库
+CREATE OR REPLACE TABLE foods (
+  food_id     INT AUTO_INCREMENT PRIMARY KEY,
+  food_name   VARCHAR(50) NOT NULL,
+  emoji       VARCHAR(10) NULL,
+  tag         VARCHAR(20) NULL COMMENT '高钙/低脂/限盐/补铁',
+  grams       VARCHAR(20) NULL,
+  servings    JSON NULL,
+  calories    INT DEFAULT NULL,
+  sodium      INT DEFAULT NULL,
+  description TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='食材库';
+
+-- 8. 食材营养素
+CREATE OR REPLACE TABLE food_nutrition (
+  nutrition_id INT AUTO_INCREMENT PRIMARY KEY,
+  food_id      INT NOT NULL,
+  nutrient_type VARCHAR(50) NOT NULL,
+  amount       DECIMAL(10,2) NOT NULL,
+  unit         VARCHAR(20) NOT NULL,
+  per_amount   VARCHAR(50) DEFAULT '100g',
+  INDEX idx_food (food_id),
+  CONSTRAINT fk_fn_food FOREIGN KEY (food_id) REFERENCES foods(food_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='食材营养素表';
+
+-- 9. 食材标签（功能/口味）
+CREATE OR REPLACE TABLE food_tags (
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  food_id   INT NOT NULL,
+  tag_name  VARCHAR(30) NOT NULL,
+  INDEX idx_food_tag (food_id, tag_name),
+  CONSTRAINT fk_ft_food FOREIGN KEY (food_id) REFERENCES foods(food_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='食材标签表';
+
+-- 10. 菜品
+CREATE OR REPLACE TABLE generated_dish (
+  dish_id     INT AUTO_INCREMENT PRIMARY KEY,
+  dish_name   VARCHAR(100) NOT NULL,
+  emoji       VARCHAR(10) NULL,
+  description TEXT,
+  rating      INT DEFAULT 0,
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜品库';
+
+-- 11. 菜品-食材
+CREATE OR REPLACE TABLE dish_ingredient (
+  id       INT AUTO_INCREMENT PRIMARY KEY,
+  dish_id  INT NOT NULL,
+  food_id  INT NOT NULL,
+  amount   DECIMAL(10,2) NOT NULL,
+  unit     VARCHAR(20) NOT NULL,
+  INDEX idx_dish (dish_id),
+  INDEX idx_food (food_id),
+  CONSTRAINT fk_di_dish FOREIGN KEY (dish_id) REFERENCES generated_dish(dish_id),
+  CONSTRAINT fk_di_food FOREIGN KEY (food_id) REFERENCES foods(food_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜品-食材';
+
+-- 12. 菜品口味
+CREATE OR REPLACE TABLE dish_flavor (
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  dish_id   INT NOT NULL,
+  flavor    VARCHAR(20) NOT NULL,
+  level     TINYINT DEFAULT 1 COMMENT '1=微辣 2=中辣 3=重辣...',
+  INDEX idx_dish_flavor (dish_id),
+  CONSTRAINT fk_df_dish FOREIGN KEY (dish_id) REFERENCES generated_dish(dish_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜品口味表';
+
+-- 13. 成员口味偏好
+CREATE OR REPLACE TABLE member_flavor (
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  member_id INT NOT NULL,
+  flavor    VARCHAR(20) NOT NULL,
+  weight    DECIMAL(3,2) DEFAULT 1.0 COMMENT '1.0=喜欢 0=无感 -1.0=讨厌',
+  UNIQUE KEY uk_member_flavor (member_id, flavor),
+  CONSTRAINT fk_mf_member FOREIGN KEY (member_id) REFERENCES family_member(member_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成员口味偏好表';
+
+-- 14. 过敏源字典
+CREATE OR REPLACE TABLE allergen (
+  allergen_id INT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(50) NOT NULL UNIQUE,
+  description VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='过敏源字典';
+
+-- 15. 成员-过敏源
+CREATE OR REPLACE TABLE member_allergen (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  member_id    INT NOT NULL,
+  allergen_id  INT NOT NULL,
+  severity     ENUM('mild','moderate','severe') DEFAULT 'moderate',
+  UNIQUE KEY uk_ma (member_id, allergen_id),
+  CONSTRAINT fk_ma_member  FOREIGN KEY (member_id)   REFERENCES family_member(member_id),
+  CONSTRAINT fk_ma_allergen FOREIGN KEY (allergen_id) REFERENCES allergen(allergen_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成员-过敏源';
+
+-- 16. 食材季节性
+CREATE OR REPLACE TABLE food_season (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  food_id       INT NOT NULL,
+  season        ENUM('spring','summer','autumn','winter') NOT NULL,
+  weight_factor DECIMAL(3,2) DEFAULT 1.0,
+  CONSTRAINT fk_fs_food FOREIGN KEY (food_id) REFERENCES foods(food_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='食材季节性';
+
+-- 17. 厨房约束字典
+CREATE OR REPLACE TABLE kitchen_constraint (
+  constraint_id INT AUTO_INCREMENT PRIMARY KEY,
+  name          VARCHAR(50) NOT NULL UNIQUE,
+  description   VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='厨房约束字典';
+
+-- 18. 成员-厨房约束
+CREATE OR REPLACE TABLE member_kitchen (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  member_id     INT NOT NULL,
+  constraint_id INT NOT NULL,
+  UNIQUE KEY uk_mk (member_id, constraint_id),
+  CONSTRAINT fk_mk_member    FOREIGN KEY (member_id)     REFERENCES family_member(member_id),
+  CONSTRAINT fk_mk_constraint FOREIGN KEY (constraint_id) REFERENCES kitchen_constraint(constraint_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='成员-厨房约束';
+
+-- 19. 菜品-厨房约束
+CREATE OR REPLACE TABLE dish_kitchen (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  dish_id       INT NOT NULL,
+  constraint_id INT NOT NULL,
+  is_required   TINYINT(1) DEFAULT 1,
+  CONSTRAINT fk_dk_dish       FOREIGN KEY (dish_id)       REFERENCES generated_dish(dish_id),
+  CONSTRAINT fk_dk_constraint FOREIGN KEY (constraint_id) REFERENCES kitchen_constraint(constraint_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜品-厨房约束';
+
+-- 20. 方案（一次就餐任务）
+CREATE OR REPLACE TABLE plan (
+  plan_id     INT AUTO_INCREMENT PRIMARY KEY,
+  family_id   INT NOT NULL,
+  plan_name   VARCHAR(100) DEFAULT NULL,
+  meal_type   ENUM('breakfast','lunch','dinner') NOT NULL,
+  plan_date   DATE NOT NULL,
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_family_date (family_id, plan_date),
+  CONSTRAINT fk_plan_family FOREIGN KEY (family_id) REFERENCES family_member(family_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='饮食方案';
+
+-- 21. 方案菜品
+CREATE OR REPLACE TABLE plan_dish (
+  id       INT AUTO_INCREMENT PRIMARY KEY,
+  plan_id  INT NOT NULL,
+  dish_id  INT NOT NULL,
+  servings INT DEFAULT 1,
+  INDEX idx_plan (plan_id),
+  CONSTRAINT fk_pd_plan FOREIGN KEY (plan_id) REFERENCES plan(plan_id),
+  CONSTRAINT fk_pd_dish FOREIGN KEY (dish_id) REFERENCES generated_dish(dish_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='方案菜品';
+
+-- 22. 方案食材（可替换）
+CREATE OR REPLACE TABLE plan_ingredient (
+  id       INT AUTO_INCREMENT PRIMARY KEY,
+  plan_id  INT NOT NULL,
+  food_id  INT NOT NULL,
+  amount   DECIMAL(10,2) NOT NULL,
+  unit     VARCHAR(20) NOT NULL,
+  replaced_by_food_id INT NULL,
+  INDEX idx_plan (plan_id),
+  CONSTRAINT fk_pi_plan FOREIGN KEY (plan_id) REFERENCES plan(plan_id),
+  CONSTRAINT fk_pi_food FOREIGN KEY (food_id) REFERENCES foods(food_id),
+  CONSTRAINT fk_pi_replace FOREIGN KEY (replaced_by_food_id) REFERENCES foods(food_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='方案食材';
+
+-- 23. 方案-成员多对多
+CREATE OR REPLACE TABLE plan_member (
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  plan_id   INT NOT NULL,
+  member_id INT NOT NULL,
+  UNIQUE KEY uk_pm (plan_id, member_id),
+  CONSTRAINT fk_pm_plan   FOREIGN KEY (plan_id)   REFERENCES plan(plan_id),
+  CONSTRAINT fk_pm_member FOREIGN KEY (member_id) REFERENCES family_member(member_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='方案就餐成员';
+
+-- 24. 方案预算
+CREATE OR REPLACE TABLE plan_budget (
+  plan_id     INT PRIMARY KEY,
+  budget_limit DECIMAL(8,2) NOT NULL,
+  used_amount  DECIMAL(8,2) DEFAULT 0.00,
+  CONSTRAINT fk_pb_plan FOREIGN KEY (plan_id) REFERENCES plan(plan_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='方案预算';

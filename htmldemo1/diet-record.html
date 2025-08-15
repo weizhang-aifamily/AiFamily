@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>饮食记录 - 益家AiFamily</title>
+    <link rel="stylesheet" href="css/diet-record.css">
+        <script src="js/load-components.js" defer></script>
+    <script src="js/load-components-in.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部模块 -->
+        <div class="header-module">
+            <h1>饮食记录</h1>
+            <p>科学记录 · 智能分析</p>
+        </div>
+
+        <!-- 日期选择器 -->
+        <div class="date-selector">
+            <button class="date-nav" id="prevDay">←</button>
+            <div class="current-date" id="currentDate">2023年11月15日</div>
+            <button class="date-nav" id="nextDay">→</button>
+        </div>
+
+        <!-- 快速记录按钮组 -->
+        <div class="quick-actions">
+            <button class="quick-btn" id="cameraBtn">
+                <span>📷</span> 拍照记录
+            </button>
+            <button class="quick-btn" id="scanBtn">
+                <span>🔍</span> 扫描条形码
+            </button>
+            <button class="quick-btn" id="manualBtn">
+                <span>✏️</span> 手动输入
+            </button>
+        </div>
+
+        <!-- 三餐标签 -->
+        <div class="meal-tabs">
+            <div class="tab active" data-meal="breakfast">早餐</div>
+            <div class="tab" data-meal="lunch">午餐</div>
+            <div class="tab" data-meal="dinner">晚餐</div>
+            <div class="tab" data-meal="snack">加餐</div>
+        </div>
+
+        <!-- 饮食记录展示区 -->
+        <div class="diet-records">
+            <!-- 示例记录项 -->
+            <div class="record-item">
+                <div class="food-info">
+                    <div class="food-icon">🍳</div>
+                    <div class="food-details">
+                        <h4>煎鸡蛋</h4>
+                        <p>约2个鸡蛋 · 180大卡</p>
+                        <div class="food-tags">
+                            <span class="tag-protein">优质蛋白</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="record-actions">
+                    <button class="edit-btn">编辑</button>
+                    <button class="delete-btn">删除</button>
+                </div>
+            </div>
+
+            <div class="record-item">
+                <div class="food-info">
+                    <div class="food-icon">🥛</div>
+                    <div class="food-details">
+                        <h4>纯牛奶</h4>
+                        <p>250ml · 150大卡</p>
+                        <div class="food-tags">
+                            <span class="tag-calcium">高钙</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="record-actions">
+                    <button class="edit-btn">编辑</button>
+                    <button class="delete-btn">删除</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 营养汇总卡片 -->
+        <div class="nutrition-summary">
+            <div class="summary-header">
+                <h3>今日营养汇总</h3>
+                <div class="calories">总热量: <span>1250</span>/1800 大卡</div>
+            </div>
+            <div class="nutrient-bars">
+                <div class="nutrient-item">
+                    <div class="nutrient-label">蛋白质</div>
+                    <div class="nutrient-bar">
+                        <div class="nutrient-fill" style="width: 65%; background: var(--primary-color);"></div>
+                    </div>
+                    <div class="nutrient-value">65g (72%)</div>
+                </div>
+                <div class="nutrient-item">
+                    <div class="nutrient-label">碳水化合物</div>
+                    <div class="nutrient-bar">
+                        <div class="nutrient-fill" style="width: 50%; background: var(--success-color);"></div>
+                    </div>
+                    <div class="nutrient-value">210g (50%)</div>
+                </div>
+                <div class="nutrient-item">
+                    <div class="nutrient-label">脂肪</div>
+                    <div class="nutrient-bar">
+                        <div class="nutrient-fill" style="width: 45%; background: var(--warning-color);"></div>
+                    </div>
+                    <div class="nutrient-value">45g (45%)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 拍照记录弹窗 -->
+        <div class="modal-overlay" id="cameraModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>拍照记录饮食</h3>
+                    <span class="close-modal" id="closeCameraBtn">&times;</span>
+                </div>
+                <div class="camera-preview" id="cameraPreview">
+                    <div class="camera-placeholder">
+                        <span>📷</span>
+                        <p>相机预览区域</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="capture-btn" id="captureBtn">拍摄</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/diet-record.js"></script>
+</body>
+</html>

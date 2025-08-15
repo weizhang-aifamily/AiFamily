@@ -1,31 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>用户列表</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭健康助手</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/index.css">
 </head>
 <body>
-    <h1>用户数据</h1>
+    <div class="container">
+        <h1 class="header">家庭健康助手</h1>
 
-    <!-- 搜索表单 -->
-    <form method="POST" action="/search">
-        <input type="text" name="keyword" placeholder="输入用户名">
-        <button type="submit">搜索</button>
-    </form>
+        <!-- 家庭成员健康概览 -->
+        <div class="health-overview">
+            <h2>家庭成员</h2>
+            <div class="family-members">
+                <div class="member-card active">
+                    <div class="member-name">小明 (8岁)</div>
+                    <div class="health-stats">
+                        <span class="stat-item">BMI: <span class="normal">正常</span></span>
+                        <span class="stat-item">血压: <span class="high">偏高</span></span>
+                        <span class="stat-item">缺氧: <span class="percent">57%</span></span>
+                    </div>
+                </div>
+                <div class="member-card">
+                    <div class="member-name">妈妈 (35岁)</div>
+                    <div class="health-stats">
+                        <span class="stat-item">BMI: <span class="normal">正常</span></span>
+                    </div>
+                </div>
+                <!-- 其他家庭成员... -->
+            </div>
+        </div>
 
-    <!-- 数据表格 -->
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>用户名</th>
-            <th>邮箱</th>
-        </tr>
-        {% for user in users %}
-        <tr>
-            <td>{{ user.user_id }}</td>
-            <td>{{ user.user_name }}</td>
-            <td>{{ user.user_email }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+        <!-- 饮食方案 -->
+        <!-- 饮食方案部分 -->
+<div class="diet-plan-section">
+    <h2>饮食方案</h2>
+
+    <!-- 饮食方案选择区 -->
+    <div class="plan-selection" id="planSelection">
+        <!-- 动态生成方案选择卡片 -->
+    </div>
+
+    <!-- 营养需求和推荐内容 -->
+    <div class="plan-content">
+        <div class="nutrition-supply">
+            <h3>当前方案营养需求</h3>
+            <ul class="supply-list" id="supplyList">
+                <!-- 动态生成 -->
+            </ul>
+        </div>
+
+        <div class="recommended-foods">
+            <h3>推荐食材清单</h3>
+            <div class="food-comparison">
+                <table id="foodComparisonTable">
+                    <!-- 动态生成 -->
+                </table>
+            </div>
+        </div>
+
+        <div class="generated-dishes">
+            <div class="dish-header">
+                <h3>为您生成的菜品</h3>
+                <button class="refresh-btn">换一批</button>
+            </div>
+            <div class="dish-list" id="dishList">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+
+    <script src="/static/js/index.js"></script>
 </body>
 </html>

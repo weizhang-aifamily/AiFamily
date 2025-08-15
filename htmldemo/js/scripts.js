@@ -93,7 +93,7 @@ function updateRecommendations() {
             icon: '🧀',
             desc: '钙含量: 720mg/100g',
             tag: '高钙',
-            reason: '🤖 AI推荐：孩子喜欢的乳制品，补钙效果佳'
+            //reason: '🤖 AI推荐：孩子喜欢的乳制品，补钙效果佳'
         });
         
         recommendedDishes.push(
@@ -108,7 +108,7 @@ function updateRecommendations() {
             icon: '🍄',
             desc: '低钠高鲜',
             tag: '调味',
-            reason: '🤖 AI推荐：天然鲜味替代盐，适合老年人'
+            //reason: '🤖 AI推荐：天然鲜味替代盐，适合老年人'
         });
         
         recommendedDishes.push(
@@ -123,7 +123,7 @@ function updateRecommendations() {
             icon: '🥬',
             desc: '铁含量: 2.7mg/100g',
             tag: '补铁',
-            reason: '🤖 AI推荐：富含铁元素，适合成年女性'
+            //reason: '🤖 AI推荐：富含铁元素，适合成年女性'
         });
         
         recommendedDishes.push(
@@ -139,7 +139,7 @@ function updateRecommendations() {
             icon: '🥕',
             desc: '维生素A丰富',
             tag: '隐藏食材',
-            reason: '🤖 AI推荐：可切碎隐藏在其他食物中'
+            //reason: '🤖 AI推荐：可切碎隐藏在其他食物中'
         });
     }
     
@@ -193,7 +193,6 @@ function updateRecommendations() {
             <div class="food-info">
                 <h4>${food.name}</h4>
                 <p>${food.desc}</p>
-                <div class="ai-reason">${food.reason}</div>
             </div>
             <div class="food-tag">${food.tag}</div>
         </div>

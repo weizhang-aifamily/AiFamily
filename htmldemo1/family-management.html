@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭管理 - 益家AiFamily</title>
+    <link rel="stylesheet" href="css/family-management.css">
+        <script src="js/load-components.js" defer></script>
+    <script src="js/load-components-in.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部标题 -->
+        <div class="header-module">
+            <h1>家庭管理</h1>
+            <p>科学管理 · 智能营养</p>
+        </div>
+<!-- 厨房设备卡片 -->
+<div class="card kitchen-equipment">
+  <h3><span class="icon">🍳</span> 我的厨房设备</h3>
+  <div class="equipment-grid" id="equipmentGrid">
+    <!-- JS 动态渲染 -->
+  </div>
+</div>
+        <!-- 家庭成员列表 -->
+        <div class="family-members-container">
+            <div class="section-header">
+                <h3>家庭成员</h3>
+                <button class="add-member-btn" id="addMemberBtn">+ 添加成员</button>
+            </div>
+
+            <div class="members-grid" id="membersGrid">
+                <!-- 成员卡片将通过JS动态加载 -->
+            </div>
+        </div>
+
+        <!-- 添加成员弹窗 -->
+        <div class="modal-overlay" id="addMemberModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>添加新成员</h3>
+                    <span class="close-modal" id="closeModalBtn">&times;</span>
+                </div>
+                <form id="memberForm">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" id="memberName" required placeholder="如：张三">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>年龄</label>
+                            <input type="number" id="memberAge" required>
+                        </div>
+                        <div class="form-group">
+                            <label>性别</label>
+                            <select id="memberGender">
+                                <option value="male">男</option>
+                                <option value="female">女</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 体检指标勾选 -->
+                    <div class="form-group">
+                        <label>常见体检异常指标（可多选）</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="healthIndicator" value="hypertension"> 高血压
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="healthIndicator" value="hyperlipidemia"> 高血脂
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="healthIndicator" value="diabetes"> 高血糖
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="healthIndicator" value="anemia"> 贫血
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="healthIndicator" value="osteoporosis"> 骨质疏松
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 体检报告上传 -->
+                    <div class="form-group">
+                        <label>上传体检报告（可选）</label>
+                        <div class="upload-area" id="uploadArea">
+                            <span class="upload-icon">📄</span>
+                            <p>点击或拖拽文件到此处</p>
+                            <input type="file" id="reportUpload" accept=".pdf,.jpg,.png" style="display:none;">
+                        </div>
+                        <div class="upload-tip">支持PDF/JPG/PNG格式，我们将自动分析报告</div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">保存成员</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="js/family-management.js"></script>
+</body>
+</html>

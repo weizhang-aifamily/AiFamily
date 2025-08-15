@@ -1,0 +1,479 @@
+/* ===== 基础变量 & 重置 ===== */
+:root {
+  --primary-color: #3B82F6;  /* 主蓝色 */
+  --primary-light: #E0F2FE;  /* 浅蓝背景 */
+  --success-color: #10B981;  /* 绿色 */
+  --warning-color: #F59E0B;  /* 黄色 */
+  --danger-color: #EF4444;   /* 红色 */
+  --text-color: #1F2937;     /* 深灰文字 */
+  --text-light: #64748B;     /* 浅灰文字 */
+  --light-bg: #F9FAFB;       /* 浅灰背景 */
+  --border-color: #E5E7EB;   /* 边框色 */
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--text-color);
+  background-color: #fff;
+  line-height: 1.5;
+  padding: 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ===== 头部模块 ===== */
+.header-module {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header-module h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.header-module p {
+  color: var(--text-light);
+  font-size: 16px;
+  margin-top: 0;
+}
+
+/* ===== 家庭成员列表 ===== */
+.family-members-container {
+  margin-top: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.add-member-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-member-btn:hover {
+  background-color: #2563EB;
+}
+
+/* ===== 成员卡片网格 ===== */
+.members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.member-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.2s;
+}
+
+.member-card:hover {
+  transform: translateY(-3px);
+}
+
+.member-avatar {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.member-info h4 {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.member-info p {
+  color: var(--text-light);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.member-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.health-tag {
+  background: var(--primary-light);
+  color: var(--primary-color);
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.diet-plan-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px;
+  background: white;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diet-plan-btn:hover {
+  background: var(--primary-light);
+}
+
+/* ===== 弹窗样式 ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  padding: 20px;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  font-size: 20px;
+  color: var(--text-color);
+}
+
+.close-modal {
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-light);
+}
+
+.close-modal:hover {
+  color: var(--text-color);
+}
+
+/* ===== 表单样式 ===== */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+/* ===== 体检指标勾选框 ===== */
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background-color: var(--light-bg);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkbox-item:hover {
+  background-color: #E5E7EB;
+}
+
+.checkbox-item input {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+/* ===== 上传区域 ===== */
+.upload-area {
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  padding: 25px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 8px;
+}
+
+.upload-area:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.upload-icon {
+  font-size: 24px;
+  display: block;
+  margin-bottom: 8px;
+  color: var(--primary-color);
+}
+
+.upload-tip {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 5px;
+}
+
+/* ===== 提交按钮 ===== */
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: #2563EB;
+}
+
+/* ===== 饮食方案弹窗 ===== */
+.diet-plan-modal {
+  max-width: 600px;
+}
+/* 删除重复定义的 .diet-plan-content */
+/* 修改饮食方案样式 */
+.diet-plan {
+  background: var(--light-bg);
+  border-radius: 0 0 8px 8px;
+  margin: 15px -15px -15px;
+  padding: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.diet-plan h5 {
+  color: var(--primary-color);
+  font-size: 15px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.diet-plan h5::before {
+  content: "🍎";
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+.diet-plan-content {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.diet-plan-content p {
+  margin-bottom: 8px;
+  padding-left: 26px; /* 对齐图标 */
+  text-indent: -1em; /* 首行缩进 */
+}
+
+.diet-plan-content strong {
+  color: var(--text-color);
+}
+
+.diet-plan-item {
+  background: var(--light-bg);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.diet-plan-item h4 {
+  margin-top: 0;
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.no-plan {
+  color: var(--text-light);
+  text-align: center;
+  padding: 20px;
+}
+
+.print-btn {
+  width: 100%;
+  margin-top: 15px;
+  padding: 12px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.print-btn:hover {
+  background: #2563EB;
+}
+
+/* ===== 响应式调整 ===== */
+@media (max-width: 600px) {
+  .checkbox-group {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .modal-content {
+    width: 95%;
+    padding: 15px;
+  }
+}
+/* ===== 直接展示的饮食方案 ===== */
+.diet-plan {
+  background: var(--light-bg);
+  border-radius: 0 0 8px 8px;
+  margin: 12px -15px -15px;
+  padding: 12px 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.diet-plan h5 {
+  color: var(--primary-color);
+  font-size: 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.diet-plan h5::before {
+  content: "🍎";
+  margin-right: 6px;
+}
+
+.diet-plan-content {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.diet-plan-content p {
+  margin-bottom: 6px;
+}
+.member-card.collapsed .diet-plan {
+  display: none;
+}
+/* ===== 厨房设备 ===== */
+.kitchen-equipment {
+  margin-bottom: 20px;
+  padding: 15px 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+}
+
+.kitchen-equipment h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.equipment-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.equipment-item input {
+  margin: 0;
+  transform: scale(1.1);
+}
+
+.equipment-item label {
+  cursor: pointer;
+  user-select: none;
+}

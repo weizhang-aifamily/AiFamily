@@ -1,0 +1,26 @@
+INSERT INTO family_member(family_id,name,avatar,gender,birth_date,relation,is_primary)
+VALUES
+(1,'小明','👦',1,'2015-05-20','儿子',0),
+(1,'爷爷','👴',1,'1958-10-01','祖父',0);
+
+INSERT INTO diet_need_tag(need_code,need_name,description) VALUES
+('lowSalt','限盐','减少钠摄入'),
+('highCalcium','高钙','增加钙摄入'),
+('lowFat','低脂','减少脂肪摄入'),
+('highIron','补铁','增加铁摄入');
+
+INSERT INTO foods(food_name,emoji,tag,grams,servings,calories,sodium,description) VALUES
+('西蓝花','🥦','高钙','200g','[1,2]',34,33,'钙含量: 47mg/100g'),
+('牛奶','🥛','高钙','250ml','[1,2,3,4]',120,120,'钙含量: 120mg/100ml');
+
+INSERT INTO generated_dish(dish_name,emoji,description) VALUES
+('奶酪焗南瓜','🧀','金黄拉丝，奶香浓郁'),
+('牛奶布丁','🥛','丝滑细腻，入口即化');
+
+INSERT INTO allergen(name,description) VALUES
+('花生','花生过敏'),
+('虾','甲壳类过敏');
+
+INSERT INTO kitchen_constraint(name,description) VALUES
+('oven','烤箱'),
+('steamer','蒸锅');

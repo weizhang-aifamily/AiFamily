@@ -1,0 +1,11 @@
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS
+plan_ingredient, plan_dish, plan_member, plan_budget, plan,
+dish_kitchen, dish_step, dish_flavor, dish_ingredient, generated_dish,
+member_kitchen, kitchen_constraint,
+member_allergen, allergen,
+food_season, food_tags, food_nutrition, foods,
+member_diet_need, need_rule, diet_need_tag,
+member_health_metric, health_metric_type,
+family_member;
+SET FOREIGN_KEY_CHECKS = 1;

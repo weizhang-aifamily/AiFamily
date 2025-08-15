@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>益家 - 特色食材直供</title>
+    <link rel="stylesheet" href="css/suppliers.css">
+        <script src="js/load-components.js" defer></script>
+    <script src="js/load-components-in.js" defer></script>
+</head>
+<body>
+    <!-- Header Section -->
+    <div class="supplier-header">
+        <h1>特色食材直供</h1>
+        <p>优质食材 · 健康生活</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="supplier-container">
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+            <div class="tab active" data-category="all">全部</div>
+            <div class="tab" data-category="weight-loss">减脂优选</div>
+            <div class="tab" data-category="growth">儿童长高</div>
+            <div class="tab" data-category="chronic">三高友好</div>
+            <div class="tab" data-category="vegetarian">素食主义</div>
+        </div>
+
+        <!-- Supplier Grid -->
+        <div class="supplier-grid" id="supplierGrid">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+
+        <!-- CTA Section -->
+        <div class="supplier-cta">
+            <p>优质供应商招募中，入驻即享流量扶持</p>
+            <button class="join-btn">立即加盟</button>
+        </div>
+    </div>
+
+    <script src="js/suppliers.js"></script>
+</body>
+</html>

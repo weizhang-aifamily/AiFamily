@@ -1,0 +1,176 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+
+body {
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
+    padding-bottom: 20px;
+}
+
+/* Header Styles */
+.supplier-header {
+    background: white;
+    padding: 20px 16px;
+    text-align: center;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.supplier-header h1 {
+    font-size: 22px;
+    margin-bottom: 8px;
+    color: #3B82F6;
+}
+
+.supplier-header p {
+    font-size: 14px;
+    color: #64748B;
+}
+
+/* Main Container */
+.supplier-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* Category Tabs */
+.category-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 12px 0;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+}
+
+.category-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.tab {
+    padding: 6px 12px;
+    background: #E0F2FE;
+    border-radius: 16px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tab.active {
+    background: #3B82F6;
+    color: white;
+}
+
+/* Supplier Grid */
+.supplier-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.supplier-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.supplier-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(255,255,255,0.9);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+.supplier-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.supplier-info {
+    padding: 12px;
+}
+
+.supplier-info h4 {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.supplier-tags {
+    display: flex;
+    gap: 4px;
+    margin: 6px 0;
+    flex-wrap: wrap;
+}
+
+.supplier-tags span {
+    background: #F1F5F9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: #64748B;
+}
+
+.supplier-desc {
+    font-size: 12px;
+    color: #666;
+    margin: 8px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.supplier-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.price {
+    font-weight: bold;
+    color: #EF4444;
+    font-size: 14px;
+}
+
+.supplier-btn {
+    background: #ECFDF5;
+    color: #047857;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* CTA Section */
+.supplier-cta {
+    text-align: center;
+    margin-top: 24px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.join-btn {
+    background: linear-gradient(135deg, #10B981, #3B82F6);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 24px;
+    margin-top: 12px;
+    font-weight: bold;
+    cursor: pointer;
+}
