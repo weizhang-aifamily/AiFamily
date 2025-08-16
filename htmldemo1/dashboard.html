@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>全家饮食规划 - 益家AiFamily</title>
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/dashboard1.css">
     <script src="js/load-components.js" defer></script>
-    <script src="js/load-components-in.js" defer></script>
+    <!--<script src="js/load-components-in.js" defer></script>-->
 </head>
 <body>
     <div class="container">
@@ -22,6 +22,7 @@
             <div class="card-header">
                 <h3><span class="icon">👨‍👩‍👧‍👦</span> <p id="mealTimeSubtitle">午餐 · 成员</p></h3>
             </div>
+
             <div class="budget-row">
               <label>预算区间 ¥</label>
               <input type="range" id="budgetRange">
@@ -34,25 +35,180 @@
         </div>
 
         <!-- 饮食方案 -->
-        <div class="card">
-            <div class="card-header">
-                <h3><span class="icon">📋</span> 饮食方案</h3>
-                <span class="science-tip" data-tip="基于中国居民膳食指南">ℹ️</span>
-            </div>
-            <div class="solution-tags" id="solutionTags">
-                <!-- JS动态生成 -->
-            </div>
-        </div>
+<!-- 替换原有的"饮食方案"卡片 -->
+<div class="card diet-preferences">
+    <div class="card-header">
+        <h3><span class="icon">📋</span> 饮食偏好设置</h3>
+    </div>
 
+    <!-- 第一部分：饮食方案 -->
+    <div class="preference-section">
+        <div class="solution-tags" id="solutionTags">
+            <!-- 原有的4个方案会在这里 -->
+        </div>
+    </div>
+
+    <!-- 分隔线 -->
+    <div class="divider"></div>
+
+    <!-- 第二部分：筛选选项 -->
+    <!-- 第二部分：筛选选项 -->
+<div class="preference-section">
+    <div class="filter-options">
+        <label class="filter-checkbox">
+            <input type="checkbox" id="excludeAllergens">
+            <span class="checkmark"></span>
+            <span class="filter-label">排除过敏源</span>
+            <span class="filter-detail" id="allergensDetail"></span>
+        </label>
+        <label class="filter-checkbox">
+            <input type="checkbox" id="excludeTaboo">
+            <span class="checkmark"></span>
+            <span class="filter-label">排除忌口</span>
+            <span class="filter-detail" id="tabooDetail"></span>
+        </label>
+        <label class="filter-checkbox">
+            <input type="checkbox" id="seasonalOnly">
+            <span class="checkmark"></span>
+            <span class="filter-label">仅当季食材</span>
+        </label>
+    </div>
+</div>
+
+    <!-- 分隔线 -->
+    <div class="divider"></div>
+
+    <!-- 第三部分：预算选择 -->
+    <div class="preference-section">
+        <div class="budget-selector">
+            <label class="budget-option">
+                <input type="radio" name="budgetLevel" value="low">
+                <span class="budget-btn">经济型</span>
+            </label>
+            <label class="budget-option">
+                <input type="radio" name="budgetLevel" value="medium" checked>
+                <span class="budget-btn">标准型</span>
+            </label>
+            <label class="budget-option">
+                <input type="radio" name="budgetLevel" value="high">
+                <span class="budget-btn">豪华型</span>
+            </label>
+        </div>
+    </div>
+</div>
+<!-- ========== 今日营养仪表盘 ========== -->
+<section id="nutritionDash" class="nutrition-dash">
+  <div class="dash-inner">
+    <h4 class="dash-title">
+      <span class="icon-lightning">⚡</span>今天还差多少？
+      <button id="miniRefresh" class="mini-refresh" title="重新计算">↻</button>
+    </h4>
+    <ul class="dash-bars">
+      <li data-nutrient="calories"><span class="bar-label">能量</span><span class="bar"><i></i></span><span class="val">0%</span></li>
+      <li data-nutrient="protein"><span class="bar-label">蛋白</span><span class="bar"><i></i></span><span class="val">0%</span></li>
+      <li data-nutrient="calcium"><span class="bar-label">钙</span><span class="bar"><i></i></span><span class="val">0%</span></li>
+      <li data-nutrient="iron"><span class="bar-label">铁</span><span class="bar"><i></i></span><span class="val">0%</span></li>
+      <li data-nutrient="sodium"><span class="bar-label">钠</span><span class="bar"><i></i></span><span class="val">0%</span></li>
+      <li data-nutrient="fat"><span class="bar-label">脂肪</span><span class="bar"><i></i></span><span class="val">0%</span></li>
+    </ul>
+  </div>
+</section>
+<!-- ===== 今日组合 ===== -->
+<section id="comboSection" class="combo-section">
+  <h2 class="combo-title">今日组合 · 一键锁定营养</h2>
+
+  <!-- 套餐 1 -->
+  <article class="combo-card" data-combo="morning">
+    <h3 class="combo-name">晨曦钙能宴</h3>
+    <p class="combo-desc">10 分钟补足全天钙 80 %</p>
+    <div class="dish-list">
+      <label class="dish-item">
+        <input type="checkbox" value="奶酪焗南瓜">
+        <img src="https://picsum.photos/seed/pumpkin/200" alt="奶酪焗南瓜">
+        <span class="dish-name">奶酪焗南瓜</span>
+        <span class="nutri-tag">高钙 +72 %</span>
+      </label>
+      <label class="dish-item">
+        <input type="checkbox" value="牛奶布丁">
+        <img src="https://picsum.photos/seed/pudding/200" alt="牛奶布丁">
+        <span class="dish-name">牛奶布丁</span>
+        <span class="nutri-tag">钙 +60 %</span>
+      </label>
+      <label class="dish-item">
+        <input type="checkbox" value="烤杏仁">
+        <img src="https://picsum.photos/seed/almond/200" alt="烤杏仁">
+        <span class="dish-name">烤杏仁</span>
+        <span class="nutri-tag">VE +45 %</span>
+      </label>
+    </div>
+  </article>
+
+  <!-- 套餐 2 -->
+  <article class="combo-card" data-combo="noon">
+    <h3 class="combo-name">轻盈铁骑宴</h3>
+    <p class="combo-desc">铁吸收 ↑58 %，零负担</p>
+    <div class="dish-list">
+      <label class="dish-item">
+        <input type="checkbox" value="羽衣甘蓝牛肉卷">
+        <img src="https://picsum.photos/seed/beefwrap/200" alt="羽衣甘蓝牛肉卷">
+        <span class="dish-name">羽衣甘蓝牛肉卷</span>
+        <span class="nutri-tag">铁 +58 %</span>
+      </label>
+      <label class="dish-item">
+        <input type="checkbox" value="草莓沙拉">
+        <img src="https://picsum.photos/seed/strawberry/200" alt="草莓沙拉">
+        <span class="dish-name">草莓沙拉</span>
+        <span class="nutri-tag">维C +90 %</span>
+      </label>
+      <label class="dish-item">
+        <input type="checkbox" value="全麦面包">
+        <img src="https://picsum.photos/seed/bread/200" alt="全麦面包">
+        <span class="dish-name">全麦面包</span>
+        <span class="nutri-tag">膳食纤维 +30 %</span>
+      </label>
+    </div>
+  </article>
+
+  <!-- 套餐 3 -->
+  <article class="combo-card" data-combo="night">
+    <h3 class="combo-name">晚安平衡宴</h3>
+    <p class="combo-desc">低钠、助眠、修复肌肉</p>
+    <div class="dish-list">
+      <label class="dish-item">
+        <input type="checkbox" value="香菇蒸鳕鱼">
+        <img src="https://picsum.photos/seed/cod/200" alt="香菇蒸鳕鱼">
+        <span class="dish-name">香菇蒸鳕鱼</span>
+        <span class="nutri-tag">优质蛋白 +40 %</span>
+      </label>
+      <label class="dish-item">
+        <input type="checkbox" value="芦笋">
+        <img src="https://picsum.photos/seed/asparagus/200" alt="芦笋">
+        <span class="dish-name">清炒芦笋</span>
+        <span class="nutri-tag">叶酸 +35 %</span>
+      </label>
+      <label class="dish-item">
+        <input type="checkbox" value="番茄汤">
+        <img src="https://picsum.photos/seed/tomato/200" alt="番茄汤">
+        <span class="dish-name">番茄汤</span>
+        <span class="nutri-tag">番茄红素 +50 %</span>
+      </label>
+    </div>
+  </article>
+</section>
+
+<!-- ===== 营养提篮（悬浮） ===== -->
+<div id="nutritionBasket" class="nutrition-basket">
+  <div class="basket-info">
+    <span id="basketCount">已选 0 道菜</span>
+    <span id="basketGap">今日钙缺口&nbsp;+0 %</span>
+  </div>
+  <button id="openBasket" class="basket-btn" disabled>查看提篮</button>
+</div>
+<!-- ========== 智能摇菜 ========== -->
         <!-- 智能推荐 -->
 <div class="card">
     <div class="card-header with-actions">
         <h3><span class="icon">🛒</span> 智能推荐</h3>
-<div class="filter-toggles" id="filterToggles">
-  <button class="toggle-btn active" data-filter="seasonal" title="当季">🌱当季</button>
-  <button class="toggle-btn" data-filter="allergen" title="含过敏源">⚠️过敏源</button>
-  <button class="toggle-btn" data-filter="taboo" title="含忌口">🚫忌口</button>
-</div>
     </div>
 
     <!-- 食材清单 - 完全复制index.html的结构 -->

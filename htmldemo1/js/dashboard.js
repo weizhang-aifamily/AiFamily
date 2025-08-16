@@ -380,35 +380,59 @@ document.addEventListener('DOMContentLoaded', function() {
         mealTimeSubtitle.textContent = `${mealType}成员`;
     }
 
-    function renderMembers() {
-        memberTags.innerHTML = familyMembers.map(member => `
-            <div class="member-tag active" data-id="${member.id}">
-                <div class="member-avatar">${member.avatar}</div>
-                <div class="member-name">${member.name}</div>
-                <div class="member-needs">
-                    ${member.displayNeeds.map(need => 
-                        `<span class="need-badge">${need}</span>`
-                    ).join('')}
+function renderMembers() {
+    memberTags.innerHTML = familyMembers.map(member => `
+        <div class="member-tag active" data-id="${member.id}">
+            <div class="member-main">
+                <div class="member-avatar-section">
+                    <div class="member-avatar">${member.avatar}</div>
+                    <div class="member-name">${member.name}</div>
                 </div>
-<!-- 过敏源图标 -->
-<div class="allergy-icons">
-  ${member.allergens.map(a => allergyIcons[a] || '⚠️').join('')}
-</div>
-                <a href="nutrition-report.html?memberId=${member.id}" class="report-link">
-                    查看报告
-                    <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
-                </a>
+                <div class="member-details">
+                    <div class="needs-row">
+                        ${member.displayNeeds.map(need => 
+                            `<span class="need-badge">${need}</span>`
+                        ).join('')}
+                    </div>
+                </div>
             </div>
-        `).join('');
+            <a href="nutrition-report.html?memberId=${member.id}" class="report-link">
+                查看报告
+                <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+            </a>
+        </div>
+    `).join('');
 
-        document.querySelectorAll('.member-tag').forEach(tag => {
-            tag.addEventListener('click', function(e) {
-                if (e.target.closest('.report-link')) return;
-                this.classList.toggle('active');
-                updateActiveMembers();
-            });
+    // 动态生成过敏源和忌口详情
+    updateFilterDetails();
+
+    document.querySelectorAll('.member-tag').forEach(tag => {
+        tag.addEventListener('click', function(e) {
+            if (e.target.closest('.report-link')) return;
+            this.classList.toggle('active');
+            updateActiveMembers();
+            updateFilterDetails(); // 更新详情
         });
-    }
+    });
+}
+function updateFilterDetails() {
+    // 获取所有选中成员的过敏源和忌口
+    const activeMembers = familyMembers.filter(m =>
+        document.querySelector(`.member-tag[data-id="${m.id}"]`)?.classList.contains('active')
+    );
+
+    // 合并所有过敏源
+    const allAllergens = [...new Set(activeMembers.flatMap(m => m.allergens || []))];
+    const allergenText = allAllergens.map(a => allergyIcons[a] || a).join('');
+    document.getElementById('allergensDetail').textContent =
+        allergenText ? `(${allergenText})` : '';
+
+    // 合并所有忌口（假设在dietaryRestrictions里）
+    const allTaboos = [...new Set(activeMembers.flatMap(m => m.restrictions || []))];
+    const tabooText = allTaboos.join(', ');
+    document.getElementById('tabooDetail').textContent =
+        tabooText ? `(${tabooText})` : '';
+}
 
     function updateActiveMembers() {
         activeMembers = [];
@@ -429,14 +453,32 @@ document.addEventListener('DOMContentLoaded', function() {
         generateRecommendations();
     }
 
-    function renderSolutionTags() {
-        solutionTags.innerHTML = Array.from(activeSolutions).map(solution => `
-            <div class="solution-tag" data-solution="${solution}">
-                <span class="icon">${dietSolutions[solution].icon}</span>
-                ${dietSolutions[solution].name}
-            </div>
-        `).join('');
-    }
+function renderSolutionTags() {
+    solutionTags.innerHTML = Array.from(activeSolutions).map(solution => `
+        <div class="solution-tag active" data-solution="${solution}">
+            <span class="icon">${dietSolutions[solution].icon}</span>
+            ${dietSolutions[solution].name}
+        </div>
+    `).join('');
+
+    // 单击切换选中
+    solutionTags.querySelectorAll('.solution-tag').forEach(tag => {
+        tag.addEventListener('click', () => {
+            tag.classList.toggle('active');
+            const key = tag.dataset.solution;
+            if (tag.classList.contains('active')) {
+                activeSolutions.add(key);
+            } else {
+                activeSolutions.delete(key);
+            }
+            generateRecommendations();
+        });
+    });
+}
+
+// 初始化：默认全部选中
+activeSolutions = new Set(Object.keys(dietSolutions));
+renderSolutionTags();
 
     function generateRecommendations() {
         generateIngredients();
@@ -569,11 +611,21 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
         initBudgetRange();
         renderMembers();
         updateSolutions();
+        updateFilterDetails();
         showAchievement('首次使用', '营养规划师✨');
         
         // 事件绑定
         document.getElementById('refreshIngredients').addEventListener('click', generateIngredients);
         document.getElementById('refreshDishes').addEventListener('click', generateDishes);
+            // 新增筛选选项事件监听（保持功能）
+    document.getElementById('excludeAllergens').addEventListener('change', generateRecommendations);
+    document.getElementById('excludeTaboo').addEventListener('change', generateRecommendations);
+    document.getElementById('seasonalOnly').addEventListener('change', generateRecommendations);
+
+    // 预算选择事件监听
+    document.querySelectorAll('input[name="budgetLevel"]').forEach(radio => {
+        radio.addEventListener('change', generateRecommendations);
+    });
     }
 
     // 启动应用
@@ -765,3 +817,70 @@ function initBudgetRange() {
     generateRecommendations();
   });
 }
+/* ========== 今日营养仪表盘 ========== */
+const nutrientTargets = { calories:2000, protein:60, calcium:800, iron:15, sodium:2000, fat:60 };
+let currentIntake = { calories:0, protein:0, calcium:0, iron:0, sodium:0, fat:0 };
+
+function renderDash(){
+  Object.keys(nutrientTargets).forEach(key=>{
+    const percent = Math.round(currentIntake[key]/nutrientTargets[key]*100);
+    const li = document.querySelector(`.dash-bars li[data-nutrient="${key}"]`);
+    const bar = li.querySelector('i');
+    const val = li.querySelector('.val');
+    bar.style.width = Math.min(percent,100)+'%';
+    val.textContent = (percent>100?'+':'')+(percent-100)+'%';
+    li.querySelector('.bar').dataset.status =
+      percent>120?'danger':percent>100?'warning':'';
+  });
+}
+document.getElementById('miniRefresh').addEventListener('click',()=>{
+  // 这里后续接入真实计算
+  renderDash();
+});
+renderDash();
+
+/* ========== 同类替换滑杆 ========== */
+// 在每个 .food-card 下方插入滑杆（示例）
+document.querySelectorAll('.food-card').forEach(card=>{
+  const slider = document.createElement('div');
+  slider.className='replace-slider';
+  slider.innerHTML=`
+    <div class="slider-row">
+      <span>🥦</span>
+      <input type="range" min="0" max="2" value="0">
+      <span>🥬</span>
+      <button class="apply-replace">✓</button>
+    </div>
+  `;
+  card.appendChild(slider);
+  card.querySelector('.food-title').addEventListener('click',()=>{
+    slider.classList.toggle('open');
+  });
+});
+/* ===== 套餐勾选逻辑 ===== */
+const basketCountEl  = document.getElementById('basketCount');
+const basketGapEl    = document.getElementById('basketGap');
+const openBasketBtn  = document.getElementById('openBasket');
+let selectedDishes = [];
+
+document.addEventListener('change', e=>{
+  if(!e.target.matches('.dish-item input')) return;
+  const dish = e.target.value;
+  if(e.target.checked){
+    selectedDishes.push(dish);
+  }else{
+    selectedDishes = selectedDishes.filter(d=>d!==dish);
+  }
+  updateBasket();
+});
+
+function updateBasket(){
+  const count = selectedDishes.length;
+  basketCountEl.textContent = `已选 ${count} 道菜`;
+  // 后续接入真实营养缺口计算
+  basketGapEl.textContent   = `今日钙缺口 +${Math.max(0,72-count*10)} %`;
+  openBasketBtn.disabled = count === 0;
+}
+
+/* 初始化 */
+updateBasket();

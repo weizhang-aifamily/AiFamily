@@ -35,69 +35,72 @@
         </div>
 
         <!-- 添加成员弹窗 -->
-        <div class="modal-overlay" id="addMemberModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>添加新成员</h3>
-                    <span class="close-modal" id="closeModalBtn">&times;</span>
-                </div>
-                <form id="memberForm">
-                    <div class="form-group">
-                        <label>姓名</label>
-                        <input type="text" id="memberName" required placeholder="如：张三">
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>年龄</label>
-                            <input type="number" id="memberAge" required>
-                        </div>
-                        <div class="form-group">
-                            <label>性别</label>
-                            <select id="memberGender">
-                                <option value="male">男</option>
-                                <option value="female">女</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- 体检指标勾选 -->
-                    <div class="form-group">
-                        <label>常见体检异常指标（可多选）</label>
-                        <div class="checkbox-group">
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="healthIndicator" value="hypertension"> 高血压
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="healthIndicator" value="hyperlipidemia"> 高血脂
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="healthIndicator" value="diabetes"> 高血糖
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="healthIndicator" value="anemia"> 贫血
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox" name="healthIndicator" value="osteoporosis"> 骨质疏松
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 体检报告上传 -->
-                    <div class="form-group">
-                        <label>上传体检报告（可选）</label>
-                        <div class="upload-area" id="uploadArea">
-                            <span class="upload-icon">📄</span>
-                            <p>点击或拖拽文件到此处</p>
-                            <input type="file" id="reportUpload" accept=".pdf,.jpg,.png" style="display:none;">
-                        </div>
-                        <div class="upload-tip">支持PDF/JPG/PNG格式，我们将自动分析报告</div>
-                    </div>
-
-                    <button type="submit" class="submit-btn">保存成员</button>
-                </form>
-            </div>
+        <!-- 添加成员弹窗 -->
+<div class="modal-overlay" id="addMemberModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>添加新成员</h3>
+            <span class="close-modal" id="closeModalBtn">&times;</span>
         </div>
+        <form id="memberForm">
+            <div class="form-group">
+                <label>姓名</label>
+                <input type="text" id="memberName" required placeholder="如：张三">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>年龄</label>
+                    <input type="number" id="memberAge" required>
+                </div>
+                <div class="form-group">
+                    <label>性别</label>
+                    <select id="memberGender">
+                        <option value="male">男</option>
+                        <option value="female">女</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 体检指标勾选 -->
+            <div class="form-group">
+                <label>常见体检异常指标（可多选）</label>
+                <div class="checkbox-group">
+                    <!-- 指标选项 -->
+                </div>
+            </div>
+
+            <!-- 过敏源 -->
+            <div class="form-group">
+                <label>过敏源（可多选）</label>
+                <div class="checkbox-group" id="allergiesGroup">
+                    <!-- 过敏源选项 -->
+                </div>
+            </div>
+
+            <!-- 忌口 -->
+            <div class="form-group">
+                <label>忌口（可多选）</label>
+                <div class="checkbox-group" id="dietaryRestrictionsGroup">
+                    <!-- 忌口选项 -->
+                </div>
+            </div>
+
+            <!-- 体检报告上传 -->
+            <div class="form-group">
+                <label>上传体检报告（可选）</label>
+                <div class="upload-area" id="uploadArea">
+                    <span class="upload-icon">📄</span>
+                    <p>点击或拖拽文件到此处</p>
+                    <input type="file" id="reportUpload" accept=".pdf,.jpg,.png" style="display:none;">
+                </div>
+                <div class="upload-tip">支持PDF/JPG/PNG格式，我们将自动分析报告</div>
+            </div>
+
+            <button type="submit" class="submit-btn">保存成员</button>
+        </form>
+    </div>
+</div>
 
     </div>
 

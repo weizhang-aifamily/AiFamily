@@ -12,25 +12,57 @@ document.addEventListener('DOMContentLoaded', function() {
     const reportUpload = document.getElementById('reportUpload');
     const membersGrid = document.getElementById('membersGrid');
 
-    // 示例成员数据
-    let members = [
-        {
-            id: 1,
-            name: '小明',
-            age: 8,
-            gender: 'male',
-            indicators: ['anemia'],
-            avatar: '👦'
-        },
-        {
-            id: 2,
-            name: '爷爷',
-            age: 65,
-            gender: 'male',
-            indicators: ['hypertension', 'hyperlipidemia'],
-            avatar: '👴'
-        }
-    ];
+// 在文件顶部添加数据
+const allergiesData = [
+    { id: 'peanuts', name: '花生', icon: '🥜' },
+    { id: 'shellfish', name: '贝类', icon: '🦐' },
+    { id: 'dairy', name: '乳制品', icon: '🥛' },
+    { id: 'eggs', name: '鸡蛋', icon: '🥚' },
+    { id: 'gluten', name: '麸质', icon: '🌾' },
+    { id: 'soy', name: '大豆', icon: '🫘' }
+];
+
+const dietaryRestrictionsData = [
+    { id: 'vegetarian', name: '素食', icon: '🥗' },
+    { id: 'halal', name: '清真', icon: '🕌' },
+    { id: 'low_sodium', name: '低盐', icon: '🧂' },
+    { id: 'low_sugar', name: '低糖', icon: '🍯' },
+    { id: 'spicy', name: '忌辣', icon: '🌶️' },
+    { id: 'pork', name: '忌猪肉', icon: '🐷' }
+];
+const healthIndicatorsData = [
+    { id: 'hypertension', name: '高血压', icon: '💓', category: '心血管' },
+    { id: 'hyperlipidemia', name: '高血脂', icon: '🩸', category: '心血管' },
+    { id: 'diabetes', name: '高血糖', icon: '🍯', category: '代谢' },
+    { id: 'anemia', name: '贫血', icon: '🩹', category: '血液' },
+    { id: 'osteoporosis', name: '骨质疏松', icon: '🦴', category: '骨骼' },
+    { id: 'gout', name: '痛风', icon: '🦶', category: '代谢' },
+    { id: 'fatty_liver', name: '脂肪肝', icon: '🫘', category: '肝脏' },
+    { id: 'gastritis', name: '胃炎', icon: '🫄', category: '消化' }
+];
+// 修改示例成员数据，添加过敏源和忌口
+let members = [
+    {
+        id: 1,
+        name: '小明',
+        age: 8,
+        gender: 'male',
+        indicators: ['anemia'],
+        allergies: ['peanuts', 'dairy'],
+        restrictions: ['spicy'],
+        avatar: '👦'
+    },
+    {
+        id: 2,
+        name: '爷爷',
+        age: 65,
+        gender: 'male',
+        indicators: ['hypertension', 'hyperlipidemia'],
+        allergies: [],
+        restrictions: ['low_sodium', 'low_sugar'],
+        avatar: '👴'
+    }
+];
 // ===== 厨房设备数据 =====
 const kitchenEquipment = [
   { id: 'stove',   name: '燃气灶', icon: '🔥' },
@@ -83,6 +115,7 @@ const kitchenEquipment = [
     // 初始化页面
     renderMembers();
 renderKitchenEquipment();
+renderFormData();
     // 事件监听
     addMemberBtn.addEventListener('click', () => addMemberModal.style.display = 'flex');
     closeModalBtn.addEventListener('click', () => addMemberModal.style.display = 'none');
@@ -115,53 +148,91 @@ renderKitchenEquipment();
     });
 
     // 表单提交
-    memberForm.addEventListener('submit', (e) => {
-        e.preventDefault();
+// 修改memberForm的submit事件监听
+memberForm.addEventListener('submit', (e) => {
+    e.preventDefault();
 
-        const newMember = {
-            id: Date.now(),
-            name: document.getElementById('memberName').value,
-            age: document.getElementById('memberAge').value,
-            gender: document.getElementById('memberGender').value,
-            indicators: Array.from(document.querySelectorAll('input[name="healthIndicator"]:checked')).map(el => el.value),
-            avatar: document.getElementById('memberGender').value === 'male' ? '👨' : '👩'
-        };
+    const newMember = {
+        id: Date.now(),
+        name: document.getElementById('memberName').value,
+        age: document.getElementById('memberAge').value,
+        gender: document.getElementById('memberGender').value,
+        indicators: Array.from(document.querySelectorAll('input[name="healthIndicator"]:checked')).map(el => el.value),
+        allergies: Array.from(document.querySelectorAll('input[name="allergies"]:checked')).map(el => el.value),
+        restrictions: Array.from(document.querySelectorAll('input[name="dietaryRestrictions"]:checked')).map(el => el.value),
+        avatar: document.getElementById('memberGender').value === 'male' ? '👨' : '👩'
+    };
 
-        members.push(newMember);
-        renderMembers();
-        addMemberModal.style.display = 'none';
-        memberForm.reset();
+    members.push(newMember);
+    renderMembers();
+    addMemberModal.style.display = 'none';
+    memberForm.reset();
+});
 
-    });
-
-    // 渲染成员列表
-    // 修改 renderMembers 函数
-    function renderMembers() {
-      membersGrid.innerHTML = members.map(member => `
+    // 替换原有的renderMembers函数
+function renderMembers() {
+    membersGrid.innerHTML = members.map(member => `
         <div class="member-card" data-id="${member.id}">
-          <div class="member-header">
-            <div class="member-avatar">${member.avatar}</div>
-            <div class="member-info">
-              <h4>${member.name}</h4>
-              <p>${member.age}岁 · ${member.gender === 'male' ? '男' : '女'}</p>
-              ${member.indicators.length ? `
-                <div class="member-tags">
-                  ${member.indicators.map(ind => `<span class="health-tag">${getIndicatorName(ind)}</span>`).join('')}
+            <div class="member-header">
+                <div class="member-avatar">${member.avatar}</div>
+                <div class="member-info">
+                    <h4>${member.name}</h4>
+                    <p>${member.age}岁 · ${member.gender === 'male' ? '男' : '女'}</p>
                 </div>
-              ` : ''}
             </div>
-          </div>
-          
-          <!-- 饮食方案直接内嵌 -->
-          <div class="diet-plan">
-            <h5>饮食建议</h5>
-            <div class="diet-plan-content">
-              ${generatePlanHTML(member)}
+            
+            <!-- 健康指标 -->
+            ${member.indicators.length ? `
+                <div class="member-section">
+                    <h5>健康关注</h5>
+                    <div class="tags-container">
+                        ${member.indicators.map(ind => {
+                            const indicatorInfo = healthIndicatorsData.find(i => i.id === ind);
+                            return `<span class="tag health-tag">
+                                ${indicatorInfo?.icon || '💊'} 
+                                ${indicatorInfo?.name || getIndicatorName(ind)}
+                            </span>`;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- 过敏源 -->
+            ${member.allergies?.length ? `
+                <div class="member-section">
+                    <h5>过敏源</h5>
+                    <div class="tags-container allergies">
+                        ${member.allergies.map(allergy => {
+                            const allergyInfo = allergiesData.find(a => a.id === allergy);
+                            return `<span class="tag allergy-tag">${allergyInfo?.icon || '⚠️'} ${allergyInfo?.name || allergy}</span>`;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- 忌口 -->
+            ${member.restrictions?.length ? `
+                <div class="member-section">
+                    <h5>饮食忌口</h5>
+                    <div class="tags-container restrictions">
+                        ${member.restrictions.map(restriction => {
+                            const restrictionInfo = dietaryRestrictionsData.find(r => r.id === restriction);
+                            return `<span class="tag restriction-tag">${restrictionInfo?.icon || '🚫'} ${restrictionInfo?.name || restriction}</span>`;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- 饮食方案 -->
+            <div class="member-section">
+                <h5>饮食建议</h5>
+                <div class="diet-plan-content">
+                    ${generatePlanHTML(member)}
+                </div>
             </div>
-          </div>
         </div>
-      `).join('');
-    }
+    `).join('');
+}
 
     // 新增独立的方案生成函数
     function generatePlanHTML(member) {
@@ -229,7 +300,49 @@ function renderKitchenEquipment() {
     });
   });
 }
+// 改名为renderFormData更合适
+// 修改renderFormData函数中的复选框渲染方式
+function renderFormData() {
+    // 渲染体检指标
+    const healthIndicatorsGroup = document.querySelector('.checkbox-group');
+    if (healthIndicatorsGroup) {
+        healthIndicatorsGroup.innerHTML = healthIndicatorsData.map(indicator => `
+            <label class="checkbox-item">
+                <input type="checkbox" name="healthIndicator" value="${indicator.id}">
+                <span class="checkbox-custom"></span>
+                <span class="emoji-icon">${indicator.icon}</span>
+                ${indicator.name}
+                <span class="category-tag">${indicator.category}</span>
+            </label>
+        `).join('');
+    }
 
+    // 渲染过敏源（同样的方式）
+    const allergiesGroup = document.getElementById('allergiesGroup');
+    if (allergiesGroup) {
+        allergiesGroup.innerHTML = allergiesData.map(allergy => `
+            <label class="checkbox-item">
+                <input type="checkbox" name="allergies" value="${allergy.id}">
+                <span class="checkbox-custom"></span>
+                <span class="emoji-icon">${allergy.icon}</span>
+                ${allergy.name}
+            </label>
+        `).join('');
+    }
+
+    // 渲染忌口（同样的方式）
+    const restrictionsGroup = document.getElementById('dietaryRestrictionsGroup');
+    if (restrictionsGroup) {
+        restrictionsGroup.innerHTML = dietaryRestrictionsData.map(restriction => `
+            <label class="checkbox-item">
+                <input type="checkbox" name="dietaryRestrictions" value="${restriction.id}">
+                <span class="checkbox-custom"></span>
+                <span class="emoji-icon">${restriction.icon}</span>
+                ${restriction.name}
+            </label>
+        `).join('');
+    }
+}
 
 
 

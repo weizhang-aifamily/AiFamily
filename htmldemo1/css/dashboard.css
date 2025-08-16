@@ -99,10 +99,6 @@ body {
     transition: all 0.2s;
 }
 
-.member-tag.active {
-    background: var(--primary);
-    color: white;
-}
 
 .member-tag .avatar {
     margin-right: 6px;
@@ -615,7 +611,20 @@ food-servings:hover::after {
     border-radius: 12px;
     padding: 12px;
 }
+/* 菜品网格：宽屏最多 4 → 缩到 2 */
+/* 默认：最多 4 列 */
+.dishes-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+}
 
+/* 768px 以下保证 2 列 */
+@media (max-width: 768px) {
+  .dishes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .dish-card {
     aspect-ratio: 1;
     border-radius: 8px;
@@ -710,39 +719,49 @@ food-servings:hover::after {
     background: linear-gradient(135deg, #f5f7fa 0%, #f8fafc 100%);
     border: 1px solid rgba(59, 130, 246, 0.2);
 }
+/* 成员选择卡片统一风格 */
+.card.member-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    border: 1px solid #e5e7eb;
+}
 
 .member-tags {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 15px;
-    margin-top: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
 }
 
 .member-tag {
     position: relative;
-    padding: 15px;
-    border-radius: 12px;
+    padding: 16px 12px;
+    border-radius: 14px;
     background: white;
-    color: var(--text);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    border: 1px solid var(--border);
 }
 
 .member-tag:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .member-tag.active {
-    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
     color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    border-color: transparent;
+    border-color: #3b82f6;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+}
+
+/* 过敏源图标样式 */
+.allergy-icons {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 12px;
+    display: flex;
+    gap: 2px;
 }
 
 .member-tag.active .member-avatar {
@@ -752,6 +771,8 @@ food-servings:hover::after {
 
 .member-tag.active .member-name {
     font-weight: 600;
+    color: #ffffff;
+    margin-top: 10px;
 }
 
 .member-tag.active .report-link {
@@ -768,12 +789,6 @@ food-servings:hover::after {
     justify-content: center;
     font-size: 24px;
     margin-bottom: 10px;
-    transition: all 0.3s ease;
-}
-
-.member-name {
-    font-size: 14px;
-    margin-bottom: 6px;
     transition: all 0.3s ease;
 }
 
@@ -811,6 +826,7 @@ food-servings:hover::after {
     display: flex;
     align-items: center;
     transition: all 0.3s ease;
+    justify-content: end;
 }
 
 .report-link:hover {
@@ -919,7 +935,7 @@ food-servings:hover::after {
   background: white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
-.budget-row { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.budget-row { display: none; align-items: center; gap: 8px; font-size: 14px; }
 .hidden { display: none; }
 .filter-toggles {
   display: flex;
@@ -955,3 +971,1022 @@ food-servings:hover::after {
 .budget-label { font-weight: 500; }
 .budget-spent { font-weight: 700; }
 .budget-separator { opacity: .6; }
+/* ================== 饮食偏好设计 ================== */
+
+.diet-preferences {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border: 1px solid #e2e8f0;
+}
+
+.preference-section {
+    padding: 20px 0;
+}
+
+.preference-section:first-child {
+    padding-top: 0;
+}
+
+.preference-section:last-child {
+    padding-bottom: 0;
+}
+
+.preference-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.preference-section h4::before {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border-radius: 2px;
+    margin-right: 8px;
+}
+
+/* 分隔线设计 */
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d1d5db, transparent);
+    margin: 0;
+    position: relative;
+}
+
+.divider::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, #e5e7eb, #f3f4f6, #e5e7eb);
+    border-radius: 2px;
+}
+
+/* 筛选选项样式 */
+.filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.filter-checkbox:hover {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.filter-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    position: relative;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.filter-checkbox input[type="checkbox"]:checked ~ .checkmark {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-color: #10b981;
+}
+
+.filter-checkbox input[type="checkbox"]:checked ~ .checkmark::after {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.filter-label {
+    font-size: 14px;
+    color: #374151;
+    font-weight: 500;
+}
+
+.filter-checkbox input[type="checkbox"]:checked ~ .filter-label {
+    color: #059669;
+    font-weight: 600;
+}
+
+/* 预算选择器样式 */
+.budget-option input[type="radio"] {
+    display: none;
+}
+/* 预算水平一行三按钮，任何宽度都不换行 */
+.budget-selector{
+  display:flex;
+  gap:clamp(4px,1vw,8px);      /* 动态间距，最小 4px */
+  flex-wrap:nowrap;
+}
+
+.budget-option{
+  flex:1 1 0;
+  min-width:0;                 /* 允许极限压缩 */
+}
+
+.budget-btn{
+  display:block;
+  width:100%;
+  padding:8px 2px;             /* 再压内边距 */
+  border-radius:8px;
+  font-size:10px;              /* 更小字体 */
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;      /* 超长时省略号 */
+}
+/* 移动端强制一行三个 */
+@media (max-width: 480px) {
+  .budget-selector {
+    flex-wrap: nowrap;
+  }
+  .budget-btn {
+    font-size: 11px;
+    padding: 10px 1px;   /* 继续压缩左右留白 */
+    white-space: nowrap;
+  }
+}
+.budget-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 10px 2px;   /* 稍微压缩左右 padding */
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;     /* 移动端字体略小 */
+    font-weight: 500;
+    color: #6b7280;
+    white-space: nowrap;
+}
+.budget-btn:hover {
+    background: #f1f5f9;
+    border-color: #d1d5db;
+}
+.budget-option input[type="radio"]:checked ~ .budget-btn {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border-color: #f59e0b;
+    color: white;
+    font-weight: 600;
+}
+/* 成员选择优化 */
+.member-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.member-tags {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+}
+
+.member-tag {
+    padding: 16px 12px;
+    border-radius: 14px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+    .budget-selector {
+        flex-direction: column;
+    }
+
+    .budget-btn {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    .filter-options {
+        gap: 8px;
+    }
+
+    .filter-checkbox {
+        padding: 10px 12px;
+    }
+}
+/* 成员标签布局调整 */
+.member-tag {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.member-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.member-avatar {
+    font-size: 20px;
+}
+
+.member-badges {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.need-badge {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #e0f2fe;
+    color: #1e40af;
+    font-size: 11px;
+}
+
+.allergy-icons {
+    font-size: 14px;
+    display: flex;
+    gap: 4px;
+}
+
+/* 查看报告链接 */
+.report-link {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 11px;
+    color: #3b82f6;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.report-link:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+.report-link svg {
+    width: 10px;
+    height: 10px;
+    fill: currentColor;
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+    .member-tag {
+        padding: 12px;
+    }
+
+    .report-link {
+        position: static;
+        align-self: flex-end;
+        margin-top: 4px;
+    }
+}
+/* 成员标签布局重构 */
+.member-tag {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.member-main {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+/* 头像+姓名区域 */
+.member-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 60px;
+}
+
+.member-avatar {
+    font-size: 32px;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.member-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    line-height: 1.2;
+}
+
+/* 右侧详情区域 */
+.member-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: center;
+}
+
+.needs-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.need-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: #e0f2fe;
+    color: #1e40af;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.allergy-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.allergy-label {
+    flex-shrink: 0;
+}
+
+.allergy-icons {
+    display: flex;
+    gap: 2px;
+}
+
+/* 查看报告链接 */
+.report-link {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 11px;
+    color: #3b82f6;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.report-link:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+.report-link svg {
+    width: 10px;
+    height: 10px;
+    fill: currentColor;
+}
+
+/* 选中状态 */
+.member-tag.active {
+    border-color: #3b82f6;
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+    .member-tag {
+        padding: 12px;
+    }
+
+    .member-avatar {
+        font-size: 28px;
+    }
+
+    .member-name {
+        font-size: 12px;
+    }
+
+    .report-link {
+        position: static;
+        align-self: flex-end;
+    }
+}
+/* 小字详情样式 */
+.filter-detail {
+    font-size: 11px;
+    color: #6b7280;
+    margin-left: 4px;
+    white-space: nowrap;
+}
+
+/* 有详情时标签宽度自适应 */
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-size: 14px;
+    color: #374151;
+    font-weight: 500;
+    white-space: nowrap;
+}
+/* 饮食方案专用样式 */
+.solution-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+/* 饮食方案：最多 4 列 */
+.solution-tags {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* 768px 以下固定 2 列 */
+@media (max-width: 768px) {
+  .solution-tags {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.solution-tag {
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    border: none;                     /* 去掉边框 */
+}
+
+/* 选中状态：橙黄背景 */
+.solution-tag.active {
+    background: #f59e0b;
+    color: white;
+}
+/* 食材清单响应式：一行一个 */
+@media (max-width: 480px) {
+  .food-list {
+    grid-template-columns: 1fr;   /* 一行一个 */
+    gap: 12px;
+  }
+}
+/* ========== 今日营养仪表盘 ========== */
+.nutrition-dash{
+  background:#fff;
+  border-radius:12px;
+  padding:12px 16px;
+  margin:16px 0;
+  box-shadow:var(--card-shadow);
+}
+.dash-title{
+  font-size:14px;
+  font-weight:600;
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:8px;
+}
+.mini-refresh{
+  background:none;
+  border:none;
+  font-size:16px;
+  cursor:pointer;
+}
+.dash-bars{
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.dash-bars li{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+}
+.bar-label{width:34px;}
+.bar{
+  flex:1;
+  height:4px;
+  background:#e5e7eb;
+  border-radius:2px;
+  overflow:hidden;
+  position:relative;
+}
+.bar i{
+  display:block;
+  height:100%;
+  background:var(--primary);
+  transition:width .3s;
+}
+.bar[data-status="warning"] i{background:#f59e0b;}
+.bar[data-status="danger"] i{background:#ef4444;}
+.val{min-width:28px;text-align:right;font-weight:600;}
+
+/* ========== 智能摇菜 ========== */
+.combo-section{
+  background:#fff;
+  border-radius:12px;
+  padding:16px;
+  margin-bottom:16px;
+  box-shadow:var(--card-shadow);
+}
+.combo-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+.combo-header h4{
+  font-size:16px;
+  font-weight:600;
+}
+.reshuffle-btn{
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  border-radius:20px;
+  padding:4px 10px;
+  font-size:12px;
+  cursor:pointer;
+}
+
+.combo-card h5{
+  font-size:13px;
+  margin:4px 0 2px;
+}
+.combo-card p{
+  font-size:11px;
+  color:var(--text-light);
+}
+.combo-tag{
+  display:inline-block;
+  background:#e0f2fe;
+  color:var(--primary);
+  padding:2px 6px;
+  border-radius:10px;
+  font-size:10px;
+  margin-top:4px;
+}
+.combo-card.expanded{
+  max-width:100%;
+  display:block;
+}
+.combo-detail{
+  display:none;
+}
+.combo-card.expanded .combo-detail{
+  display:block;
+  margin-top:8px;
+  font-size:12px;
+}
+
+/* ========== 同类替换滑杆 ========== */
+.replace-slider{
+  background:#f8fafc;
+  border-radius:8px;
+  margin-top:6px;
+  padding:6px;
+  display:none;
+}
+.replace-slider.open{display:block;}
+.slider-row{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+}
+.slider-row input[type=range]{
+  flex:1;
+  margin:0;
+}
+.slider-val{
+  min-width:24px;
+  text-align:right;
+}
+.apply-replace{
+  background:var(--success);
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  padding:2px 6px;
+  font-size:10px;
+  cursor:pointer;
+}
+/* ===== 套餐纵向列表 ===== */
+.combo-section{
+  padding:0 16px 80px; /* 底部留空间给悬浮框 */
+}
+.combo-title{
+  font-size:18px;
+  font-weight:600;
+  margin:20px 0 12px;
+  color:var(--text);
+}
+.combo-card{
+  background:#fff;
+  border-radius:16px;
+  margin-bottom:16px;
+  padding:16px;
+  box-shadow:var(--card-shadow);
+}
+.combo-name{
+  font-size:18px;
+  font-weight:700;
+  margin:0 0 4px;
+}
+.combo-desc{
+  font-size:12px;
+  color:var(--text-light);
+  margin-bottom:12px;
+}
+
+.dish-item {
+  width: 100%;        /* 由 grid 决定具体宽度 */
+  aspect-ratio: 1;    /* 保持正方形 */
+}
+.dish-item input{
+  position:absolute;
+  top:4px;right:4px;
+  width:18px;height:18px;
+  margin:0;
+  opacity:0;
+}
+.dish-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;  /* 不变形，填满空间 */
+  border-radius: 8px;
+}
+/* ❌ 先强制去掉旧 flex 限制 */
+.dish-item{
+  flex:none !important;   /* 取消旧的 flex:0 0 88px */
+  width:100% !important;  /* 让网格决定真实宽度 */
+  aspect-ratio:1;         /* 保持正方形 */
+}
+
+/* 图片自适应容器 */
+.dish-item img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:8px;
+}
+@media (max-width:768px){
+  #comboSection .dish-list{
+    grid-template-columns:repeat(2,1fr) !important;
+    gap:8px;
+  }
+}
+/* 1️⃣ 父级：手机 2 列，桌面 4 列 */
+#comboSection .dish-list{
+  display:grid !important;
+  grid-template-columns:repeat(4,1fr) !important;
+  gap:12px;
+}
+@media (max-width:768px){
+  #comboSection .dish-list{
+    grid-template-columns:repeat(2,1fr) !important;
+    gap:8px;
+  }
+}
+
+/* 2️⃣ 卡片：去掉旧 flex，占满网格单元 */
+.dish-item{
+  position:relative;
+  width:100% !important;   /* 由网格决定 */
+  aspect-ratio:1 / 1;     /* 保持正方形 */
+  overflow:hidden;
+  border-radius:8px;
+}
+
+/* 3️⃣ 图片：100% 填充，不变形 */
+.dish-item img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+/* 1️⃣ 用 grid 把图片和文字纵向排布，高度仍固定为正方形 */
+.dish-item{
+  display:grid;
+  grid-template-rows:1fr auto; /* 图片占剩余空间，文字自动贴底 */
+  width:100%;
+  aspect-ratio:1 / 1;
+  border-radius:8px;
+  overflow:hidden;
+}
+
+/* 2️⃣ 图片区域：填满上方网格，不变形 */
+.dish-item img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+/* 3️⃣ 文字区域：白色半透明底，贴底显示 */
+.dish-name,
+.nutri-tag{
+  background:rgba(255,255,255,.85);
+  padding:2px 4px;
+  font-size:11px;
+  text-align:center;
+  line-height:1.2;
+}
+/* 1️⃣ 父级网格：桌面4列 / 手机2列 */
+#comboSection .dish-list{
+  display:grid !important;
+  grid-template-columns:repeat(4,1fr) !important;
+  gap:12px;
+}
+@media (max-width:768px){
+  #comboSection .dish-list{
+    grid-template-columns:repeat(2,1fr) !important;
+    gap:8px;
+  }
+}
+
+/* 2️⃣ 卡片：垂直 flex，图片+文字自动堆叠 */
+.dish-item{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+}
+
+/* 3️⃣ 图片：宽度100%，高度按正方形自适应 */
+.dish-item img{
+  width:100%;
+  aspect-ratio:1 / 1;
+  object-fit:cover;
+  border-radius:8px 8px 0 0;   /* 顶部圆角 */
+}
+
+/* 4️⃣ 文字区域：自动高度，不会被裁 */
+.dish-name,
+.nutri-tag{
+  background:#fff;
+  padding:4px 6px;
+  font-size:11px;
+  line-height:1.2;
+  text-align:center;
+  border-radius:0 0 8px 8px;   /* 底部圆角 */
+}
+/* 父级网格：桌面 4 列 / 手机 2 列 */
+#comboSection .dish-list{
+  display:grid !important;
+  grid-template-columns:repeat(4,1fr) !important;
+  gap:12px;
+}
+@media (max-width:768px){
+  #comboSection .dish-list{
+    grid-template-columns:repeat(2,1fr) !important;
+    gap:8px;
+  }
+}
+
+/* 卡片：宽高比 1:1.25（图片正方形，文字额外 25% 高度） */
+.dish-item{
+  position:relative;
+  width:100%;
+  padding-top:125%;   /* 1:1.25 比例容器 */
+  border-radius:8px;
+  overflow:hidden;
+}
+
+/* 图片：绝对定位，占满上半区（100% 高） */
+.dish-item img{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:80%;         /* 留出 20% 给文字 */
+  object-fit:cover;
+  border-radius:8px 8px 0 0;
+}
+
+/* 文字：绝对定位，占满下半区（20% 高） */
+.dish-name,
+.nutri-tag{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#fff;
+  padding:4px 6px;
+  font-size:11px;
+  line-height:1.2;
+  text-align:center;
+  border-radius:0 0 8px 8px;
+}
+.dish-name{
+  display:block;
+  font-size:12px;
+  font-weight:600;
+  margin-top:4px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.nutri-tag{
+  display:inline-block;
+  background:#e0f2fe;
+  color:var(--primary);
+  font-size:10px;
+  padding:2px 4px;
+  border-radius:10px;
+}
+/* 勾选状态 */
+.dish-item input:checked + img{
+  outline:2px solid var(--success);
+}
+.dish-item input:checked::after{
+  content:'✓';
+  position:absolute;
+  top:2px;right:2px;
+  background:var(--success);
+  color:#fff;
+  border-radius:50%;
+  width:16px;height:16px;
+  font-size:10px;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ===== 营养提篮悬浮框 ===== */
+.nutrition-basket{
+  position:fixed;
+  left:16px;right:16px;bottom:16px;
+  height:56px;
+  background:linear-gradient(90deg,#3b82f6,#10b981);
+  border-radius:28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  color:#fff;
+  font-size:13px;
+  box-shadow:0 4px 12px rgba(0,0,0,.15);
+  z-index:100;
+}
+.basket-info span{display:block;}
+.basket-btn{
+  background:rgba(255,255,255,.2);
+  border:none;
+  color:#fff;
+  border-radius:20px;
+  padding:6px 12px;
+  font-size:12px;
+  cursor:pointer;
+}
+.basket-btn:disabled{opacity:.5;cursor:not-allowed;}
+/* 默认每行4个 */
+.combo-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* 768px 以下每行2个 */
+@media (max-width: 768px) {
+  .combo-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+/* ✅ 今日组合：每行4个 */
+.combo-section[data-combo="morning"] .dish-list,
+.combo-section[data-combo="noon"] .dish-list,
+.combo-section[data-combo="night"] .dish-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* ✅ 手机端：每行2个 */
+@media (max-width: 768px) {
+  .combo-section[data-combo="morning"] .dish-list,
+  .combo-section[data-combo="noon"] .dish-list,
+  .combo-section[data-combo="night"] .dish-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+/* 🔒 强制覆盖旧样式，宽屏 4 列，手机 2 列 */
+#comboSection .dish-list {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 12px !important;
+  overflow: visible !important;
+}
+
+/* 每个菜品卡片自适应宽度 */
+#comboSection .dish-item {
+  flex: none !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+/* 📱 手机端：2 列 */
+@media (max-width: 768px) {
+  #comboSection .dish-list {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+/* 1️⃣ 把 label.dish-item 变成可点的整卡片 */
+.dish-item{
+  position:relative;
+  display:block;
+  padding:8px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:background .2s;
+}
+.dish-item:hover{
+  background:#f8fafc;
+}
+
+/* 2️⃣ 选中后整卡高亮 + 勾勾定位 */
+.dish-item:has(input:checked){
+  outline:2px solid #10b981;
+  outline-offset:-2px;
+}
+.dish-item:has(input:checked)::after{   /* 勾勾保持右上角 */
+  content:'✓';
+  position:absolute;
+  top:4px;
+  right:4px;
+  width:20px;
+  height:20px;
+  background:#10b981;
+  color:#fff;
+  border-radius:50%;
+  font-size:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:2;
+}
