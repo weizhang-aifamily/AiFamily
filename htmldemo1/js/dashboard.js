@@ -337,21 +337,28 @@ const ingredientTips = {
     '橄榄油': '橄榄油富含不饱和脂肪酸',
     '西兰花': '西兰花营养全面'
 };
-
-const dishWarnings = {
-    '奶酪焗南瓜': '维持当前饮食，3个月后钙缺口↑12%',
-    '蒜蓉菠菜': '菠菜焯水后铁吸收率提高50%',
-    '牛奶布丁': '注意控制糖分摄入',
-    '豆腐羹': '适合全家人食用',
-    '香菇蒸鸡': '低盐健康选择',
-    '白灼虾': '高蛋白低脂肪',
-    '凉拌时蔬': '富含膳食纤维',
-    '红烧牛肉': '适量食用，注意脂肪摄入',
-    '猪肝炒蛋': '补铁效果显著',
-    '凉拌鸡丝': '低脂健康选择',
-    '蒸鳕鱼': '富含Omega-3脂肪酸',
-    '胡萝卜沙拉': '富含β-胡萝卜素'
-};
+/* ---------- 近期吃过数据 ---------- */
+const historyDishes = [
+  { emoji: '🥗', name: '彩虹沙拉', desc: '5色蔬菜拼盘', count: '5' },
+  { emoji: '🍤', name: '黄金虾仁', desc: '酥脆鲜嫩', count: '3' },
+  { emoji: '🍄', name: '菌菇汤', desc: '浓郁暖胃', count: '2' },
+  { emoji: '🥕', name: '糖醋萝卜', desc: '开胃爽口', count: '2' },
+  { emoji: '🌽', name: '奶油玉米', desc: '香甜软糯', count: '1' },
+  { emoji: '🍗', name: '椒盐鸡翅', desc: '外酥里嫩', count: '2' }
+];
+/* ========== 尝鲜功能 ========== */
+const tasteDishesPool = [
+  { emoji: '🥗', name: '彩虹沙拉', desc: '5色蔬菜拼盘', category: '轻食' },
+  { emoji: '🍤', name: '黄金虾仁', desc: '酥脆鲜嫩', category: '海鲜' },
+  { emoji: '🍄', name: '菌菇汤', desc: '浓郁暖胃', category: '汤品' },
+  { emoji: '🥕', name: '糖醋萝卜', desc: '开胃爽口', category: '小菜' },
+  { emoji: '🌽', name: '奶油玉米', desc: '香甜软糯', category: '主食' },
+  { emoji: '🍗', name: '椒盐鸡翅', desc: '外酥里嫩', category: '肉类' },
+  { emoji: '🍜', name: '凉拌面', desc: '夏日清爽', category: '主食' },
+  { emoji: '🥦', name: '蒜蓉西兰花', desc: '翠绿清香', category: '蔬菜' },
+  { emoji: '🍳', name: '太阳蛋', desc: '溏心嫩滑', category: '蛋类' },
+  { emoji: '🍠', name: '蜜汁红薯', desc: '香甜软糯', category: '主食' }
+];
 
 /* ============= 2. 主应用逻辑 ============= */
 document.addEventListener('DOMContentLoaded', function() {
@@ -402,7 +409,15 @@ function renderMembers() {
             </a>
         </div>
     `).join('');
+// 新增：渲染 smart-guard-bar 的成员
+    const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
+    if (guardMemberLine) {
+        guardMemberLine.innerHTML = familyMembers.map(member =>
+            `<span class="member-tag active">${member.avatar}${member.name}</span>`
+        ).join('');
+    }
 
+    activeMembers = [...familyMembers];
     // 动态生成过敏源和忌口详情
     updateFilterDetails();
 
@@ -412,9 +427,21 @@ function renderMembers() {
             this.classList.toggle('active');
             updateActiveMembers();
             updateFilterDetails(); // 更新详情
+            syncGuardBarMembers();
         });
     });
 }
+// 新增：同步 smart-guard-bar 成员状态
+function syncGuardBarMembers() {
+    const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
+    if (!guardMemberLine) return;
+
+    guardMemberLine.innerHTML = familyMembers.map(member => {
+        const isActive = activeMembers.some(m => m.id === member.id);
+        return `<span class="member-tag ${isActive ? 'active' : ''}">${member.avatar}${member.name}</span>`;
+    }).join('');
+}
+
 function updateFilterDetails() {
     // 获取所有选中成员的过敏源和忌口
     const activeMembers = familyMembers.filter(m =>
@@ -442,6 +469,7 @@ function updateFilterDetails() {
             if (member) activeMembers.push(member);
         });
         updateSolutions();
+        syncGuardBarMembers();
     }
 
     function updateSolutions() {
@@ -528,7 +556,7 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
     const pricePer100g = ingredientPrice[ing.name] || 5; // 缺省 5 元
     totalCost += (grams / 100) * pricePer100g;
   });
-  document.getElementById('budgetSpent').textContent = `¥${totalCost.toFixed(1)}`;
+  document.getElementById('budgetSpent').textContent = `预估¥${totalCost.toFixed(1)}`;
 
     document.querySelectorAll('.food-card').forEach(card =>
         card.addEventListener('click', () => showReplaceModal(JSON.parse(card.dataset.ingredient), card))
@@ -556,7 +584,6 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
             </div>
         `).join('');
 
-        showDishWarnings(dishes);
     }
 
     function showIngredientTips(ingredients) {
@@ -574,16 +601,6 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
         }
         showNextTip();
         setInterval(showNextTip, 5000);
-    }
-
-    function showDishWarnings(dishes) {
-        const warningElement = document.getElementById('dishWarning');
-        if (dishes.length === 0) {
-            warningElement.textContent = '暂无饮食建议';
-            return;
-        }
-        const firstDish = dishes[0];
-        warningElement.textContent = dishWarnings[firstDish.name] || '暂无饮食建议';
     }
 
     function showAchievement(reason, name) {
@@ -613,7 +630,12 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
         updateSolutions();
         updateFilterDetails();
         showAchievement('首次使用', '营养规划师✨');
-        
+          // 新增幻灯片初始化
+  initSlideshow();
+  initFirstComboSelection();
+renderTasteRow();                 // 生成尝鲜菜
+  document.getElementById('refreshTasteInline')
+          .addEventListener('click', renderTasteRow); // 换一批
         // 事件绑定
         document.getElementById('refreshIngredients').addEventListener('click', generateIngredients);
         document.getElementById('refreshDishes').addEventListener('click', generateDishes);
@@ -632,33 +654,6 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
     init();
 });
 
-// 辅助函数：按名称查找食材
-function initBudgetRange() {
-// 1. 预算配置
-const BUDGET_RANGE = { min: 20, max: 200, step: 5, default: 80 };
-let currentBudget = Number(localStorage.getItem('currentBudget')) || BUDGET_RANGE.default;
-
-// 2. 初始化预算 UI
-const budgetRange = document.getElementById('budgetRange');
-const budgetValue = document.getElementById('budgetValue');
-budgetRange.min   = BUDGET_RANGE.min;
-budgetRange.max   = BUDGET_RANGE.max;
-budgetRange.step  = BUDGET_RANGE.step;
-budgetRange.value = currentBudget;
-budgetValue.textContent = currentBudget;
-const generateBtn   = document.getElementById('generatePlanBtn');
-
-budgetRange.addEventListener('input', (e) => {
-  budgetValue.textContent = e.target.value;
-  generateBtn.classList.remove('hidden');          // 显示按钮
-});
-
-generateBtn.addEventListener('click', () => {
-  currentBudget = parseInt(budgetRange.value);
-  localStorage.setItem('currentBudget', currentBudget);
-  generateRecommendations();                       // 复用现有函数
-});
-}
 
 /* ============= 替换食材功能 ============= */
 let currentReplacementTarget = null;
@@ -795,27 +790,9 @@ function initBudgetRange() {
 
   const budgetRange = document.getElementById('budgetRange');
   const budgetValue = document.getElementById('budgetValue');
-  const familyBudgetSpan = document.getElementById('familyBudget');
   budgetRange.min   = BUDGET_RANGE.min;
   budgetRange.max   = BUDGET_RANGE.max;
   budgetRange.step  = BUDGET_RANGE.step;
-  budgetRange.value = currentBudget;
-  budgetValue.textContent = currentBudget;
-  familyBudgetSpan.textContent = currentBudget;   // ← 首次同步
-
-  const generateBtn = document.getElementById('generatePlanBtn');
-  budgetRange.addEventListener('input', (e) => {
-    const val = e.target.value;
-    budgetValue.textContent = val;
-    familyBudgetSpan.textContent = val;           // ← 实时同步
-    generateBtn.classList.remove('hidden');
-  });
-
-  generateBtn.addEventListener('click', () => {
-    currentBudget = parseInt(budgetRange.value);
-    localStorage.setItem('currentBudget', currentBudget);
-    generateRecommendations();
-  });
 }
 /* ========== 今日营养仪表盘 ========== */
 const nutrientTargets = { calories:2000, protein:60, calcium:800, iron:15, sodium:2000, fat:60 };
@@ -859,7 +836,6 @@ document.querySelectorAll('.food-card').forEach(card=>{
 });
 /* ===== 套餐勾选逻辑 ===== */
 const basketCountEl  = document.getElementById('basketCount');
-const basketGapEl    = document.getElementById('basketGap');
 const openBasketBtn  = document.getElementById('openBasket');
 let selectedDishes = [];
 
@@ -877,10 +853,148 @@ document.addEventListener('change', e=>{
 function updateBasket(){
   const count = selectedDishes.length;
   basketCountEl.textContent = `已选 ${count} 道菜`;
-  // 后续接入真实营养缺口计算
-  basketGapEl.textContent   = `今日钙缺口 +${Math.max(0,72-count*10)} %`;
   openBasketBtn.disabled = count === 0;
 }
 
 /* 初始化 */
 updateBasket();
+
+/* ========== 幻灯片功能 ========== */
+function initSlideshow() {
+  const track = document.querySelector('.slideshow-track');
+  const slides = document.querySelectorAll('.combo-slide');
+  const indicators = document.querySelectorAll('.indicator');
+  const prevBtn = document.getElementById('prevSlide');
+  const nextBtn = document.getElementById('nextSlide');
+  let currentSlide = 0;
+
+  // 更新幻灯片位置
+  function updateSlidePosition() {
+    track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+    // 更新指示点
+    indicators.forEach((indicator, index) => {
+      indicator.classList.toggle('active', index === currentSlide);
+    });
+  }
+
+  // 切换到下一张
+  function nextSlide() {
+    currentSlide = (currentSlide + 1) % slides.length;
+    updateSlidePosition();
+  }
+
+  // 切换到上一张
+  function prevSlide() {
+    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+    updateSlidePosition();
+  }
+
+  // 点击指示点切换
+  indicators.forEach((indicator, index) => {
+    indicator.addEventListener('click', () => {
+      currentSlide = index;
+      updateSlidePosition();
+    });
+  });
+
+  // 按钮事件绑定
+  nextBtn.addEventListener('click', nextSlide);
+  prevBtn.addEventListener('click', prevSlide);
+
+  // 自动播放（可选）
+  let autoplayInterval = setInterval(nextSlide, 5000);
+
+  // 鼠标悬停时暂停自动播放
+  track.addEventListener('mouseenter', () => clearInterval(autoplayInterval));
+  track.addEventListener('mouseleave', () => {
+    autoplayInterval = setInterval(nextSlide, 5000);
+  });
+
+  // 初始化位置
+  updateSlidePosition();
+}
+
+// 初始化第一个套餐默认全选
+function initFirstComboSelection() {
+  const firstCombo = document.querySelector('.combo-slide[data-combo="morning"]');
+  const checkboxes = firstCombo.querySelectorAll('input[type="checkbox"]');
+
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = true;
+    selectedDishes.push(checkbox.value);
+  });
+
+  updateBasket();
+}
+function renderTasteRow() {
+  const container = document.getElementById('tasteRowList');
+  const shuffled = [...tasteDishesPool].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 3);
+
+  container.innerHTML = selected.map(dish => `
+    <div class="dish-item">
+      <input type="checkbox" value="${dish.name}">
+      <div class="dish-image">${dish.emoji}</div>
+      <span class="dish-name">${dish.name}</span>
+      <span class="nutri-tag">${dish.desc}</span>
+    <span class="add-btn" data-dish="${dish.name}">+</span>
+    </div>
+  `).join('');
+}
+
+/* ---------- 渲染近期吃过 ---------- */
+function renderHistoryRow() {
+  const track = document.getElementById('historyTrack');
+  track.innerHTML = historyDishes.map(dish => `
+    <div class="dish-item">
+      <input type="checkbox" value="${dish.name}">
+      <div class="dish-image">${dish.emoji}</div>
+      <span class="dish-name">${dish.name}</span>
+      <span class="nutri-tag">${dish.count}</span>
+    <span class="add-btn" data-dish="${dish.name}">+</span>
+    </div>
+  `).join('');
+}
+renderHistoryRow();
+
+/* ---------- 尝鲜 + 历史 共用加菜 ---------- */
+function attachAddButtons() {
+  document.querySelectorAll('.add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dish = btn.dataset.dish;
+      if (!selectedDishes.includes(dish)) {
+        selectedDishes.push(dish);
+        updateBasket();
+      }
+    });
+  });
+}
+attachAddButtons();
+// 示例随机评分生成
+function getRandomRating() {
+    const rating = (4 + Math.random()).toFixed(1);
+    const stars = '⭐'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.ceil(rating));
+    return `${stars} ${rating}`;
+}
+// 初始隐藏原卡片
+document.querySelector('.card').style.display = 'none';
+
+const overlay   = document.getElementById('cartOverlay');
+const drawer    = document.getElementById('cartDrawer');
+const openBtn   = document.getElementById('openBasket');
+const closeBtn  = document.getElementById('closeCart');
+
+// 打开
+openBtn.addEventListener('click', () => {
+    overlay.classList.add('show');
+});
+
+// 关闭
+closeBtn.addEventListener('click', closeCart);
+overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeCart();
+});
+function closeCart() {
+    overlay.classList.remove('show');
+}

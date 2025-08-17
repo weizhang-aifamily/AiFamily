@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>微信式下拉面板</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #f5f5f5;
+    }
+
+    /* 顶部守护条样式 */
+    .header-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #07C160;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      z-index: 100;
+      transition: transform 0.3s;
+    }
+
+    /* 隐藏面板 */
+    .hidden-panel {
+      position: fixed;
+      top: -100%; /* 初始在屏幕外 */
+      left: 0;
+      right: 0;
+      height: 70vh;
+      background: white;
+      border-radius: 0 0 20px 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      z-index: 90;
+      padding: 20px;
+      transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    /* 主内容区 */
+    .main-content {
+      margin-top: 60px;
+      min-height: 200vh;
+      padding: 20px;
+      background: white;
+      transition: filter 0.3s;
+    }
+
+    /* 底部提篮 */
+    .floating-basket {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: #07C160;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      z-index: 110;
+      transition: all 0.3s;
+    }
+
+    /* 展开时的状态 */
+    body.panel-open .hidden-panel {
+      transform: translateY(100%);
+    }
+
+    body.panel-open .main-content {
+      filter: brightness(0.95);
+    }
+
+    body.panel-open .floating-basket {
+      transform: translateY(100px);
+      opacity: 0;
+    }
+
+    /* 下拉箭头提示 */
+    .pull-hint {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 30px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    body.pulling .pull-hint {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部守护条 -->
+  <div class="header-bar" id="headerBar">
+    智能守护条
+  </div>
+
+  <!-- 下拉箭头提示 -->
+  <div class="pull-hint" id="pullHint">↓</div>
+
+  <!-- 隐藏面板 -->
+  <div class="hidden-panel" id="hiddenPanel">
+    <h3>饮食偏好设置</h3>
+    <p>这里是您之前要求隐藏的内容</p>
+    <p>包含成员卡片、饮食方案等</p>
+  </div>
+
+  <!-- 主内容区 -->
+  <div class="main-content">
+    <p>向下滑动页面试试...</p>
+    <p>(在顶部区域下拉)</p>
+  </div>
+
+  <!-- 悬浮提篮 -->
+  <div class="floating-basket" id="floatingBasket">
+    🛒
+  </div>
+
+  <script>
+    let startY = 0;
+    let isDragging = false;
+    const body = document.body;
+    const headerBar = document.getElementById('headerBar');
+    const hiddenPanel = document.getElementById('hiddenPanel');
+    const floatingBasket = document.getElementById('floatingBasket');
+    const pullHint = document.getElementById('pullHint');
+
+    // 触摸开始
+    document.addEventListener('touchstart', (e) => {
+      if (window.scrollY === 0) {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+      }
+    });
+
+    // 触摸移动
+    document.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+
+      const y = e.touches[0].clientY;
+      const dy = y - startY;
+
+      // 只有在下拉时才处理
+      if (dy > 0) {
+        e.preventDefault();
+
+        // 显示下拉提示
+        body.classList.add('pulling');
+
+        // 计算下拉进度 (0-1)
+        const progress = Math.min(dy / 150, 1);
+
+        // 实时移动面板
+        hiddenPanel.style.transform = `translateY(${progress * 100}%)`;
+
+        // 守护条跟随下移
+        headerBar.style.transform = `translateY(${dy * 0.8}px)`;
+
+        // 超过阈值时自动展开
+        if (dy > 120 && !body.classList.contains('panel-open')) {
+          openPanel();
+        }
+      }
+    });
+
+    // 触摸结束
+    document.addEventListener('touchend', () => {
+      if (!isDragging) return;
+
+      isDragging = false;
+      body.classList.remove('pulling');
+
+      // 如果没达到展开阈值，则回弹
+      if (!body.classList.contains('panel-open')) {
+        hiddenPanel.style.transform = 'translateY(0)';
+        headerBar.style.transform = 'translateY(0)';
+      }
+    });
+
+    // 展开面板
+    function openPanel() {
+      body.classList.add('panel-open');
+      hiddenPanel.style.transform = 'translateY(100%)';
+      headerBar.style.transform = 'translateY(0)';
+    }
+
+    // 点击面板收起
+    hiddenPanel.addEventListener('click', () => {
+      body.classList.remove('panel-open');
+      hiddenPanel.style.transform = 'translateY(0)';
+
+      // 提篮延迟重新出现
+      setTimeout(() => {
+        floatingBasket.style.opacity = '1';
+        floatingBasket.style.transform = 'translateY(0)';
+      }, 300);
+    });
+  </script>
+</body>
+</html>

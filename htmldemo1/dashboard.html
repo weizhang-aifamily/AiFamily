@@ -4,19 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>全家饮食规划 - 益家AiFamily</title>
+    <link rel="stylesheet" href="css/xialakimi.css">
     <link rel="stylesheet" href="css/dashboard1.css">
     <script src="js/load-components.js" defer></script>
     <!--<script src="js/load-components-in.js" defer></script>-->
 </head>
 <body>
-    <div class="container">
-        <!-- 成就提示 -->
-        <div class="achievement-toast" id="achievementToast"></div>
-        <!-- 头部模块 -->
-        <div class="header-module">
-            <h1>全家饮食规划</h1>
-            <p id="weeklyAchievement"></p>
-        </div>
+          <!-- 隐藏面板 (初始在屏幕外) -->
+<div id="pullOverlay"></div>
+
+
+<!-- 顶部隐藏面板 -->
+<div id="hiddenPanel">
         <!-- 成员选择 -->
         <div class="card member-card">
             <div class="card-header">
@@ -113,102 +112,189 @@
     </ul>
   </div>
 </section>
-<!-- ===== 今日组合 ===== -->
+    <button id="closePanelBtn" class="panel-close-btn">收起</button>
+  </div>
+
+
+
+
+    <div id="mainContent" class="container">
+        <!-- 成就提示 -->
+        <div class="achievement-toast" id="achievementToast"></div>
+        <!-- 头部模块 -->
+        <div class="header-module">
+            <p id="weeklyAchievement"></p>
+        </div>
+<!-- ===== 缩略版 ===== -->
+        <section class="smart-guard-bar">
+              <h5 class="combo-title">用餐成员、方案</h5>
+        <div class="guard-content">
+            <div class="member-line">
+            </div>
+            <div class="solution-line">
+                <span class="solution-tag active" data-solution="lowFat">低脂✓</span>
+                <span class="solution-tag active" data-solution="highIron">补铁✓</span>
+                <span class="solution-tag active" data-solution="highCalcium">高钙✓</span>
+                <span class="solution-tag active" data-solution="lowSalt">限盐✓</span>
+            </div>
+                <div class="divider"></div>
+            <div class="gap-line">
+                <span class="gap-tag">钙<span class="gap-value"><progress value="3" max="8"></progress></span></span>
+                <span class="gap-tag">铁<span class="gap-value"><progress value="3" max="8"></progress></span></span>
+                <span class="gap-tag">蛋白<span class="gap-value"><progress value="3" max="8"></progress></span></span>
+            </div>
+        </div>
+            <button id="toggleArrow" class="arrow-btn">↓</button>
+        </section>
+
+<!-- ===== 今日组合（幻灯片版） ===== -->
+          <!-- 主内容区 -->
+  <main class="main-content">
 <section id="comboSection" class="combo-section">
-  <h2 class="combo-title">今日组合 · 一键锁定营养</h2>
+  <h2 class="combo-title">AI推荐</h2>
 
-  <!-- 套餐 1 -->
-  <article class="combo-card" data-combo="morning">
-    <h3 class="combo-name">晨曦钙能宴</h3>
-    <p class="combo-desc">10 分钟补足全天钙 80 %</p>
-    <div class="dish-list">
-      <label class="dish-item">
-        <input type="checkbox" value="奶酪焗南瓜">
-        <img src="https://picsum.photos/seed/pumpkin/200" alt="奶酪焗南瓜">
-        <span class="dish-name">奶酪焗南瓜</span>
-        <span class="nutri-tag">高钙 +72 %</span>
-      </label>
-      <label class="dish-item">
-        <input type="checkbox" value="牛奶布丁">
-        <img src="https://picsum.photos/seed/pudding/200" alt="牛奶布丁">
-        <span class="dish-name">牛奶布丁</span>
-        <span class="nutri-tag">钙 +60 %</span>
-      </label>
-      <label class="dish-item">
-        <input type="checkbox" value="烤杏仁">
-        <img src="https://picsum.photos/seed/almond/200" alt="烤杏仁">
-        <span class="dish-name">烤杏仁</span>
-        <span class="nutri-tag">VE +45 %</span>
-      </label>
-    </div>
-  </article>
+  <!-- 幻灯片容器 -->
+  <div class="combo-slideshow">
 
-  <!-- 套餐 2 -->
-  <article class="combo-card" data-combo="noon">
-    <h3 class="combo-name">轻盈铁骑宴</h3>
-    <p class="combo-desc">铁吸收 ↑58 %，零负担</p>
-    <div class="dish-list">
-      <label class="dish-item">
-        <input type="checkbox" value="羽衣甘蓝牛肉卷">
-        <img src="https://picsum.photos/seed/beefwrap/200" alt="羽衣甘蓝牛肉卷">
-        <span class="dish-name">羽衣甘蓝牛肉卷</span>
-        <span class="nutri-tag">铁 +58 %</span>
-      </label>
-      <label class="dish-item">
-        <input type="checkbox" value="草莓沙拉">
-        <img src="https://picsum.photos/seed/strawberry/200" alt="草莓沙拉">
-        <span class="dish-name">草莓沙拉</span>
-        <span class="nutri-tag">维C +90 %</span>
-      </label>
-      <label class="dish-item">
-        <input type="checkbox" value="全麦面包">
-        <img src="https://picsum.photos/seed/bread/200" alt="全麦面包">
-        <span class="dish-name">全麦面包</span>
-        <span class="nutri-tag">膳食纤维 +30 %</span>
-      </label>
-    </div>
-  </article>
+    <!-- 幻灯片轨道 -->
+    <div class="slideshow-track">
+      <!-- 套餐 1：晨曦钙能宴 -->
+      <article class="combo-slide active" data-combo="morning">
 
-  <!-- 套餐 3 -->
-  <article class="combo-card" data-combo="night">
-    <h3 class="combo-name">晚安平衡宴</h3>
-    <p class="combo-desc">低钠、助眠、修复肌肉</p>
-    <div class="dish-list">
-      <label class="dish-item">
-        <input type="checkbox" value="香菇蒸鳕鱼">
-        <img src="https://picsum.photos/seed/cod/200" alt="香菇蒸鳕鱼">
-        <span class="dish-name">香菇蒸鳕鱼</span>
-        <span class="nutri-tag">优质蛋白 +40 %</span>
-      </label>
-      <label class="dish-item">
-        <input type="checkbox" value="芦笋">
-        <img src="https://picsum.photos/seed/asparagus/200" alt="芦笋">
-        <span class="dish-name">清炒芦笋</span>
-        <span class="nutri-tag">叶酸 +35 %</span>
-      </label>
-      <label class="dish-item">
-        <input type="checkbox" value="番茄汤">
-        <img src="https://picsum.photos/seed/tomato/200" alt="番茄汤">
-        <span class="dish-name">番茄汤</span>
-        <span class="nutri-tag">番茄红素 +50 %</span>
-      </label>
+        <h3 class="combo-name">晨曦钙能宴</h3>
+        <p class="combo-desc">10 分钟补足全天钙 80 %</p>
+        <div class="dish-list">
+          <label class="dish-item">
+            <input type="checkbox" value="奶酪焗南瓜" checked>
+            <img src="https://picsum.photos/seed/pumpkin/200" alt="奶酪焗南瓜">
+            <span class="dish-name">奶酪焗南瓜</span>
+            <span class="nutri-tag">高钙 +72 %</span>
+            <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
+          </label>
+          <label class="dish-item">
+            <input type="checkbox" value="牛奶布丁" checked>
+            <img src="https://picsum.photos/seed/pudding/200" alt="牛奶布丁">
+            <span class="dish-name">牛奶布丁</span>
+            <span class="nutri-tag">钙 +60 %</span>
+          </label>
+          <label class="dish-item">
+            <input type="checkbox" value="烤杏仁" checked>
+            <img src="https://picsum.photos/seed/almond/200" alt="烤杏仁">
+            <span class="dish-name">烤杏仁</span>
+            <span class="nutri-tag">VE +45 %</span>
+            <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
+          </label>
+        </div>
+      </article>
+
+      <!-- 套餐 2：轻盈铁骑宴 -->
+      <article class="combo-slide" data-combo="noon">
+        <h3 class="combo-name">轻盈铁骑宴</h3>
+        <p class="combo-desc">铁吸收 ↑58 %，零负担</p>
+        <div class="dish-list">
+          <label class="dish-item">
+            <input type="checkbox" value="羽衣甘蓝牛肉卷">
+            <img src="https://picsum.photos/seed/beefwrap/200" alt="羽衣甘蓝牛肉卷">
+            <span class="dish-name">羽衣甘蓝牛肉卷</span>
+            <span class="nutri-tag">铁 +58 %</span>
+            <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
+          </label>
+          <label class="dish-item">
+            <input type="checkbox" value="草莓沙拉">
+            <img src="https://picsum.photos/seed/strawberry/200" alt="草莓沙拉">
+            <span class="dish-name">草莓沙拉</span>
+            <span class="nutri-tag">维C +90 %</span>
+            <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
+          </label>
+          <label class="dish-item">
+            <input type="checkbox" value="全麦面包">
+            <img src="https://picsum.photos/seed/bread/200" alt="全麦面包">
+            <span class="dish-name">全麦面包</span>
+            <span class="nutri-tag">膳食纤维 +30 %</span>
+            <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
+          </label>
+        </div>
+      </article>
+
+      <!-- 套餐 3：晚安平衡宴 -->
+      <article class="combo-slide" data-combo="night">
+        <h3 class="combo-name">晚安平衡宴</h3>
+        <p class="combo-desc">低钠、助眠、修复肌肉</p>
+        <div class="dish-list">
+          <label class="dish-item">
+            <input type="checkbox" value="香菇蒸鳕鱼">
+            <img src="https://picsum.photos/seed/cod/200" alt="香菇蒸鳕鱼">
+            <span class="dish-name">香菇蒸鳕鱼</span>
+            <span class="nutri-tag">优质蛋白 +40 %</span>
+            <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
+          </label>
+          <label class="dish-item">
+            <input type="checkbox" value="芦笋">
+            <img src="https://picsum.photos/seed/asparagus/200" alt="芦笋">
+            <span class="dish-name">清炒芦笋</span>
+            <span class="nutri-tag">叶酸 +35 %</span>
+            <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
+          </label>
+          <label class="dish-item">
+            <input type="checkbox" value="番茄汤">
+            <img src="https://picsum.photos/seed/tomato/200" alt="番茄汤">
+            <span class="dish-name">番茄汤</span>
+            <span class="nutri-tag">番茄红素 +50 %</span>
+            <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
+          </label>
+        </div>
+      </article>
     </div>
-  </article>
+    <!-- 幻灯片指示点 -->
+    <div class="slideshow-indicators">
+      <span class="indicator active" data-slide="0"></span>
+      <span class="indicator" data-slide="1"></span>
+      <span class="indicator" data-slide="2"></span>
+    </div>
+
+    <!-- 左右切换按钮 -->
+    <button class="slideshow-btn prev" id="prevSlide">‹</button>
+    <button class="slideshow-btn next" id="nextSlide">›</button>
+  </div>
+      <!-- 尝尝鲜：同级、一行 3 菜 -->
+  <div class="taste-row">
+    <h3 class="combo-name">尝尝鲜</h3>
+    <div class="dish-list" id="tasteRowList">
+      <!-- JS 动态生成 3 个尝鲜菜 -->
+    </div>
+    <button class="refresh-taste-inline" id="refreshTasteInline">↻ 换一批</button>
+  </div>
 </section>
+      <section class="combo-section">
+      <!-- 近期吃过 -->
+<div class="taste-row">
+  <h3 class="combo-name">近期吃过</h3>
+    <div class="dish-list" id="historyTrack">
+      <!-- JS 动态生成 -->
+    </div>
+</div>
+      </section>
+  </main>
 
 <!-- ===== 营养提篮（悬浮） ===== -->
 <div id="nutritionBasket" class="nutrition-basket">
   <div class="basket-info">
     <span id="basketCount">已选 0 道菜</span>
-    <span id="basketGap">今日钙缺口&nbsp;+0 %</span>
+          <span id="budgetSpent" class="budget-spent">预估¥0</span>
   </div>
-  <button id="openBasket" class="basket-btn" disabled>查看提篮</button>
+  <button id="openBasket" class="basket-btn" disabled>查看食材</button>
 </div>
-<!-- ========== 智能摇菜 ========== -->
-        <!-- 智能推荐 -->
-<div class="card">
-    <div class="card-header with-actions">
-        <h3><span class="icon">🛒</span> 智能推荐</h3>
+<!-- ========== 食材与菜品 ========== -->
+<div id="cartOverlay" class="cart-overlay">
+    <div id="cartDrawer" class="cart-drawer">
+        <div class="cart-header">
+            <h3>菜品与食材</h3>
+            <button id="closeCart" class="cart-close">✕</button>
+        </div>
+        <div class="card" id="cartContent">
+    <!-- 推荐菜品 - 完全复制index.html的结构 -->
+    <div class="ai-dishes-showcase">
+        <div class="dishes-grid" id="dishList"></div>
     </div>
 
     <!-- 食材清单 - 完全复制index.html的结构 -->
@@ -216,26 +302,13 @@
         <div class="selection-title">
             <div class="recommendation-title">食材清单</div>
         </div>
-        <div class="budget-display">
-          <span class="budget-label">本餐预计花费</span>
-          <span id="budgetSpent" class="budget-spent">¥0</span>
-          <span class="budget-separator">/</span>
-          <span class="budget-total">¥<span id="familyBudget">80</span></span>
-        </div>
         <div class="food-list" id="ingredientList"></div>
         <div class="nutrition-tip" id="ingredientTip"></div>
     </div>
 
-    <!-- 推荐菜品 - 完全复制index.html的结构 -->
-    <div class="ai-dishes-showcase">
-        <div class="selection-title">
-            <div class="recommendation-title">为您生成的菜品 ↻</div>
-        </div>
-        <div class="dishes-grid" id="dishList"></div>
-        <div class="health-warning" id="dishWarning"></div>
+</div>
     </div>
 </div>
-
         <!-- 微成就 -->
         <div class="achievement-bar">
             <div class="progress-container">
@@ -246,5 +319,6 @@
     </div>
 
     <script src="js/dashboard.js"></script>
+    <script src="js/xialakimi.js"></script>
 </body>
 </html>

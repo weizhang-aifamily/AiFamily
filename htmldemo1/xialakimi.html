@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>全家饮食规划 - 下拉面板</title>
+  <link rel="stylesheet" href="xialakimi.css">
+</head>
+<body>
+
+<!-- 下拉遮罩 -->
+<div id="pullOverlay"></div>
+
+<!-- 顶部隐藏面板 -->
+<div id="hiddenPanel">
+  <div class="panel-content">
+    <!-- 把原成员卡片、饮食偏好卡片原样搬进来（示例占位） -->
+    <div class="card member-card">
+      <h3>成员选择</h3>
+      <p>这里放原成员卡片内容</p>
+    </div>
+    <div class="card diet-preferences">
+      <h3>饮食偏好</h3>
+      <p>这里放原饮食偏好卡片内容</p>
+      <h3>饮食偏好</h3>
+      <p>这里放原饮食偏好卡片内容</p>
+    </div>
+      <button id="closePanelBtn" class="panel-close-btn">收起</button>
+  </div>
+</div>
+
+<!-- 主内容 -->
+<div id="mainContent">
+  <header class="top-bar">
+    <h1>全家饮食规划</h1>
+    <p>本周成就 · 钙↑12% 盐↓1.8g 铁↑28%</p>
+  </header>
+
+  <section class="smart-guard-bar">
+    <div class="tag-line">
+      <span class="tag">👨爸爸·低脂✓</span>
+      <span class="tag">👩妈妈·补铁✓</span>
+      <span class="tag">👴爷爷·限盐✓</span>
+      <span class="tag">👦小明·高钙✓</span>
+    </div>
+    <div class="gap-line">
+      <span>钙 -22%</span><span>铁 -18%</span><span>蛋白 -10%</span>
+    </div>
+    <button id="toggleArrow" class="arrow-btn">↓</button>
+  </section>
+
+  <section class="mock-content">
+    <h2>晚餐组合幻灯片</h2>
+    <p>… 你的晚餐组合卡片 …</p>
+  </section>
+</div>
+
+<script src="xialakimi.js"></script>
+</body>
+</html>
