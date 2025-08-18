@@ -22,7 +22,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   top: 0;
   left: 0;
   right: 0;
-  height: 70vh;
+  max-height: 70vh;
   background: #fff;
   border-radius: 0 0 20px 20px;
   transform: translateY(-100%);
@@ -82,7 +82,9 @@ body.panel-open #pullOverlay {
 }
 /* 当下拉时，整页往下推 */
 body.panel-open #mainContent {
-  transform: translateY(70vh);   /* ← 把整页（含 smart-guard-bar）往下推 */
+  transform: translateY(var(--panel-height, 70vh));
+  transition: transform .3s cubic-bezier(.23, 1, .32, 1);
+    /* ← 把整页（含 smart-guard-bar）往下推 */
 }
 /* 半遮半露的关闭按钮 */
 .panel-close-btn{

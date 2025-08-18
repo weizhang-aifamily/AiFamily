@@ -1,7 +1,4 @@
 /* ============= 1. 常量数据定义 ============= */
-const uiContent = {
-    weeklyAchievement: "本周成就 · 给家人提升钙↑12% 减盐↓1.8g 补铁↑28%"
-};
 
 const familyMembers = [
   {
@@ -371,7 +368,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressFill = document.getElementById('progressFill');
     const achievementText = document.getElementById('achievementText');
     const mealTimeSubtitle = document.getElementById('mealTimeSubtitle');
-    const weeklyAchievement = document.getElementById('weeklyAchievement');
 
     // 状态管理
     let activeMembers = [...familyMembers];
@@ -384,10 +380,26 @@ document.addEventListener('DOMContentLoaded', function() {
         let mealType = '午餐';
         if (hour < 10) mealType = '早餐';
         else if (hour >= 16) mealType = '晚餐';
-        mealTimeSubtitle.textContent = `${mealType}成员`;
+        mealTimeSubtitle.textContent = `益家配餐 · ${mealType}`;
     }
 
 function renderMembers() {
+
+// 新增：渲染 smart-guard-bar 的成员
+    const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
+    if (guardMemberLine) {
+        guardMemberLine.innerHTML = familyMembers.map(member =>
+            `<span class="member-tag active">${member.avatar}${member.name}</span>`
+        ).join('');
+    }
+
+    activeMembers = [...familyMembers];
+    // 动态生成过敏源和忌口详情
+    updateFilterDetails();
+
+}
+
+function renderMembersbak() {
     memberTags.innerHTML = familyMembers.map(member => `
         <div class="member-tag active" data-id="${member.id}">
             <div class="member-main">
@@ -409,15 +421,6 @@ function renderMembers() {
             </a>
         </div>
     `).join('');
-// 新增：渲染 smart-guard-bar 的成员
-    const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
-    if (guardMemberLine) {
-        guardMemberLine.innerHTML = familyMembers.map(member =>
-            `<span class="member-tag active">${member.avatar}${member.name}</span>`
-        ).join('');
-    }
-
-    activeMembers = [...familyMembers];
     // 动态生成过敏源和忌口详情
     updateFilterDetails();
 
@@ -617,14 +620,9 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
         achievementText.textContent = `再完成${5 - usageCount}次规划解锁「智能厨神」成就`;
     }
 
-    /* ============= 4. 初始化 ============= */
-    function initUIContent() {
-        weeklyAchievement.textContent = uiContent.weeklyAchievement;
-    }
 
     function init() {
         setMealTime();
-        initUIContent();
         initBudgetRange();
         renderMembers();
         updateSolutions();
@@ -636,10 +634,7 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
 renderTasteRow();                 // 生成尝鲜菜
   document.getElementById('refreshTasteInline')
           .addEventListener('click', renderTasteRow); // 换一批
-        // 事件绑定
-        document.getElementById('refreshIngredients').addEventListener('click', generateIngredients);
-        document.getElementById('refreshDishes').addEventListener('click', generateDishes);
-            // 新增筛选选项事件监听（保持功能）
+            //过敏源忌口等
     document.getElementById('excludeAllergens').addEventListener('change', generateRecommendations);
     document.getElementById('excludeTaboo').addEventListener('change', generateRecommendations);
     document.getElementById('seasonalOnly').addEventListener('change', generateRecommendations);
@@ -758,13 +753,7 @@ function saveReplacement(original, replacement) {
 
 /* ============= 定时更新函数 ============= */
 function updateAlternatives() {
-    // 这里应该是从API获取最新数据的逻辑
-    fetch('/api/ingredients/alternatives')
-        .then(res => res.json())
-        .then(data => {
-            Object.assign(globalAlternatives, data);
-            console.log('可替换食材数据已更新');
-        });
+
 }
 
 // 每30分钟更新一次
@@ -780,19 +769,12 @@ toggles.forEach(btn => {
     const key = btn.dataset.filter;
     btn.classList.toggle('active');
     window.filterFlags[key] = !window.filterFlags[key];
-    generateRecommendations(); // 复用现有生成函数
   });
 });
 
 function initBudgetRange() {
   const BUDGET_RANGE = { min: 20, max: 200, step: 5, default: 80 };
-  let currentBudget = Number(localStorage.getItem('currentBudget')) || BUDGET_RANGE.default;
 
-  const budgetRange = document.getElementById('budgetRange');
-  const budgetValue = document.getElementById('budgetValue');
-  budgetRange.min   = BUDGET_RANGE.min;
-  budgetRange.max   = BUDGET_RANGE.max;
-  budgetRange.step  = BUDGET_RANGE.step;
 }
 /* ========== 今日营养仪表盘 ========== */
 const nutrientTargets = { calories:2000, protein:60, calcium:800, iron:15, sodium:2000, fat:60 };
@@ -977,7 +959,9 @@ function getRandomRating() {
     const stars = '⭐'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.ceil(rating));
     return `${stars} ${rating}`;
 }
-// 初始隐藏原卡片
+
+
+// 初始隐藏食材清单
 document.querySelector('.card').style.display = 'none';
 
 const overlay   = document.getElementById('cartOverlay');
@@ -998,3 +982,14 @@ overlay.addEventListener('click', (e) => {
 function closeCart() {
     overlay.classList.remove('show');
 }
+// 打开弹窗
+  function openPopup(){
+    document.getElementById('overlaymore').style.display='flex';
+  }
+  // 关闭弹窗
+  function closePopup(){
+    document.getElementById('overlaymore').style.display='none';
+  }
+  // 绑定关闭事件
+  document.getElementById('closeBtnmore').addEventListener('click', closePopup);
+  document.getElementById('openmore').addEventListener('click', openPopup);

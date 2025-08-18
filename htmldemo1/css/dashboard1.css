@@ -24,6 +24,7 @@ body {
   background-color: #fff;
   line-height: 1.5;
   padding: 0;
+    margin-top: 30px;
 }
 
 .container {
@@ -211,7 +212,7 @@ body {
 
 /* ============= SOLUTION TAGS ============= */
 .solution-tags {
-    display: grid;
+    display: flex;
     gap: 10px;
     grid-template-columns: repeat(4, 1fr);
 }
@@ -597,9 +598,10 @@ body {
 }
 
 .budget-selector {
-  display: flex;
-  gap: clamp(4px,1vw,8px);
-  flex-wrap: nowrap;
+    display: flex;
+    gap: 15px;
+    margin: 8px 1px;
+    flex-wrap: nowrap;
 }
 /* 预算选择器样式 */
 .budget-option input[type="radio"] {
@@ -613,7 +615,7 @@ body {
 .budget-btn {
   display: block;
   width: 100%;
-  padding: 8px 2px;
+  padding: 6px 2px;
   border-radius: 8px;
   font-size: 10px;
   white-space: nowrap;
@@ -621,7 +623,7 @@ body {
   text-overflow: ellipsis;
   text-align: center;
   background: #f8fafc;
-  border: 2px solid #e2e8f0;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
@@ -643,14 +645,14 @@ body {
 @media (max-width: 480px) {
   .budget-btn {
     font-size: 11px;
-    padding: 10px 1px;
+    padding: 6px 1px;
   }
 }
 
 /* ============= FILTER STYLES ============= */
 
 .preference-section {
-    padding: 20px 0;
+    padding: 15px 0 0;
 }
 
 .preference-section:first-child {
@@ -682,7 +684,7 @@ body {
 .divider {
     height: 1px;
     background: linear-gradient(90deg, transparent, #d1d5db, transparent);
-    margin: 0;
+    margin-top: 15px;
     position: relative;
 }
 
@@ -701,17 +703,17 @@ body {
 /* 筛选选项样式 */
 .filter-options {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 12px;
 }
 
 .filter-checkbox {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 8px;
+    padding: 1px 3px;
     background: #f8fafc;
-    border-radius: 10px;
+    border-radius: 5px;
     cursor: pointer;
     transition: all 0.3s ease;
     border: 1px solid transparent;
@@ -728,13 +730,13 @@ body {
 }
 
 .checkmark {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #d1d5db;
-  border-radius: 6px;
-  position: relative;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 .checkmark::after {
@@ -854,7 +856,7 @@ body {
 .combo-section {
   background: #fff;
   border-radius: 12px;
-  padding: 1px 16px 80px;
+  padding: 1px 16px 25px;
   margin-bottom: 16px;
   box-shadow: var(--card-shadow);
 }
@@ -862,7 +864,7 @@ body {
 .combo-title {
   font-size: 18px;
   font-weight: 600;
-  margin: 20px 0 12px;
+  margin: 15px 0 12px;
   color: var(--text);
 }
 
@@ -1374,7 +1376,6 @@ body {
 
       background: #fff;
   border-radius: 12px;
-  padding: 1px 16px 10px;
   margin-bottom: 16px;
   box-shadow: var(--card-shadow);
 }
@@ -1474,3 +1475,40 @@ body {
   justify-content: center;
   cursor: pointer;
 }
+.my-header {
+    padding: 12px 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    /* border-radius: 12px; */
+    /* margin: 16px 15px; */
+    box-shadow: var(--card-shadow);
+}
+#overlaymore{
+position:fixed; inset:0;
+    background:rgba(0,0,0,.45);
+    display:flex; align-items:flex-start;   /* 改为顶部对齐 */
+    justify-content:center;
+    z-index:9999;
+  }
+  #popupmore{
+    position:relative;
+      margin-top:25vh;
+    background:#fff;
+    padding:24px 32px;
+    border-radius:12px;
+      width:420px;
+    max-width:90vw;
+    max-height:90vh;
+    box-shadow:0 8px 32px rgba(0,0,0,.15);
+  }
+  #closeBtnmore{
+    position:absolute; top:8px; right:12px;
+    background:none; border:none;
+    font-size:20px; cursor:pointer;
+  }
