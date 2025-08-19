@@ -57,7 +57,10 @@
           <!-- 主内容区 -->
   <main class="main-content">
 <section id="comboSection" class="combo-section">
-  <h2 class="combo-title"><p id="mealTimeSubtitle"></p></h2>
+  <div style="display: flex;justify-content:space-between; align-items:center;">
+      <h2 class="combo-title"><p id="mealTimeSubtitle"></p></h2>
+    <div id="openmore" class="more">更多设置</div>
+  </div>
         <!-- 第一部分：饮食方案 -->
     <div class="preference-section">
         <div class="solution-tags" id="solutionTags">
@@ -84,8 +87,9 @@
                 <span class="filter-label">排除忌口</span>
                 <span class="filter-detail" id="tabooDetail"></span>
             </label>
+
         </div>
-        <div id="openmore">更多</div>
+
     </div>
     <!-- 分隔线 -->
     <div class="divider"></div>
@@ -113,6 +117,21 @@
                 <span class="budget-btn">豪华型</span>
             </label>
         </div>
+        <div class="budget-selector">
+            <label class="budget-option">
+                <input type="radio" name="budgetLevel" value="low">
+                <span class="budget-btn">快手菜</span>
+            </label>
+            <label class="budget-option">
+                <input type="radio" name="budgetLevel" value="medium" checked>
+                <span class="budget-btn">日常菜</span>
+            </label>
+            <label class="budget-option">
+                <input type="radio" name="budgetLevel" value="high">
+                <span class="budget-btn">功夫菜</span>
+            </label>
+        </div>
+        <div class="divider"></div>
         <div class="budget-selector">
             <label class="budget-option">
                 <input type="radio" name="budgetLevel" value="low">
@@ -144,20 +163,20 @@
         <div class="dish-list">
           <label class="dish-item">
             <input type="checkbox" value="奶酪焗南瓜" checked>
-            <img src="https://picsum.photos/seed/pumpkin/200" alt="奶酪焗南瓜">
+            <img src="picsum.photos/seed/pumpkin/200" alt="奶酪焗南瓜">
             <span class="dish-name">奶酪焗南瓜</span>
             <span class="nutri-tag">高钙 +72 %</span>
             <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
           </label>
           <label class="dish-item">
             <input type="checkbox" value="牛奶布丁" checked>
-            <img src="https://picsum.photos/seed/pudding/200" alt="牛奶布丁">
+            <img src="picsum.photos/seed/pudding/200" alt="牛奶布丁">
             <span class="dish-name">牛奶布丁</span>
             <span class="nutri-tag">钙 +60 %</span>
           </label>
           <label class="dish-item">
             <input type="checkbox" value="烤杏仁" checked>
-            <img src="https://picsum.photos/seed/almond/200" alt="烤杏仁">
+            <img src="picsum.photos/seed/almond/200" alt="烤杏仁">
             <span class="dish-name">烤杏仁</span>
             <span class="nutri-tag">VE +45 %</span>
             <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
@@ -172,21 +191,21 @@
         <div class="dish-list">
           <label class="dish-item">
             <input type="checkbox" value="羽衣甘蓝牛肉卷">
-            <img src="https://picsum.photos/seed/beefwrap/200" alt="羽衣甘蓝牛肉卷">
+            <img src="picsum.photos/seed/beefwrap/200" alt="羽衣甘蓝牛肉卷">
             <span class="dish-name">羽衣甘蓝牛肉卷</span>
             <span class="nutri-tag">铁 +58 %</span>
             <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
           </label>
           <label class="dish-item">
             <input type="checkbox" value="草莓沙拉">
-            <img src="https://picsum.photos/seed/strawberry/200" alt="草莓沙拉">
+            <img src="picsum.photos/seed/strawberry/200" alt="草莓沙拉">
             <span class="dish-name">草莓沙拉</span>
             <span class="nutri-tag">维C +90 %</span>
             <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
           </label>
           <label class="dish-item">
             <input type="checkbox" value="全麦面包">
-            <img src="https://picsum.photos/seed/bread/200" alt="全麦面包">
+            <img src="picsum.photos/seed/bread/200" alt="全麦面包">
             <span class="dish-name">全麦面包</span>
             <span class="nutri-tag">膳食纤维 +30 %</span>
             <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
@@ -201,21 +220,21 @@
         <div class="dish-list">
           <label class="dish-item">
             <input type="checkbox" value="香菇蒸鳕鱼">
-            <img src="https://picsum.photos/seed/cod/200" alt="香菇蒸鳕鱼">
+            <img src="picsum.photos/seed/cod/200" alt="香菇蒸鳕鱼">
             <span class="dish-name">香菇蒸鳕鱼</span>
             <span class="nutri-tag">优质蛋白 +40 %</span>
             <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
           </label>
           <label class="dish-item">
             <input type="checkbox" value="芦笋">
-            <img src="https://picsum.photos/seed/asparagus/200" alt="芦笋">
+            <img src="picsum.photos/seed/asparagus/200" alt="芦笋">
             <span class="dish-name">清炒芦笋</span>
             <span class="nutri-tag">叶酸 +35 %</span>
             <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>
           </label>
           <label class="dish-item">
             <input type="checkbox" value="番茄汤">
-            <img src="https://picsum.photos/seed/tomato/200" alt="番茄汤">
+            <img src="picsum.photos/seed/tomato/200" alt="番茄汤">
             <span class="dish-name">番茄汤</span>
             <span class="nutri-tag">番茄红素 +50 %</span>
             <span class="dish-per">⭐⭐⭐⭐☆ 4.7</span>

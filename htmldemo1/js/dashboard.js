@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let mealType = '午餐';
         if (hour < 10) mealType = '早餐';
         else if (hour >= 16) mealType = '晚餐';
-        mealTimeSubtitle.textContent = `益家配餐 · ${mealType}`;
+        mealTimeSubtitle.textContent = `精选${mealType}`;
     }
 
 function renderMembers() {
@@ -389,13 +389,20 @@ function renderMembers() {
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
     if (guardMemberLine) {
         guardMemberLine.innerHTML = familyMembers.map(member =>
-            `<span class="member-tag active">${member.avatar}${member.name}</span>`
+            `<span class="member-tag active" data-id="${member.id}">${member.avatar}${member.name}</span>`
         ).join('');
     }
-
+guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
+        tag.addEventListener('click', () => {
+            tag.classList.toggle('active');
+            updateActiveMembers();
+            updateSolutions();   // 让推荐实时刷新
+        });
+    });
     activeMembers = [...familyMembers];
     // 动态生成过敏源和忌口详情
-    updateFilterDetails();
+    //updateFilterDetails();
+    updateSolutions();
 
 }
 
@@ -426,11 +433,11 @@ function renderMembersbak() {
 
     document.querySelectorAll('.member-tag').forEach(tag => {
         tag.addEventListener('click', function(e) {
-            if (e.target.closest('.report-link')) return;
+            //if (e.target.closest('.report-link')) return;
             this.classList.toggle('active');
             updateActiveMembers();
-            updateFilterDetails(); // 更新详情
-            syncGuardBarMembers();
+            //updateFilterDetails(); // 更新详情
+            //syncGuardBarMembers();
         });
     });
 }
@@ -471,8 +478,8 @@ function updateFilterDetails() {
             const member = familyMembers.find(m => m.id === id);
             if (member) activeMembers.push(member);
         });
-        updateSolutions();
-        syncGuardBarMembers();
+        //updateSolutions();
+        //syncGuardBarMembers();
     }
 
     function updateSolutions() {
@@ -625,8 +632,7 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
         setMealTime();
         initBudgetRange();
         renderMembers();
-        updateSolutions();
-        updateFilterDetails();
+        //updateFilterDetails();
         showAchievement('首次使用', '营养规划师✨');
           // 新增幻灯片初始化
   initSlideshow();

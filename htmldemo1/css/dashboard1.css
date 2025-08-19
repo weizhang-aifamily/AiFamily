@@ -9,6 +9,9 @@
     --border: #E5E7EB;
     --card-bg: #FFFFFF;
     --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      --dad-primary: #ff8a47;   /* 爸爸橙 */
+  --dad-bg:      #fff4ec;   /* 奶咖背景 */
+  --dad-text:    #664433;   /* 暖灰咖文字 */
 }
 
 /* ============= BASE STYLES ============= */
@@ -91,23 +94,42 @@ body {
 }
 
 .member-tag {
-    position: relative;
-    padding: 16px;
-    border-radius: 14px;
-    background: white;
-    border: 1px solid var(--border);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    transition: all 0.3s ease;
-    cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .25s ease;
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+/* 未选中 */
+.member-tag {
+  background: var(--dad-bg);
+  color: var(--dad-text);
 }
 
 .member-tag.active {
-    background: linear-gradient(135deg, var(--primary), #1d4ed8);
-    color: white;
-    border-color: var(--primary);
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+  background: var(--dad-primary);
+  color: #fff;
+  border-color: var(--dad-primary);
+  box-shadow: 0 2px 8px rgba(255, 138, 71, .35);
+}
+/* 选中时在最左侧出现白色小勾 */
+.member-tag.active::after {
+  content: '✓';
+  margin-left: 6px;
+  font-size: 14px;
+  color: #fff;
 }
 
+/* 未选中时，把勾去掉 */
+.member-tag:not(.active)::after {
+  content: none;
+}
 .member-main {
     display: flex;
     gap: 12px;
@@ -222,22 +244,55 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-
-.solution-tag {
-    padding: 8px 16px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #6b7280;
-    background: #f8fafc;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+:root {
+  --accent: #2dd4aa;   /* 薄荷绿 */
+  --border: #d1d5db;   /* 默认灰边 */
 }
 
-.solution-tag.active {
-    background: var(--warning);
-    color: white;
+.solution-tag{
+  position: relative;
+  display:inline-flex;
+  align-items:center;
+  padding:3px 12px 3px 10px;
+  font-size:12px;
+  border-radius:5px;
+  cursor:pointer;
+  transition:all .25s;
+  background:#fff;
+  color:#065f46;
+  border:1px solid var(--border);
 }
+
+/* 选中：只换边框色 */
+.solution-tag.active{
+  border-color:var(--accent);
+}
+
+/* 右下三角旗 + 对钩 */
+.solution-tag.active::after{
+  content:'';
+  position:absolute;
+  right:-1px;          /* 对齐边框 */
+  bottom:-1px;
+  width:0;
+  height:0;
+  border-style:solid;
+  border-width:0 0 14px 14px;   /* 14×14 小三角 */
+  border-color:transparent transparent var(--accent) transparent;
+  pointer-events:none;
+}
+.solution-tag.active::before{
+  content:'✓';
+  position:absolute;
+  right:0;
+  bottom:0;
+  font-size:9px;
+  color:#fff;
+  line-height:1;
+  z-index:1;
+  pointer-events:none;
+}
+
 
 /* ============= FOOD CARDS ============= */
 .food-list {
@@ -652,7 +707,7 @@ body {
 /* ============= FILTER STYLES ============= */
 
 .preference-section {
-    padding: 15px 0 0;
+    padding: 10px 0 0;
 }
 
 .preference-section:first-child {
@@ -761,7 +816,7 @@ body {
 }
 
 .filter-label {
-  font-size: 14px;
+  font-size: 12px;
   color: #374151;
   font-weight: 500;
 }
@@ -1272,12 +1327,7 @@ body {
     height: 6px;
     margin-left: 1px;
 }
-.member-tag, .solution-tag, .gap-tag {
-    font-size: 13px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    background: #f3f4f6;
-}
+
 .gap-tag {
     font-size: 13px;
     padding: 4px 8px;
@@ -1285,10 +1335,6 @@ body {
     background: #fff;
 }
 
-.solution-tag.active {
-    background: #e0f2fe;
-    color: var(--primary);
-}
 
 .gap-value {
     margin-left: 4px;
@@ -1359,7 +1405,7 @@ body {
     to { transform: translateY(0); }
 }
 .smart-guard-bar .member-line .member-tag {
-    font-size: 12px;
+    font-size: 13px;
     padding: 4px 8px;
     border-radius: 6px;
     background: #f3f4f6;
@@ -1367,17 +1413,20 @@ body {
 }
 
 .smart-guard-bar .member-line .member-tag.active {
-    background: var(--primary);
+    background: #f6a53b;
 }
 .smart-guard-bar {
   display: flex;
   flex-direction: column;
   position: relative;
-
-      background: #fff;
+  background: #fff;
   border-radius: 12px;
-  margin-bottom: 16px;
   box-shadow: var(--card-shadow);
+
+  gap: 4px;
+  padding: 12px 16px;
+  margin: 16px 0;
+
 }
 /* 遮罩层：全屏半透明 + 虚化 */
 .cart-overlay{
@@ -1512,3 +1561,21 @@ position:fixed; inset:0;
     background:none; border:none;
     font-size:20px; cursor:pointer;
   }
+  /* “更多”按钮：与标签同高同圆角 */
+.more{
+  flex-shrink:0;     /* 防止被压缩 */
+  padding:6px 12px;
+  font-size:11px;
+  border-radius:9px;
+  cursor:pointer;
+  transition:all .2s;
+  color: #8c8e8e;
+  border:0 dashed #2dd4aa;
+  background:transparent;
+    height: 30px;
+}
+
+.more:hover{
+  background:#f0fdf8;
+  border-style:solid;
+}
