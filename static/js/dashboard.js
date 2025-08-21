@@ -1,37 +1,22 @@
+import { loadFamilyMembers } from './familyDataLoader.js';
 /* ============= 1. 常量数据定义 ============= */
 
-const familyMembers = [
-  {
-    id: 1, name: '爸爸', avatar: '👨', needs: ['lowFat'], displayNeeds: ['低脂'], healthStatus: '良好',
-    allergens: ['peanuts']                           // ⬅ 新增
-  },
-  {
-    id: 2, name: '妈妈', avatar: '👩', needs: ['highIron'], displayNeeds: ['补铁'], healthStatus: '缺铁性贫血',
-    allergens: []                                    // ⬅ 新增
-  },
-  {
-    id: 3, name: '爷爷', avatar: '👴', needs: ['lowSalt', 'highCalcium'], displayNeeds: ['限盐', '高钙'], healthStatus: '高血压',
-    allergens: ['shrimp']                            // ⬅ 新增
-  },
-  {
-    id: 4, name: '小明', avatar: '👦', needs: ['highCalcium'], displayNeeds: ['高钙'], healthStatus: '生长发育期',
-    allergens: ['milk', 'peanuts']                   // ⬅ 新增
-  }
+let familyMembers = [
 ];
-const allergyIcons = {
+let allergyIcons = {
   peanuts: '🥜',
   shrimp:  '🦐',
   milk:    '🥛',
   egg:     '🥚'
 };
-const dietSolutions = {
+let dietSolutions = {
     lowSalt: { name: '限盐', icon: '🧂', desc: '钠<1500mg/日' },
     highCalcium: { name: '高钙', icon: '🦴', desc: '钙≥800mg/日' },
     lowFat: { name: '低脂', icon: '🥑', desc: '脂肪<50g/日' },
     highIron: { name: '补铁', icon: '🧲', desc: '铁≥15mg/日' }
 };
 
-const ingredientPool = {
+let ingredientPool = {
   highCalcium: [
     {
       emoji: '🥦',
@@ -212,7 +197,7 @@ const ingredientPool = {
     }
   ]
 };
-const ingredientPrice = {
+let ingredientPrice = {
   '西蓝花': 3.5,
   '牛奶': 4.0,
   '豆腐': 2.8,
@@ -228,7 +213,7 @@ const ingredientPrice = {
   // 如后续还有新食材，继续补充
 };
 
-const globalAlternatives = {
+let globalAlternatives = {
   // 高钙类
   西蓝花: [
     { emoji: '🥦', name: '西蓝花', desc: '钙含量: 47mg/100g', grams: '200g' },
@@ -297,7 +282,7 @@ const globalAlternatives = {
     { emoji: '🌿', name: '芦笋', desc: '低热量高纤', grams: '150g' }
   ]
 };
-const dishPool = {
+let dishPool = {
     highCalcium: [
         {emoji: '🧀', name: '奶酪焗南瓜', desc: '金黄拉丝，奶香浓郁'},
         {emoji: '🥛', name: '牛奶布丁', desc: '丝滑细腻，入口即化'},
@@ -320,7 +305,7 @@ const dishPool = {
     ]
 };
 
-const ingredientTips = {
+let ingredientTips = {
     '奶酪': '钙含量: 720mg/100g，建议每日摄入300ml奶制品',
     '牛奶': '钙含量: 120mg/100ml，早晚各一杯最佳',
     '豆腐': '钙含量: 138mg/100g，优质植物蛋白来源',
@@ -335,7 +320,7 @@ const ingredientTips = {
     '西兰花': '西兰花营养全面'
 };
 /* ---------- 近期吃过数据 ---------- */
-const historyDishes = [
+let historyDishes = [
   { emoji: '🥗', name: '彩虹沙拉', desc: '5色蔬菜拼盘', count: '5' },
   { emoji: '🍤', name: '黄金虾仁', desc: '酥脆鲜嫩', count: '3' },
   { emoji: '🍄', name: '菌菇汤', desc: '浓郁暖胃', count: '2' },
@@ -344,7 +329,7 @@ const historyDishes = [
   { emoji: '🍗', name: '椒盐鸡翅', desc: '外酥里嫩', count: '2' }
 ];
 /* ========== 尝鲜功能 ========== */
-const tasteDishesPool = [
+let tasteDishesPool = [
   { emoji: '🥗', name: '彩虹沙拉', desc: '5色蔬菜拼盘', category: '轻食' },
   { emoji: '🍤', name: '黄金虾仁', desc: '酥脆鲜嫩', category: '海鲜' },
   { emoji: '🍄', name: '菌菇汤', desc: '浓郁暖胃', category: '汤品' },
@@ -382,8 +367,9 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (hour >= 16) mealType = '晚餐';
         mealTimeSubtitle.textContent = `精选${mealType}`;
     }
-
 function renderMembers() {
+    (async () => {
+      familyMembers = await loadFamilyMembers(1);
 
 // 新增：渲染 smart-guard-bar 的成员
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
@@ -403,7 +389,7 @@ guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
     // 动态生成过敏源和忌口详情
     //updateFilterDetails();
     updateSolutions();
-
+    })();
 }
 
 function renderMembersbak() {

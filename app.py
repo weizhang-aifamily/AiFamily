@@ -1,17 +1,19 @@
 from flask import Flask, render_template, request, jsonify
 from dbconnect.dbconn import db
 from routes.member_routes import member_bp
+from models.family_bp import family_bp
 
 app = Flask(__name__)
 
 # 注册蓝图
 app.register_blueprint(member_bp)
+app.register_blueprint(family_bp)
 
 # 保留原有的基本路由
 @app.route('/')
 def index():
-    users = db.query("SELECT * FROM testdb")
-    return render_template('index.html', users=users)
+    users = db.query("SELECT * FROM app_user ")
+    return render_template('dashboard.html', users=users)
 
 @app.route('/search', methods=['POST'])
 def search():

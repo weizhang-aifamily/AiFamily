@@ -273,3 +273,81 @@ CREATE OR REPLACE TABLE plan_budget (
   used_amount  DECIMAL(8,2) DEFAULT 0.00,
   CONSTRAINT fk_pb_plan FOREIGN KEY (plan_id) REFERENCES plan(plan_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='方案预算';
+-- ===============================================================
+-- 25. 套餐分组（如“晚安平衡宴”）
+-- ===============================================================
+CREATE TABLE combo_group (
+  group_id      INT AUTO_INCREMENT PRIMARY KEY,
+  group_code    VARCHAR(50)  NOT NULL UNIQUE COMMENT '业务短码，如 night-balance',
+  group_name    VARCHAR(100) NOT NULL COMMENT '展示名称，如晚安平衡宴',
+  description   VARCHAR(255) DEFAULT NULL,
+  calories      INT          DEFAULT NULL COMMENT '整组预估总热量',
+  sort_order    INT          DEFAULT 0,
+  create_time   DATETIME     DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='套餐分组';
+
+-- ===============================================================
+-- 26. 套餐-菜品映射（一对多）
+-- ===============================================================
+CREATE TABLE combo_dish (
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  group_id  INT NOT NULL,
+  dish_id   INT NOT NULL,
+  servings  INT DEFAULT 1 COMMENT '该菜品在套餐中的份数',
+  sort_order INT DEFAULT 0,
+  CONSTRAINT fk_cd_group FOREIGN KEY (group_id) REFERENCES combo_group(group_id),
+  CONSTRAINT fk_cd_dish  FOREIGN KEY (dish_id)  REFERENCES generated_dish(dish_id),
+  UNIQUE KEY uk_group_dish (group_id, dish_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='套餐-菜品映射';
+
+-- ===============================================================
+-- 27. 用户菜品历史（近期吃过 & 尝尝鲜用）
+-- ===============================================================
+CREATE TABLE member_dish_history (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  member_id   INT NOT NULL,
+  dish_id     INT NOT NULL,
+  first_time  DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '首次吃到',
+  last_time   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最近吃到',
+  eat_count   INT      DEFAULT 1 COMMENT '累计吃过几次',
+  rating      TINYINT  DEFAULT NULL COMMENT '1~5 星，可为 NULL',
+  is_tried    TINYINT  DEFAULT 1 COMMENT '0 表示“还没吃过”，用于尝鲜推荐',
+  CONSTRAINT fk_mdh_member FOREIGN KEY (member_id) REFERENCES family_member(member_id),
+  CONSTRAINT fk_mdh_dish   FOREIGN KEY (dish_id)   REFERENCES generated_dish(dish_id),
+  UNIQUE KEY uk_member_dish (member_id, dish_id),
+  INDEX idx_last_time (member_id, last_time),
+  INDEX idx_count     (member_id, eat_count DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户菜品历史';
+-- 新增用户表（核心认证表）
+CREATE TABLE app_user (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) UNIQUE NOT NULL COMMENT '登录邮箱',
+    phone VARCHAR(20) UNIQUE COMMENT '手机号',
+    password_hash VARCHAR(255) NOT NULL COMMENT '密码哈希',
+    username VARCHAR(50) NOT NULL COMMENT '用户名',
+    avatar VARCHAR(255) COMMENT '头像URL',
+    status ENUM('active', 'inactive', 'locked') DEFAULT 'active' COMMENT '账号状态',
+    last_login_at DATETIME COMMENT '最后登录时间',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_email (email),
+    INDEX idx_phone (phone),
+    INDEX idx_status (status)
+) COMMENT='用户账号表';
+
+-- 修改家庭表，关联到用户
+CREATE TABLE family (
+    family_id INT AUTO_INCREMENT PRIMARY KEY,
+    family_name VARCHAR(100) NOT NULL COMMENT '家庭名称',
+    created_by INT NOT NULL COMMENT '创建者用户ID',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_family_creator FOREIGN KEY (created_by) REFERENCES app_user(user_id)
+) COMMENT='家庭表';
+
+-- 修改家庭成员表，移除认证相关字段
+ALTER TABLE family_member
+    DROP COLUMN is_primary,
+    ADD COLUMN user_id INT NULL COMMENT '关联的用户ID，如果该成员有独立账号',
+    ADD COLUMN is_manager TINYINT(1) DEFAULT 0 COMMENT '是否是家庭管理员',
+    ADD CONSTRAINT fk_member_user FOREIGN KEY (user_id) REFERENCES app_user(user_id),
+    ADD CONSTRAINT fk_member_family FOREIGN KEY (family_id) REFERENCES family(family_id);
