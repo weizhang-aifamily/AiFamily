@@ -66,7 +66,7 @@ function loadComponents() {
             
             // 自动设置当前页面激活状态
             setTimeout(() => {
-                const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';
+                const currentPath = window.location.pathname.split('/').pop() || 'peican.html';
                 this.querySelectorAll('.nav-item').forEach(item => {
                     if (item.getAttribute('href') === currentPath) {
                         item.classList.add('active');

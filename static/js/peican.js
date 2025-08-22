@@ -1,7 +1,23 @@
-import { loadFamilyMembers } from './familyDataLoader.js';
+import { getMembers,getDietSolutions } from './familyDataLoader.js';
 /* ============= 1. 常量数据定义 ============= */
 
 let familyMembers = [
+      {
+    id: 1, name: '爸爸', avatar: '👨', needs: ['lowFat'], displayNeeds: ['低脂'], healthStatus: '良好',
+    allergens: ['peanuts']                           // ⬅ 新增
+  },
+  {
+    id: 2, name: '妈妈', avatar: '👩', needs: ['highIron'], displayNeeds: ['补铁'], healthStatus: '缺铁性贫血',
+    allergens: []                                    // ⬅ 新增
+  },
+  {
+    id: 3, name: '爷爷', avatar: '👴', needs: ['lowSalt', 'highCalcium'], displayNeeds: ['限盐', '高钙'], healthStatus: '高血压',
+    allergens: ['shrimp']                            // ⬅ 新增
+  },
+  {
+    id: 4, name: '小明', avatar: '👦', needs: ['highCalcium'], displayNeeds: ['高钙'], healthStatus: '生长发育期',
+    allergens: ['milk', 'peanuts']                   // ⬅ 新增
+  }
 ];
 let allergyIcons = {
   peanuts: '🥜',
@@ -302,6 +318,21 @@ let dishPool = {
         {emoji: '🍗', name: '凉拌鸡丝', desc: '低脂高蛋白，麻辣鲜香'},
         {emoji: '🐟', name: '蒸鳕鱼', desc: '雪白细腻，柠檬提鲜'},
         {emoji: '🥕', name: '胡萝卜沙拉', desc: '色彩缤纷，酸甜开胃'}
+    ],
+    black_hair: [
+        {emoji: '🍗', name: '凉拌鸡丝', desc: '低脂高蛋白，麻辣鲜香'},
+        {emoji: '🐟', name: '蒸鳕鱼', desc: '雪白细腻，柠檬提鲜'},
+        {emoji: '🥕', name: '胡萝卜沙拉', desc: '色彩缤纷，酸甜开胃'}
+    ],
+    TG: [
+        {emoji: '🍗', name: '凉拌鸡丝', desc: '低脂高蛋白，麻辣鲜香'},
+        {emoji: '🐟', name: '蒸鳕鱼', desc: '雪白细腻，柠檬提鲜'},
+        {emoji: '🥕', name: '胡萝卜沙拉', desc: '色彩缤纷，酸甜开胃'}
+    ],
+    calcium: [
+        {emoji: '🍗', name: '凉拌鸡丝', desc: '低脂高蛋白，麻辣鲜香'},
+        {emoji: '🐟', name: '蒸鳕鱼', desc: '雪白细腻，柠檬提鲜'},
+        {emoji: '🥕', name: '胡萝卜沙拉', desc: '色彩缤纷，酸甜开胃'}
     ]
 };
 
@@ -347,6 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // DOM元素引用
     const memberTags = document.getElementById('memberTags');
     const solutionTags = document.getElementById('solutionTags');
+    //食材清单
     const ingredientList = document.getElementById('ingredientList');
     const dishList = document.getElementById('dishList');
     const achievementToast = document.getElementById('achievementToast');
@@ -369,7 +401,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 function renderMembers() {
     (async () => {
-      familyMembers = await loadFamilyMembers(1);
+        familyMembers = await getMembers(1);
+        // const memberIds = familyMembers.map(m => m.member_id).join(',');
+        // dietSolutions = await getDietSolutions(memberIds);
 
 // 新增：渲染 smart-guard-bar 的成员
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
@@ -469,49 +503,42 @@ function updateFilterDetails() {
     }
 
     function updateSolutions() {
-        activeSolutions = new Set();
-        activeMembers.forEach(member => {
-            member.needs.forEach(need => activeSolutions.add(need));
-        });
-        renderSolutionTags();
-        generateRecommendations();
-    }
+    activeSolutions = new Set(
+    activeMembers.flatMap(m => (m.needs || []).filter(Boolean)));
+    // 直接用全局 dietSolutions 渲染标签
+        console.log('solutionTags:', solutionTags);   // 应该是 null
+    solutionTags.innerHTML = [...activeSolutions]
+        .filter(code => dietSolutions[code])      // 防止后端缺项
+        .map(code => `
+            <div class="solution-tag active" data-solution="${code}">
+                <span class="icon">${dietSolutions[code].icon}</span>
+                ${dietSolutions[code].name}
+            </div>
+        `).join('');
 
-function renderSolutionTags() {
-    solutionTags.innerHTML = Array.from(activeSolutions).map(solution => `
-        <div class="solution-tag active" data-solution="${solution}">
-            <span class="icon">${dietSolutions[solution].icon}</span>
-            ${dietSolutions[solution].name}
-        </div>
-    `).join('');
-
-    // 单击切换选中
+    // 绑定点击事件（只绑定一次即可）
     solutionTags.querySelectorAll('.solution-tag').forEach(tag => {
         tag.addEventListener('click', () => {
             tag.classList.toggle('active');
             const key = tag.dataset.solution;
-            if (tag.classList.contains('active')) {
-                activeSolutions.add(key);
-            } else {
-                activeSolutions.delete(key);
-            }
+            tag.classList.contains('active')
+                ? activeSolutions.add(key)
+                : activeSolutions.delete(key);
             generateRecommendations();
         });
     });
+
+    generateRecommendations();
 }
 
-// 初始化：默认全部选中
-activeSolutions = new Set(Object.keys(dietSolutions));
-renderSolutionTags();
-
     function generateRecommendations() {
-        generateIngredients();
+        //generateIngredients();
         generateDishes();
         usageCount++;
         updateAchievementProgress();
     }
 
-// 替换原来的 generateIngredients 函数
+// 生成食材清单
 function generateIngredients() {
     const ingredients = new Set();
     activeSolutions.forEach(solution => {
@@ -563,6 +590,7 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
     function generateDishes() {
         const dishes = [];
         activeSolutions.forEach(solution => {
+            if (!solution || !dishPool[solution]) return;
             const availableDishes = dishPool[solution].filter(
                 dish => !dishes.some(d => d.name === dish.name)
             );

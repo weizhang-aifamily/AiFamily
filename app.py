@@ -13,7 +13,7 @@ app.register_blueprint(family_bp)
 @app.route('/')
 def index():
     users = db.query("SELECT * FROM app_user ")
-    return render_template('dashboard.html', users=users)
+    return render_template('peican.html', users=users)
 
 @app.route('/search', methods=['POST'])
 def search():

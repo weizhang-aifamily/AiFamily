@@ -1,0 +1,210 @@
+-- =========================================================
+-- 1. 用户 & 家庭成员
+-- =========================================================
+CREATE TABLE ejia_app_user (
+    id         SERIAL,
+    phone      VARCHAR(20),
+    nickname   VARCHAR(30),
+    avatar_url TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE ejia_user_family (
+    id         SERIAL,
+    owner_id   INT,          -- 户主 user.id
+    relation   VARCHAR(20),  -- 本人/配偶/子女/父母
+    name       VARCHAR(30),
+    birthday   DATE,
+    gender     SMALLINT,     -- 0女 1男 2未知
+    height_cm  SMALLINT,
+    weight_kg  NUMERIC(4,1),
+    pal        NUMERIC(3,2)  -- 体力活动系数
+);
+
+-- =========================================================
+-- 2. 体检异常 & 目标
+-- =========================================================
+CREATE TABLE ejia_enum_checkup_item (
+    code     VARCHAR(20),
+    name     TEXT,
+    unit     TEXT,
+    risk_dir SMALLINT   -- -1低 0正常 1高
+);
+
+CREATE TABLE ejia_member_checkup (
+    id         SERIAL,
+    family_id  INT,
+    item_code  VARCHAR(20),
+    value      NUMERIC,
+    test_date  DATE
+);
+
+CREATE TABLE ejia_enum_goal (
+    code VARCHAR(20),
+    name TEXT
+);
+
+CREATE TABLE ejia_member_goal (
+    id        SERIAL,
+    family_id INT,
+    goal_code VARCHAR(20),
+    weight    NUMERIC DEFAULT 1
+);
+
+-- =========================================================
+-- 3. 过敏源 & 忌口
+-- =========================================================
+CREATE TABLE ejia_enum_allergen (
+    code VARCHAR(20),
+    name TEXT
+);
+
+CREATE TABLE ejia_member_allergen (
+    id            SERIAL,
+    family_id     INT,
+    allergen_code VARCHAR(20),
+    severity      SMALLINT   -- 1轻 2中 3重
+);
+
+CREATE TABLE ejia_member_diet_taboo (
+    id         SERIAL,
+    family_id  INT,
+    taboo_type VARCHAR(30),   -- vegetarian / halal / no_beef / custom
+    note       TEXT
+);
+
+-- =========================================================
+-- 4. 食材 / 菜品 / 套餐
+-- =========================================================
+CREATE TABLE ejia_ingredient (
+    id            SERIAL,
+    name          VARCHAR(100),
+    edible_ratio  NUMERIC DEFAULT 1,
+    kcal          NUMERIC,
+    protein       NUMERIC,
+    fat           NUMERIC,
+    carbs         NUMERIC,
+    sfa           NUMERIC,
+    pufa          NUMERIC,
+    cholesterol   NUMERIC,
+    sodium        NUMERIC,
+    potassium     NUMERIC,
+    purine        NUMERIC,
+    fiber         NUMERIC,
+    gi            NUMERIC,
+    iron          NUMERIC,
+    folate        NUMERIC,
+    vit_c         NUMERIC,
+    calcium       NUMERIC,
+    collagen      NUMERIC,
+    melanin_boost NUMERIC
+);
+
+CREATE TABLE ejia_recipe (
+    id             SERIAL,
+    name           VARCHAR(100),
+    description    TEXT,
+    cuisine_type   VARCHAR(30),
+    cooking_method VARCHAR(30),
+    prep_time_min  SMALLINT,
+    image_url      TEXT,
+    is_vegan       BOOLEAN DEFAULT FALSE,
+    is_halal       BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE ejia_recipe_ingredient (
+    id            SERIAL,
+    recipe_id     INT,
+    ingredient_id INT,
+    net_weight_g  NUMERIC,
+    note          TEXT
+);
+
+CREATE TABLE ejia_recipe_allergen (
+    id            SERIAL,
+    recipe_id     INT,
+    allergen_code VARCHAR(20)
+);
+
+CREATE TABLE ejia_meal_plan (
+    id              SERIAL,
+    name            VARCHAR(100),
+    target_family_ids JSON,   -- PostgreSQL 数组；MySQL 可改成 JSON
+    created_at      TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE ejia_meal_plan_recipe (
+    id           SERIAL,
+    meal_plan_id INT,
+    recipe_id    INT,
+    meal_type    SMALLINT,   -- 1早2午3晚4加餐
+    serving_order SMALLINT
+);
+
+-- =========================================================
+-- 5. 每日选餐 & 目标 & 摄入
+-- =========================================================
+CREATE TABLE ejia_daily_order (
+    id             SERIAL,
+    family_id      INT,
+    order_date     DATE,
+    recipe_id      INT,
+    meal_type      SMALLINT,
+    actual_portion NUMERIC DEFAULT 1
+);
+
+CREATE TABLE ejia_member_daily_target (
+    id          SERIAL,
+    family_id   INT,
+    target_date DATE,
+    kcal        NUMERIC,
+    protein     NUMERIC,
+    fat         NUMERIC,
+    carbs       NUMERIC,
+    fiber       NUMERIC,
+    sodium      NUMERIC,
+    potassium   NUMERIC,
+    calcium     NUMERIC,
+    iron        NUMERIC,
+    vit_c       NUMERIC
+);
+
+-- =========================================================
+-- 6. 视图：每日实际摄入汇总（PostgreSQL 语法）
+-- MySQL 需用 CREATE VIEW ... 手动汇总
+-- =========================================================
+CREATE OR REPLACE VIEW ejia_daily_actual_nutrient AS
+SELECT
+    d.family_id,
+    d.order_date,
+    SUM(rn.kcal      * d.actual_portion) AS kcal,
+    SUM(rn.protein   * d.actual_portion) AS protein,
+    SUM(rn.fat       * d.actual_portion) AS fat,
+    SUM(rn.carbs     * d.actual_portion) AS carbs,
+    SUM(rn.fiber     * d.actual_portion) AS fiber,
+    SUM(rn.sodium    * d.actual_portion) AS sodium,
+    SUM(rn.potassium * d.actual_portion) AS potassium,
+    SUM(rn.calcium   * d.actual_portion) AS calcium,
+    SUM(rn.iron      * d.actual_portion) AS iron,
+    SUM(rn.vit_c     * d.actual_portion) AS vit_c
+FROM ejia_daily_order d
+JOIN (
+    -- 简易 recipe_nutrient 视图
+    SELECT
+        r.id AS recipe_id,
+        SUM(i.kcal      * ri.net_weight_g/100) AS kcal,
+        SUM(i.protein   * ri.net_weight_g/100) AS protein,
+        SUM(i.fat       * ri.net_weight_g/100) AS fat,
+        SUM(i.carbs     * ri.net_weight_g/100) AS carbs,
+        SUM(i.fiber     * ri.net_weight_g/100) AS fiber,
+        SUM(i.sodium    * ri.net_weight_g/100) AS sodium,
+        SUM(i.potassium * ri.net_weight_g/100) AS potassium,
+        SUM(i.calcium   * ri.net_weight_g/100) AS calcium,
+        SUM(i.iron      * ri.net_weight_g/100) AS iron,
+        SUM(i.vit_c     * ri.net_weight_g/100) AS vit_c
+    FROM ejia_recipe r
+    JOIN ejia_recipe_ingredient ri ON r.id = ri.recipe_id
+    JOIN ejia_ingredient i ON ri.ingredient_id = i.id
+    GROUP BY r.id
+) AS rn ON d.recipe_id = rn.recipe_id
+GROUP BY d.family_id, d.order_date;
