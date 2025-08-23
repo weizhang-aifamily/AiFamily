@@ -1,4 +1,4 @@
-import { getMembers,getDietSolutions } from './familyDataLoader.js';
+import { getMembers,getDietSolutions,getCombos } from './familyDataLoader.js';
 /* ============= 1. 常量数据定义 ============= */
 
 let familyMembers = [
@@ -28,7 +28,7 @@ let allergyIcons = {
 let dietSolutions = {
     lowSalt: { name: '限盐', icon: '🧂', desc: '钠<1500mg/日' },
     highCalcium: { name: '高钙', icon: '🦴', desc: '钙≥800mg/日' },
-    lowFat: { name: '低脂', icon: '🥑', desc: '脂肪<50g/日' },
+    black_hair: { name: '低脂', icon: '🥑', desc: '脂肪<50g/日' },
     highIron: { name: '补铁', icon: '🧲', desc: '铁≥15mg/日' }
 };
 
@@ -350,6 +350,102 @@ let ingredientTips = {
     '橄榄油': '橄榄油富含不饱和脂肪酸',
     '西兰花': '西兰花营养全面'
 };
+/* ========== 1. 套餐数据结构 ========== */
+let comboData = [
+  {
+    comboId: 'morning',
+    comboName: '晨曦钙能宴',
+    comboDesc: '10 分钟补足全天钙 80 %',
+    dishes: [
+      {
+        id: 1,
+        name: '奶酪焗南瓜',
+        picSeed: 'pumpkin',
+        tags: ['高钙 +72 %'],
+        checked: true,
+        rating: 4.7
+      },
+      {
+        id: 2,
+        name: '牛奶布丁',
+        picSeed: 'pudding',
+        tags: ['钙 +60 %'],
+        checked: true
+      },
+      {
+        id: 3,
+        name: '烤杏仁',
+        picSeed: 'almond',
+        tags: ['VE +45 %'],
+        checked: true,
+        rating: 4.7
+      }
+    ]
+  },
+  {
+    comboId: 'noon',
+    comboName: '轻盈铁骑宴',
+    comboDesc: '铁吸收 ↑58 %，零负担',
+    dishes: [
+      {
+        id: 4,
+        name: '羽衣甘蓝牛肉卷',
+        picSeed: 'beefwrap',
+        tags: ['铁 +58 %'],
+        checked: false,
+        rating: 4.7
+      },
+      {
+        id: 5,
+        name: '草莓沙拉',
+        picSeed: 'strawberry',
+        tags: ['维C +90 %'],
+        checked: false,
+        rating: 4.7
+      },
+      {
+        id: 6,
+        name: '全麦面包',
+        picSeed: 'bread',
+        tags: ['膳食纤维 +30 %'],
+        checked: false,
+        rating: 4.7
+      }
+    ]
+  },
+  {
+    comboId: 'night',
+    comboName: '晚安平衡宴',
+    comboDesc: '低钠、助眠、修复肌肉',
+    dishes: [
+      {
+        id: 7,
+        name: '香菇蒸鳕鱼',
+        picSeed: 'cod',
+        tags: ['优质蛋白 +40 %'],
+        checked: false,
+        rating: 4.7
+      },
+      {
+        id: 8,
+        name: '清炒芦笋',
+        picSeed: 'asparagus',
+        tags: ['叶酸 +35 %'],
+        checked: false,
+        rating: 4.7
+      },
+      {
+        id: 9,
+        name: '番茄汤',
+        picSeed: 'tomato',
+        tags: ['番茄红素 +50 %'],
+        checked: false,
+        rating: 4.7
+      }
+    ]
+  }
+];
+
 /* ---------- 近期吃过数据 ---------- */
 let historyDishes = [
   { emoji: '🥗', name: '彩虹沙拉', desc: '5色蔬菜拼盘', count: '5' },
@@ -402,8 +498,9 @@ document.addEventListener('DOMContentLoaded', function() {
 function renderMembers() {
     (async () => {
         familyMembers = await getMembers(1);
-        // const memberIds = familyMembers.map(m => m.member_id).join(',');
-        // dietSolutions = await getDietSolutions(memberIds);
+        const memberIds = familyMembers.map(m => m.member_id).join(',');
+        dietSolutions = await getDietSolutions(memberIds);
+        comboData = await getCombos(memberIds);
 
 // 新增：渲染 smart-guard-bar 的成员
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
@@ -426,41 +523,6 @@ guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
     })();
 }
 
-function renderMembersbak() {
-    memberTags.innerHTML = familyMembers.map(member => `
-        <div class="member-tag active" data-id="${member.id}">
-            <div class="member-main">
-                <div class="member-avatar-section">
-                    <div class="member-avatar">${member.avatar}</div>
-                    <div class="member-name">${member.name}</div>
-                </div>
-                <div class="member-details">
-                    <div class="needs-row">
-                        ${member.displayNeeds.map(need => 
-                            `<span class="need-badge">${need}</span>`
-                        ).join('')}
-                    </div>
-                </div>
-            </div>
-            <a href="nutrition-report.html?memberId=${member.id}" class="report-link">
-                查看报告
-                <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
-            </a>
-        </div>
-    `).join('');
-    // 动态生成过敏源和忌口详情
-    updateFilterDetails();
-
-    document.querySelectorAll('.member-tag').forEach(tag => {
-        tag.addEventListener('click', function(e) {
-            //if (e.target.closest('.report-link')) return;
-            this.classList.toggle('active');
-            updateActiveMembers();
-            //updateFilterDetails(); // 更新详情
-            //syncGuardBarMembers();
-        });
-    });
-}
 // 新增：同步 smart-guard-bar 成员状态
 function syncGuardBarMembers() {
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
@@ -506,7 +568,8 @@ function updateFilterDetails() {
     activeSolutions = new Set(
     activeMembers.flatMap(m => (m.needs || []).filter(Boolean)));
     // 直接用全局 dietSolutions 渲染标签
-        console.log('solutionTags:', solutionTags);   // 应该是 null
+        console.log('activeSolutions:', activeSolutions);
+        console.log('dietSolutions:', dietSolutions);
     solutionTags.innerHTML = [...activeSolutions]
         .filter(code => dietSolutions[code])      // 防止后端缺项
         .map(code => `
@@ -533,10 +596,36 @@ function updateFilterDetails() {
 
     function generateRecommendations() {
         //generateIngredients();
+        renderCombos();
         generateDishes();
         usageCount++;
         updateAchievementProgress();
     }
+
+/* ========== 2. 加载套餐 ========== */
+function renderCombos() {
+  const track = document.getElementById('combos');
+  if (!track) return;
+
+  track.innerHTML = comboData.map((combo, idx) => `
+    <article class="combo-slide ${idx === 0 ? 'active' : ''}" data-combo="${combo.comboId}">
+      <h3 class="combo-name">${combo.comboName}</h3>
+      <p class="combo-desc">${combo.comboDesc}</p>
+      <div class="dish-list">
+        ${combo.dishes.map(dish => `
+          <label class="dish-item">
+            <input type="checkbox" value="${dish.name}" ${dish.checked ? 'checked' : ''}>
+            <img src="https://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
+            <span class="dish-name">${dish.name}</span>
+            ${dish.tags.map(tag => `<span class="nutri-tag">${tag}</span>`).join('')}
+            ${dish.rating ? `<span class="dish-per">⭐⭐⭐⭐☆ ${dish.rating}</span>` : ''}
+          </label>
+        `).join('')}
+      </div>
+    </article>
+  `).join('');
+  // initFirstComboSelection();
+}
 
 // 生成食材清单
 function generateIngredients() {
@@ -650,7 +739,7 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
         showAchievement('首次使用', '营养规划师✨');
           // 新增幻灯片初始化
   //initSlideshow();
-  initFirstComboSelection();
+
 renderTasteRow();                 // 生成尝鲜菜
   document.getElementById('refreshTasteInline')
           .addEventListener('click', renderTasteRow); // 换一批
