@@ -1,5 +1,7 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, json
 from dbconnect.dbconn import db
+from ejiacanAI.data_access import DataAccess
+from ejiacanAI.engine import ILPRecommender
 
 family_bp = Blueprint('family', __name__, url_prefix='/family')
 
@@ -8,24 +10,32 @@ def get_members(user_id):
     """获取成员的饮食方案"""
     try:
         query = """
-        SELECT  f.id          AS member_id,
-                f.owner_id    AS family_id,
-                f.name        AS name,
-                ''            AS avatar,          -- ejia_user_family 暂无 avatar
-                f.gender      AS gender,
-                f.birthday    AS birth_date,
-                f.relation    AS relation,
-                ''            AS oxygen_level,
-                ''            AS blood_pressure,
-                ''            AS birth_rate,
-                GROUP_CONCAT(DISTINCT d.need_code) AS needs,
-                GROUP_CONCAT(DISTINCT a.name)      AS allergens
+        SELECT  
+            f.id          AS member_id,
+            f.owner_id    AS family_id,
+            f.name        AS name,
+            ''            AS avatar,          -- ejia_user_family 暂无 avatar
+            f.gender      AS gender,
+            f.birthday    AS birth_date,
+            f.relation    AS relation,
+            ''            AS oxygen_level,
+            ''            AS blood_pressure,
+            ''            AS birth_rate,
+            GROUP_CONCAT(DISTINCT d.need_code) AS needs,
+            GROUP_CONCAT(DISTINCT a.name)      AS allergens
         FROM ejia_user_family f
         LEFT JOIN ejia_member_diet_need        d  ON f.id = d.member_id
-        LEFT JOIN ejia_member_allergen  ma ON f.id = ma.family_id
-        LEFT JOIN ejia_enum_allergen    a  ON ma.allergen_code = a.code
+        LEFT JOIN ejia_member_allergen  ma ON f.member_id = ma.member_id
+        LEFT JOIN ejia_allergen_tbl    a  ON ma.allergen_code = a.code
         WHERE f.owner_id = %s
-        GROUP BY f.id
+        GROUP BY 
+            f.id,
+            f.owner_id,
+            f.name,
+            f.gender,
+            f.birthday,
+            f.relation
+        LIMIT 0, 1000;
         """
         rows = db.query(query, (user_id,))
         for r in rows:
@@ -36,58 +46,84 @@ def get_members(user_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# 初始化推荐引擎
+dao = DataAccess(db)
+engine = ILPRecommender()
 @family_bp.route('/getCombos/<member_ids>', methods=['GET'])
 def get_combos(member_ids):
+    """
+    /family/getCombos/1,2,3
+    使用ILP引擎推荐最优的菜品组合，然后从套餐表中匹配最相似的套餐
+    """
     try:
-        ids_tuple = tuple(map(int, member_ids.split(',')))
-        if len(ids_tuple) == 1:
-            ids_tuple = (ids_tuple[0], -1)
+        # 将字符串转换为整数列表
+        member_ids_list = list(map(int, member_ids.split(',')))
 
-        sql = """
+        # 使用ILP推荐引擎生成最优菜品组合
+        recommended_dishes = engine.recommend(
+            dishes=dao.fetch_safe_dishes(member_ids_list),
+            need=dao.fetch_family_need(member_ids_list),
+            top_k=5
+        )
+
+        if not recommended_dishes:
+            return jsonify({"status": "success", "data": [], "message": "未找到合适的菜品组合"})
+
+        # 获取推荐菜品的ID列表
+        recommended_dish_ids = [dish['dish_id'] for dish in recommended_dishes]
+        recommended_dish_ids_str = ','.join(map(str, recommended_dish_ids))
+
+        # 从套餐表中查找包含这些推荐菜品的套餐
+        sql_find_combos = f"""
         SELECT
-            c.id            AS combo_id,
-            c.combo_name,
-            c.combo_desc,
+            c.id as combo_id,
+            c.combo_name as combo_name,
+            c.combo_desc as combo_desc,
             c.meal_type,
-            d.id            AS dish_id,
-            d.name          AS dish_name,
-            d.emoji,
-            d.rating,
-            dc.name         AS dish_category
-        FROM ejia_combo           AS c
-        JOIN ejia_combo_item      AS ci ON ci.combo_id = c.id
-        JOIN ejia_dish            AS d  ON d.id  = ci.dish_id
-        JOIN ejia_dish_category   AS dc ON dc.id = d.category_id
-        ORDER BY c.id, ci.dish_id
+            COUNT(ci.dish_id) as match_count,
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'dish_id',  d.id,
+                    'name',     d.name,
+                    'emoji',    d.emoji,
+                    'rating',   d.rating,
+                    'category', dc.name
+                )
+            ) AS dishes
+        FROM ejia_combo c
+        JOIN ejia_combo_item ci ON c.id = ci.combo_id
+        JOIN ejia_dish d ON d.id = ci.dish_id
+        JOIN ejia_dish_category dc ON dc.id = d.category_id
+        WHERE ci.dish_id IN ({recommended_dish_ids_str})
+        GROUP BY c.id, c.combo_name, c.combo_desc, c.meal_type
+        ORDER BY match_count DESC, c.id
+        LIMIT 5;
         """
-        # rows = db.query(sql, (ids_tuple,))
-        rows = db.query(sql)
 
-        # ---------- 纯 Python 聚合 ----------
-        combo_map = {}   # {combo_id: {...}}
-        for r in rows:
-            cid = r['combo_id']
-            # 套餐级别只初始化一次
-            if cid not in combo_map:
-                combo_map[cid] = {
-                    'comboId':   r['meal_type'] or str(cid),  # morning / noon / night
-                    'comboName': r['combo_name'],
-                    'comboDesc': r['combo_desc'],
-                    'dishes':    []
-                }
-            # 菜品级别
-            combo_map[cid]['dishes'].append({
-                'id':        r['dish_id'],
-                'name':      r['dish_name'],
-                'picSeed':   r['dish_name'].lower().replace(' ', ''),
-                'tags':      [f"{r['dish_category']} +{int((r['rating'] or 4.7)*10)}%"],
-                'checked':   True,
-                'rating':    round(float(r['rating'] or 4.7), 1)
+        combo_rows = db.query(sql_find_combos)
+
+        # 组装成前端需要的结构
+        combos = []
+        for r in combo_rows:
+            dishes = json.loads(r['dishes'])
+            for dish in dishes:
+                dish['picSeed'] = dish['name'].lower().replace(' ', '')
+                dish['tags'] = [f"{dish['category']} +{int((dish['rating'] or 4.7) * 10)}%"]
+                dish['checked'] = True
+                dish['rating'] = round(float(dish['rating'] or 4.7), 1)
+
+            # 计算套餐的营养得分（基于ILP推荐的结果）
+            score = min(5, r['match_count'] + 2)  # 基础分 + 匹配奖励
+
+            combos.append({
+                'comboId': r['meal_type'] or str(r['combo_id']),
+                'comboName': r['combo_name'],
+                'comboDesc': r['combo_desc'],
+                'score': score,
+                'dishes': dishes
             })
 
-        combo_data = list(combo_map.values())
-
-        return jsonify({"status": "success", "data": combo_data})
+        return jsonify({"status": "success", "data": combos})
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
