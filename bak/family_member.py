@@ -1,6 +1,6 @@
 from datetime import datetime
 from dbconnect.dbconn import db  # 导入数据库实例
-from models.health_metric import HealthMetric
+from bak.health_metric import HealthMetric
 class FamilyMember:
     @staticmethod
     def get_basic_info(member_id):

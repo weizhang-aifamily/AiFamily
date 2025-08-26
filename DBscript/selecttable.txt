@@ -1,0 +1,243 @@
+-- 成员基础信息
+SELECT * FROM `ejiacan`.`ejia_user`;
+SELECT * FROM `ejiacan`.`ejia_user_family`;
+SELECT * FROM `ejiacan`.`ejia_user_family_member`;
+
+-- 成员健康信息
+SELECT * FROM `ejiacan`.`ejia_member_checkup`;-- 体检
+SELECT * FROM `ejiacan`.`ejia_member_goal`;-- 个人目标
+SELECT * FROM `ejiacan`.`ejia_member_diet_taboo`;-- 忌口
+SELECT * FROM `ejiacan`.`ejia_member_allergen`;-- 过敏
+-- 饮食推荐
+SELECT * FROM `ejiacan`.`nutrient_rni_template`;-- 人体营养素参考基准
+SELECT * FROM `ejiacan`.`ejia_member_daily_nutrient`;-- 根据年龄性别推算的成员营养素基准
+SELECT * FROM `ejiacan`.`ejia_member_diet_need`;-- 根据体检和个人目标形成营养元素的增减值
+SELECT * FROM `ejiacan`.`ejia_member_daily_nutrient_actual`;-- 成员实际营养素需求
+
+-- 成员饮食记录
+SELECT * FROM `ejiacan`.`ejia_member_food_log`;
+SELECT * FROM `ejiacan`.`ejia_member_nutrient_log`;
+
+-- 套餐菜品食材关系
+SELECT * FROM `ejiacan`.`ejia_combo`;
+SELECT * FROM `ejiacan`.`ejia_combo_dish_rel`;
+SELECT * FROM `ejiacan`.`ejia_dish`;
+SELECT * FROM `ejiacan`.`ejia_dish_category_rel`;
+SELECT * FROM `ejiacan`.`ejia_dish_category_tbl`;
+SELECT * FROM `ejiacan`.`ejia_dish_food_rel`;
+
+-- 食物营养基础信息
+SELECT * FROM `ejiacan`.`foods`;
+SELECT * FROM `ejiacan`.`food_categories`;
+SELECT * FROM `ejiacan`.`food_nutrients`;
+SELECT * FROM `ejiacan`.`food_portions`;
+SELECT * FROM `ejiacan`.`food_sources`;
+SELECT * FROM `ejiacan`.`measure_units`;
+SELECT * FROM `ejiacan`.`nutrients`;
+
+-- 枚举字典表
+SELECT * FROM `ejiacan`.`ejia_enum_allergen_tbl`;
+SELECT * FROM `ejiacan`.`ejia_enum_checkup_item_tbl`;
+SELECT * FROM `ejiacan`.`ejia_enum_diet_need_tbl`;
+SELECT * FROM `ejiacan`.`ejia_enum_goal_tbl`;
+
+
+SELECT `ejia_combo`.`id`,
+    `ejia_combo`.`combo_name`,
+    `ejia_combo`.`combo_desc`,
+    `ejia_combo`.`meal_type`,
+    `ejia_combo`.`created_at`
+FROM `ejiacan`.`ejia_combo`;
+
+SELECT `ejia_combo_dish_rel`.`combo_id`,
+    `ejia_combo_dish_rel`.`dish_id`
+FROM `ejiacan`.`ejia_combo_dish_rel`;
+
+SELECT `ejia_dish`.`id`,
+    `ejia_dish`.`name`,
+    `ejia_dish`.`emoji`,
+    `ejia_dish`.`description`,
+    `ejia_dish`.`rating`,
+    `ejia_dish`.`default_portion_g`,
+    `ejia_dish`.`max_servings`
+FROM `ejiacan`.`ejia_dish`;
+
+SELECT `ejia_dish_category_rel`.`dish_id`,
+    `ejia_dish_category_rel`.`category_id`
+FROM `ejiacan`.`ejia_dish_category_rel`;
+
+SELECT `ejia_dish_category_tbl`.`id`,
+    `ejia_dish_category_tbl`.`name`
+FROM `ejiacan`.`ejia_dish_category_tbl`;
+
+SELECT `ejia_dish_food_rel`.`dish_id`,
+    `ejia_dish_food_rel`.`food_id`,
+    `ejia_dish_food_rel`.`amount_grams`
+FROM `ejiacan`.`ejia_dish_food_rel`;
+
+SELECT `ejia_enum_allergen_tbl`.`code`,
+    `ejia_enum_allergen_tbl`.`name`,
+    `ejia_enum_allergen_tbl`.`food_id`
+FROM `ejiacan`.`ejia_enum_allergen_tbl`;
+
+SELECT `ejia_enum_checkup_item_tbl`.`code`,
+    `ejia_enum_checkup_item_tbl`.`name`,
+    `ejia_enum_checkup_item_tbl`.`unit`,
+    `ejia_enum_checkup_item_tbl`.`risk_dir`
+FROM `ejiacan`.`ejia_enum_checkup_item_tbl`;
+
+SELECT `ejia_enum_diet_need_tbl`.`code`,
+    `ejia_enum_diet_need_tbl`.`name`,
+    `ejia_enum_diet_need_tbl`.`icon`,
+    `ejia_enum_diet_need_tbl`.`desc_text`,
+    `ejia_enum_diet_need_tbl`.`checkup_id`,
+    `ejia_enum_diet_need_tbl`.`goal_id`
+FROM `ejiacan`.`ejia_enum_diet_need_tbl`;
+
+SELECT `ejia_enum_goal_tbl`.`code`,
+    `ejia_enum_goal_tbl`.`name`
+FROM `ejiacan`.`ejia_enum_goal_tbl`;
+
+SELECT `ejia_member_allergen`.`id`,
+    `ejia_member_allergen`.`member_id`,
+    `ejia_member_allergen`.`allergen_code`,
+    `ejia_member_allergen`.`severity`
+FROM `ejiacan`.`ejia_member_allergen`;
+
+SELECT `ejia_member_checkup`.`id`,
+    `ejia_member_checkup`.`member_id`,
+    `ejia_member_checkup`.`item_code`,
+    `ejia_member_checkup`.`low`,
+    `ejia_member_checkup`.`high`,
+    `ejia_member_checkup`.`actual_value`,
+    `ejia_member_checkup`.`result_status`,
+    `ejia_member_checkup`.`test_date`
+FROM `ejiacan`.`ejia_member_checkup`;
+
+SELECT `ejia_member_daily_nutrient`.`member_id`,
+    `ejia_member_daily_nutrient`.`nutrient_id`,
+    `ejia_member_daily_nutrient`.`need_qty`,
+    `ejia_member_daily_nutrient`.`updated_at`
+FROM `ejiacan`.`ejia_member_daily_nutrient`;
+
+SELECT `ejia_member_diet_need`.`id`,
+    `ejia_member_diet_need`.`member_id`,
+    `ejia_member_diet_need`.`need_type`,
+    `ejia_member_diet_need`.`need_code`,
+    `ejia_member_diet_need`.`nutrient_id`,
+    `ejia_member_diet_need`.`offset_val`
+FROM `ejiacan`.`ejia_member_diet_need`;
+
+SELECT `ejia_member_diet_taboo`.`id`,
+    `ejia_member_diet_taboo`.`member_id`,
+    `ejia_member_diet_taboo`.`taboo_type`,
+    `ejia_member_diet_taboo`.`food_id`
+FROM `ejiacan`.`ejia_member_diet_taboo`;
+
+SELECT `ejia_member_food_log`.`id`,
+    `ejia_member_food_log`.`member_id`,
+    `ejia_member_food_log`.`combo_id`,
+    `ejia_member_food_log`.`dish_id`,
+    `ejia_member_food_log`.`eat_date`,
+    `ejia_member_food_log`.`created_at`,
+    `ejia_member_food_log`.`meal_type`,
+    `ejia_member_food_log`.`actual_portion`
+FROM `ejiacan`.`ejia_member_food_log`;
+
+SELECT `ejia_member_goal`.`id`,
+    `ejia_member_goal`.`member_id`,
+    `ejia_member_goal`.`goal_code`,
+    `ejia_member_goal`.`goal_value`,
+    `ejia_member_goal`.`weight`
+FROM `ejiacan`.`ejia_member_goal`;
+
+SELECT `ejia_member_nutrient_log`.`log_id`,
+    `ejia_member_nutrient_log`.`member_id`,
+    `ejia_member_nutrient_log`.`log_date`,
+    `ejia_member_nutrient_log`.`nutrient_id`,
+    `ejia_member_nutrient_log`.`intake_qty`,
+    `ejia_member_nutrient_log`.`created_at`
+FROM `ejiacan`.`ejia_member_nutrient_log`;
+
+SELECT `ejia_user`.`id`,
+    `ejia_user`.`phone`,
+    `ejia_user`.`nickname`,
+    `ejia_user`.`avatar_url`,
+    `ejia_user`.`created_at`
+FROM `ejiacan`.`ejia_user`;
+
+SELECT `ejia_user_family`.`id`,
+    `ejia_user_family`.`owner_id`,
+    `ejia_user_family`.`note`
+FROM `ejiacan`.`ejia_user_family`;
+
+SELECT `ejia_user_family_member`.`id`,
+    `ejia_user_family_member`.`owner_id`,
+    `ejia_user_family_member`.`relation`,
+    `ejia_user_family_member`.`name`,
+    `ejia_user_family_member`.`birthday`,
+    `ejia_user_family_member`.`gender`,
+    `ejia_user_family_member`.`height_cm`,
+    `ejia_user_family_member`.`weight_kg`,
+    `ejia_user_family_member`.`pal`,
+    `ejia_user_family_member`.`family_id`
+FROM `ejiacan`.`ejia_user_family_member`;
+
+SELECT `food_categories`.`id`,
+    `food_categories`.`code`,
+    `food_categories`.`description`
+FROM `ejiacan`.`food_categories`;
+
+SELECT `food_nutrients`.`id`,
+    `food_nutrients`.`fdc_id`,
+    `food_nutrients`.`nutrient_id`,
+    `food_nutrients`.`amount`,
+    `food_nutrients`.`data_points`,
+    `food_nutrients`.`derivation_id`,
+    `food_nutrients`.`min`,
+    `food_nutrients`.`max`,
+    `food_nutrients`.`median`
+FROM `ejiacan`.`food_nutrients`;
+
+SELECT `food_portions`.`id`,
+    `food_portions`.`fdc_id`,
+    `food_portions`.`seq_num`,
+    `food_portions`.`amount`,
+    `food_portions`.`measure_unit_id`,
+    `food_portions`.`modifier`,
+    `food_portions`.`gram_weight`,
+    `food_portions`.`min_year_acquired`
+FROM `ejiacan`.`food_portions`;
+
+SELECT `food_sources`.`id`,
+    `food_sources`.`code`,
+    `food_sources`.`description`
+FROM `ejiacan`.`food_sources`;
+
+SELECT `foods`.`fdc_id`,
+    `foods`.`description`,
+    `foods`.`data_type`,
+    `foods`.`food_category_id`,
+    `foods`.`publication_date`
+FROM `ejiacan`.`foods`;
+
+SELECT `measure_units`.`id`,
+    `measure_units`.`name`
+FROM `ejiacan`.`measure_units`;
+
+SELECT `nutrient_rni_template`.`template_id`,
+    `nutrient_rni_template`.`age_min`,
+    `nutrient_rni_template`.`age_max`,
+    `nutrient_rni_template`.`gender`,
+    `nutrient_rni_template`.`activity_lvl`,
+    `nutrient_rni_template`.`nutrient_id`,
+    `nutrient_rni_template`.`recommended`
+FROM `ejiacan`.`nutrient_rni_template`;
+
+SELECT `nutrients`.`id`,
+    `nutrients`.`name`,
+    `nutrients`.`name_cn`,
+    `nutrients`.`unit_name`,
+    `nutrients`.`nutrient_nbr`,
+    `nutrients`.`order_rank`
+FROM `ejiacan`.`nutrients`;

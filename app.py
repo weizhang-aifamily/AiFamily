@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 from dbconnect.dbconn import db
-from routes.member_routes import member_bp
+from bak.member_routes import member_bp
 from models.family_bp import family_bp
 
 app = Flask(__name__)
@@ -12,7 +12,7 @@ app.register_blueprint(family_bp)
 # 保留原有的基本路由
 @app.route('/')
 def index():
-    users = db.query("SELECT * FROM app_user ")
+    users = db.query("SELECT * FROM ejia_user ")
     return render_template('peican.html', users=users)
 
 @app.route('/search', methods=['POST'])

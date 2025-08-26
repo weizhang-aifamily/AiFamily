@@ -1,8 +1,11 @@
-from flask import Blueprint, jsonify, json
+from flask import Blueprint, jsonify, json, request
+from typing import List, Dict, Optional
 from dbconnect.dbconn import db
-from ejiacanAI.data_access import DataAccess
 from ejiacanAI.engine import ILPRecommender
-
+from ejiacanAI.data_access import EnhancedDataAccess
+from ejiacanAI.smart_recommender import SmartRecommender, RecommendationConfig
+import logging
+logger = logging.getLogger(__name__)
 family_bp = Blueprint('family', __name__, url_prefix='/family')
 
 @family_bp.route('getMembers/<int:user_id>', methods=['GET'])
@@ -23,10 +26,10 @@ def get_members(user_id):
             ''            AS birth_rate,
             GROUP_CONCAT(DISTINCT d.need_code) AS needs,
             GROUP_CONCAT(DISTINCT a.name)      AS allergens
-        FROM ejia_user_family f
+        FROM ejia_user_family_member f
         LEFT JOIN ejia_member_diet_need        d  ON f.id = d.member_id
-        LEFT JOIN ejia_member_allergen  ma ON f.member_id = ma.member_id
-        LEFT JOIN ejia_allergen_tbl    a  ON ma.allergen_code = a.code
+        LEFT JOIN ejia_member_allergen  ma ON f.id = ma.member_id
+        LEFT JOIN ejia_enum_allergen_tbl    a  ON ma.allergen_code = a.code
         WHERE f.owner_id = %s
         GROUP BY 
             f.id,
@@ -47,86 +50,38 @@ def get_members(user_id):
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # 初始化推荐引擎
-dao = DataAccess(db)
+dao = EnhancedDataAccess(db)
 engine = ILPRecommender()
+
 @family_bp.route('/getCombos/<member_ids>', methods=['GET'])
 def get_combos(member_ids):
-    """
-    /family/getCombos/1,2,3
-    使用ILP引擎推荐最优的菜品组合，然后从套餐表中匹配最相似的套餐
-    """
     try:
-        # 将字符串转换为整数列表
         member_ids_list = list(map(int, member_ids.split(',')))
+        meal_type = request.args.get('meal_type', 'lunch')
+        max_results = min(int(request.args.get('max_results', 10)), 50)
 
-        # 使用ILP推荐引擎生成最优菜品组合
-        recommended_dishes = engine.recommend(
-            dishes=dao.fetch_safe_dishes(member_ids_list),
-            need=dao.fetch_family_need(member_ids_list),
-            top_k=5
-        )
+        # 1. 获取智能推荐结果
+        recommendations = recommender.recommend(member_ids_list, meal_type, max_results)
 
-        if not recommended_dishes:
+        if not recommendations:
             return jsonify({"status": "success", "data": [], "message": "未找到合适的菜品组合"})
 
-        # 获取推荐菜品的ID列表
-        recommended_dish_ids = [dish['dish_id'] for dish in recommended_dishes]
-        recommended_dish_ids_str = ','.join(map(str, recommended_dish_ids))
+        # 2. 将推荐结果转换为套餐格式（保持原有返回结构）
+        #combos = _convert_recommendations_to_combos(recommendations)
+        combos = dao.fetch_matching_combos_new(recommendations)
 
-        # 从套餐表中查找包含这些推荐菜品的套餐
-        sql_find_combos = f"""
-        SELECT
-            c.id as combo_id,
-            c.combo_name as combo_name,
-            c.combo_desc as combo_desc,
-            c.meal_type,
-            COUNT(ci.dish_id) as match_count,
-            JSON_ARRAYAGG(
-                JSON_OBJECT(
-                    'dish_id',  d.id,
-                    'name',     d.name,
-                    'emoji',    d.emoji,
-                    'rating',   d.rating,
-                    'category', dc.name
-                )
-            ) AS dishes
-        FROM ejia_combo c
-        JOIN ejia_combo_item ci ON c.id = ci.combo_id
-        JOIN ejia_dish d ON d.id = ci.dish_id
-        JOIN ejia_dish_category dc ON dc.id = d.category_id
-        WHERE ci.dish_id IN ({recommended_dish_ids_str})
-        GROUP BY c.id, c.combo_name, c.combo_desc, c.meal_type
-        ORDER BY match_count DESC, c.id
-        LIMIT 5;
-        """
-
-        combo_rows = db.query(sql_find_combos)
-
-        # 组装成前端需要的结构
-        combos = []
-        for r in combo_rows:
-            dishes = json.loads(r['dishes'])
-            for dish in dishes:
-                dish['picSeed'] = dish['name'].lower().replace(' ', '')
-                dish['tags'] = [f"{dish['category']} +{int((dish['rating'] or 4.7) * 10)}%"]
-                dish['checked'] = True
-                dish['rating'] = round(float(dish['rating'] or 4.7), 1)
-
-            # 计算套餐的营养得分（基于ILP推荐的结果）
-            score = min(5, r['match_count'] + 2)  # 基础分 + 匹配奖励
-
-            combos.append({
-                'comboId': r['meal_type'] or str(r['combo_id']),
-                'comboName': r['combo_name'],
-                'comboDesc': r['combo_desc'],
-                'score': score,
-                'dishes': dishes
-            })
-
-        return jsonify({"status": "success", "data": combos})
+        return jsonify({
+            "status": "success",
+            "data": combos,
+            "metadata": {
+                "recommendation_type": "smart",
+                "total_recommendations": len(recommendations)
+            }
+        })
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        logger.error("Get combos error: %s", str(e))
+
 
 @family_bp.route('getDietSolutions/<member_ids>', methods=['GET'])
 def get_diet_solutions(member_ids):
@@ -145,7 +100,7 @@ def get_diet_solutions(member_ids):
                               ds.icon, \
                               ds.desc_text
               FROM ejia_member_diet_need dn
-                       JOIN ejia_diet_need_tbl ds ON dn.need_code = ds.code
+                       JOIN ejia_enum_diet_need_tbl ds ON dn.need_code = ds.code
               WHERE dn.member_id IN %s \
               """
 
@@ -154,3 +109,50 @@ def get_diet_solutions(member_ids):
         return jsonify({"status": "success", "data": result})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# 初始化
+recommender = SmartRecommender(dao)
+
+
+@family_bp.route('/smartRecommendation/<member_ids>', methods=['GET'])
+def smart_recommendation(member_ids):
+    try:
+        member_ids_list = list(map(int, member_ids.split(',')))
+        meal_type = request.args.get('meal_type', 'lunch')
+        max_results = min(int(request.args.get('max_results', 10)), 50)
+
+        recommendations = recommender.recommend(
+            member_ids_list, meal_type, max_results
+        )
+
+        # 格式化返回结果
+        formatted_recommendations = []
+        for rec in recommendations:
+            formatted_rec = {
+                'dish_id': rec['id'],
+                'name': rec['name'],
+                'emoji': rec.get('emoji', '🍽️'),
+                'servings': 1,
+                'portion_g': rec.get('default_portion_g', 100),
+                'rating': rec.get('rating', 0),
+                'match_score': rec.get('final_score', 0),
+                'matched_needs': rec.get('matched_needs', [])
+            }
+            formatted_recommendations.append(formatted_rec)
+
+        return jsonify({
+            "status": "success",
+            "data": formatted_recommendations,
+            "metadata": {
+                "total_count": len(formatted_recommendations),
+                "meal_type": meal_type,
+                "member_ids": member_ids_list
+            }
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"推荐失败: {str(e)}"
+        }), 500

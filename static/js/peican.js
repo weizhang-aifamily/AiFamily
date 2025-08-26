@@ -606,7 +606,7 @@ function updateFilterDetails() {
 function renderCombos() {
   const track = document.getElementById('combos');
   if (!track) return;
-
+console.log("comboData" ,comboData)
   track.innerHTML = comboData.map((combo, idx) => `
     <article class="combo-slide ${idx === 0 ? 'active' : ''}" data-combo="${combo.comboId}">
       <h3 class="combo-name">${combo.comboName}</h3>
@@ -617,7 +617,7 @@ function renderCombos() {
             <input type="checkbox" value="${dish.name}" ${dish.checked ? 'checked' : ''}>
             <img src="https://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
             <span class="dish-name">${dish.name}</span>
-            ${dish.tags.map(tag => `<span class="nutri-tag">${tag}</span>`).join('')}
+            ${dish.servings ? `<span class="nutri-tag">${dish.servings}人份</span>` :''}
             ${dish.rating ? `<span class="dish-per">⭐⭐⭐⭐☆ ${dish.rating}</span>` : ''}
           </label>
         `).join('')}
