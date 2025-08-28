@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 import random
-from ejiacanAI.models import RecommendationConfig, NeedInfo, MemberConstraints
+from ejiacanAI.models import RecommendationConfig, NeedInfo, MemberConstraints, FamilyNeed
 from ejiacanAI.data_access import EnhancedDataAccess
 import logging
 
@@ -20,46 +20,57 @@ class SmartRecommender:
         智能推荐主入口
         """
         try:
-            logger.info("Starting recommendation for members: %s", member_ids)
-
             # 1. 获取成员需求信息
             needs_info = self.data_access.get_member_needs(member_ids)
-            logger.info("Member needs: %s", needs_info.all_need_codes)
 
             # 2. 获取成员约束条件
             constraints = self.data_access.get_member_constraints(member_ids)
-            logger.info("Member constraints: %s", constraints)
 
             # 3. 根据需求场景选择推荐策略
             if not needs_info.all_need_codes:
-                logger.info("No specific needs found, using popular dishes")
                 recommendations = self.data_access.get_popular_dishes(constraints, max_results * 2)
             elif len(needs_info.all_need_codes) == 1:
-                logger.info("Single need scenario: %s", needs_info.all_need_codes[0])
                 recommendations = self.data_access.get_dishes_for_need(
                     needs_info.all_need_codes[0], constraints, self.config.min_match_score, max_results * 3
                 )
             else:
-                logger.info("Multiple needs scenario: %s", needs_info.all_need_codes)
                 recommendations = self.data_access.get_dishes_for_multiple_needs(
                     needs_info.all_need_codes, constraints, needs_info.need_weights, max_results * 4
                 )
 
-            logger.info("Found %d candidate recommendations", len(recommendations))
 
-            # 4. 后处理
-            processed_recommendations = self._post_process_recommendations(
-                recommendations, meal_type, needs_info, max_results
-            )
+            # 增加多样性 TODO
+            # processed_recommendations = self._add_more_recommendations(
+            #     recommendations, meal_type, needs_info, max_results
+            # )
 
-            logger.info("Final recommendations: %d", len(processed_recommendations))
-            return processed_recommendations
+            return recommendations
 
         except Exception as e:
             logger.error("Error in recommendation: %s", str(e))
             return self._get_fallback_recommendations(member_ids, max_results)
 
-    def _post_process_recommendations(self, recommendations: List[Dict],
+    # 从成员需求拼出 FamilyNeed
+    def _build_family_need(self, member_ids: List[int]) -> FamilyNeed:
+        # ejia_member_daily_nutrient_actual
+        calcium_total = 0
+        iron_total = 0
+        sodium_total = 2000  # 每人 2000mg，示例
+        purine_total = 300
+        kcal_total = 600  # 单餐示例
+        for mid in member_ids:
+            # TODO: 按年龄性别查 nutrient_rni_template 求和
+            calcium_total += 800
+            iron_total += 12
+        return FamilyNeed(
+            calcium_target=calcium_total,
+            iron_target=iron_total,
+            sodium_limit=sodium_total,
+            purine_limit=purine_total,
+            kcal_limit=kcal_total
+        )
+
+    def _add_more_recommendations(self, recommendations: List[Dict],
                                       meal_type: str, needs_info: NeedInfo,
                                       max_results: int) -> List[Dict]:
         """后处理推荐结果"""
@@ -69,19 +80,14 @@ class SmartRecommender:
         # 去重
         unique_recommendations = {}
         for rec in recommendations:
-            if rec['id'] not in unique_recommendations:
-                unique_recommendations[rec['id']] = rec
+            if rec['dish_id'] not in unique_recommendations:
+                unique_recommendations[rec['dish_id']] = rec
 
         recommendations = list(unique_recommendations.values())
 
         # 确保多样性
         if len(needs_info.all_need_codes) > 1:
             recommendations = self._ensure_diversity(recommendations, needs_info.all_need_codes)
-
-        # 计算最终评分
-        for rec in recommendations:
-            rec['final_score'] = self._calculate_final_score(rec)
-            rec['matched_needs'] = self._get_matched_needs(rec, needs_info.all_need_codes)
 
         # 排序并限制数量
         recommendations.sort(key=lambda x: x['final_score'], reverse=True)
@@ -154,20 +160,34 @@ class SmartRecommender:
     def _get_matched_needs(self, dish: Dict, all_need_codes: List[str]) -> List[Dict]:
         """获取匹配的需求信息"""
         matched_needs = []
-        for need_code in all_need_codes:
-            score = self._get_need_match_score(dish, need_code)
-            if score >= self.config.min_match_score:
-                matched_needs.append({
-                    'need_code': need_code,
-                    'match_score': score,
-                    'explanation': self._generate_explanation(need_code, score)
-                })
+        matched_needs.append({
+            'need_code': dish['matched_needs_codes'],
+
+        })
+        # for need_code in all_need_codes:
+        #     score = self._get_need_match_score(dish, need_code)
+        #     if score >= self.config.min_match_score:
+        #         matched_needs.append({
+        #             'need_code': need_code,
+        #             'match_score': score,
+        #             'explanation': self._generate_explanation(need_code, score)
+        #         })
         return matched_needs
 
     def _get_need_match_score(self, dish: Dict, need_code: str) -> float:
         """获取菜品对特定需求的匹配分数"""
-        # 这里可以扩展为更复杂的匹配逻辑
-        return dish.get('match_score', 0) or 0.0
+        # 方法1: 从预计算的数据中获取
+        if 'matched_need_codes' in dish and dish['matched_need_codes']:
+            matched_codes = dish['matched_need_codes'].split(',')
+            if need_code in matched_codes:
+                # 如果有加权分数，使用加权分数
+                if 'weighted_score' in dish:
+                    return float(dish.get('weighted_score', 0))
+                # 否则使用基础匹配分数
+                return float(dish.get('match_score', 0))
+
+        # 方法2: 如果没有预计算数据，返回0
+        return 0.0
 
     def _generate_explanation(self, need_code: str, match_score: float) -> str:
         """生成匹配解释"""

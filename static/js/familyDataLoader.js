@@ -23,8 +23,9 @@ export async function getDietSolutions(member_ids = "1,2") {
   console.error('getDietSolutions：', json.message || json);
   return [];
 }
-export async function getCombos(member_ids = "1,2") {
-  const res  = await fetch(`/family/getCombos/${member_ids}`);
+export async function getCombos(member_ids = "1,2", mealType = 'lunch', maxResults = 3) {
+  const url = `/family/getCombos/${member_ids}?meal_type=${mealType}&max_results=${maxResults}`;
+  const res  = await fetch(url);
   const json = await res.json();
 
   if (json.status === 'success') {

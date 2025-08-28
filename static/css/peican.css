@@ -1082,92 +1082,49 @@ body {
   display: none;
 }
 
-/* ============= 幻灯片样式 ============= */
-.combo-slideshow {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-  margin: 0 0;
-}
-
-.slideshow-track {
+/* ============= 精选套餐 ============= */
+/* 每个 combo 占一行 */
+.combo-list {
   display: flex;
-  transition: transform 0.5s ease;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.combo-slide {
-  flex: 0 0 100%;
+/* 每个 combo 容器 */
+.combo-row {
+  background: var(--card-bg);
+  border-radius: 12px;
   padding: 16px;
+  box-shadow: var(--card-shadow);
 }
 
-/* 指示点 */
-.slideshow-indicators {
-  display: none;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 16px;
+.combo-row .combo-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
 }
 
-.indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #d1d5db;
-  cursor: pointer;
-  transition: background 0.3s;
+.combo-row .combo-desc {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 12px;
 }
 
-.indicator.active {
-  background: var(--primary);
-  transform: scale(1.2);
+/* 菜品容器：横向滚动 */
+.combo-row .dish-list {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
 }
 
-/* 左右切换按钮 */
-.slideshow-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: 50%;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  z-index: 10;
-  transition: all 0.3s;
-}
-
-.slideshow-btn:hover {
-  background: white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.slideshow-btn.prev {
-  left: 10px;
-    display: none;
-}
-
-.slideshow-btn.next {
-  right: 10px;
-    display: none;
-}
-
-@media (max-width: 768px) {
-  .slideshow-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-  }
-
-  .slideshow-btn.prev {
-    left: 5px;
-  }
-
-  .slideshow-btn.next {
-    right: 5px;
-  }
+/* 每个菜品卡片 */
+.combo-row .dish-item {
+  flex: 0 0 100px; /* 固定宽度，确保一行最多 3 个（可改） */
+  scroll-snap-align: start;
+  text-align: center;
+  font-size: 12px;
 }
 /* ============= 尝尝鲜样式 ============= */
 .taste-section {

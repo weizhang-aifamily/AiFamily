@@ -50,3 +50,28 @@ class NeedInfo:
     member_needs: Dict[int, List[Dict]]
     all_need_codes: List[str]
     need_weights: Dict[str, float] = field(default_factory=dict)
+
+################dish_recommender########
+@dataclass
+class UserSnapshot:
+    member_id: int
+    daily_targets: Dict[str, float]          # 营养素 -> 目标量
+    hard_caps: Dict[str, float]              # 营养素 -> 上限
+    gene_weights: Dict[str, float]           # 需求代码 -> 权重
+    recent_7d_dish_ids: List[int]            # 最近 7 天已吃 dish_id
+
+@dataclass
+class Context:
+    meal_type: str                           # breakfast/lunch/dinner/snack
+    max_cook_time: int                       # 分钟
+    surprise_level: float                    # 0-1 滑块
+    stock: Dict[str, float] | None = None    # 可选库存，None=全放行
+
+@dataclass
+class Dish:
+    dish_id: int
+    name: str
+    nutrients: Dict[str, float]              # 每 100 g 含量
+    ingredients: Dict[str, float]            # 食材 -> 克
+    cook_time: int
+    last_seen_days: int                      # 距用户上次吃这道菜的天数

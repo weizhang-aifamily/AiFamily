@@ -8,59 +8,76 @@ class ILPRecommender:
         # 直接使用 PULP_CBC_CMD，这是最稳定的选项
         self.solver = pulp.PULP_CBC_CMD(msg=False)
 
-    def recommend(self, dishes: List[Dish], need: FamilyNeed, top_k: int = 5) -> List[Dict]:
-        # 创建问题实例
-        prob = pulp.LpProblem('FamilyMenuOptimization', pulp.LpMaximize)
+    # ---------- 统一入口 ----------
+    @staticmethod
+    def recommend(dishes: List[Dish],
+                  member_id: int,
+                  k: int = 10,
+                  algo: int = 1) -> List[Dish]:
+        if algo not in {1, 2, 3}:
+            raise ValueError("algo must be 1,2,3")
 
-        # 创建菜品映射
-        dish_map = {d.id: d for d in dishes}
+        # 全局分数缓存
+        scores = Recommender._fetch_scores(member_id)
 
-        # 创建决策变量
-        decision_vars = {}
-        for dish in dishes:
-            for servings in range(1, dish.max_servings + 1):
-                var_name = f"dish_{dish.id}_servings_{servings}"
-                decision_vars[(dish.id, servings)] = pulp.LpVariable(var_name, cat='Binary')
+        # 过滤掉最近 7 天已吃的
+        recent = set(Recommender._recent7(member_id))
+        dishes = [d for d in dishes if d.id not in recent]
 
-        # 计算总营养摄入量
-        def total_nutrient(nutrient_name):
-            return pulp.lpSum(
-                var * servings * getattr(dish_map[dish_id], nutrient_name) * dish_map[dish_id].default_portion_g / 100.0
-                for (dish_id, servings), var in decision_vars.items()
-            )
+        if algo == 1:
+            return Recommender._algo_mmr(dishes, scores, k)
+        if algo == 2:
+            return Recommender._algo_cold_start(dishes, scores, k)
+        if algo == 3:
+            return Recommender._algo_bandit(dishes, member_id, k)
 
-        # 设置目标函数
-        total_calcium = total_nutrient('calcium')
-        total_iron = total_nutrient('iron')
 
-        # 防止除零错误
-        calcium_target = max(float(need.calcium_target), 1.0)
-        iron_target = max(float(need.iron_target), 1.0)
+    # ---------- 三种算法 ----------
+    @staticmethod
+    def _algo_mmr(dishes: List[Dish], scores: Dict[int, float], k: int) -> List[Dish]:
+        """MMR + 随机扰动"""
+        # 这里用极简版：先把菜按分排序，加微小扰动后截断
+        eps = 1e-4
+        dishes = sorted(dishes,
+                        key=lambda d: scores.get(d.id, 0) + random.uniform(-eps, eps),
+                        reverse=True)
+        return dishes[:k]
 
-        prob += total_calcium / calcium_target + total_iron / iron_target
+    @staticmethod
+    def _algo_cold_start(dishes: List[Dish], scores: Dict[int, float], k: int) -> List[Dish]:
+        """ε-Greedy 探索/利用"""
+        eps = 0.1
+        chosen, pool = [], list(dishes)
+        for _ in range(min(k, len(pool))):
+            if random.random() < eps:
+                d = random.choice(pool)
+            else:
+                d = max(pool, key=lambda d: scores.get(d.id, 0))
+            chosen.append(d)
+            pool.remove(d)
+        return chosen
 
-        # 添加约束条件
-        prob += total_calcium >= need.calcium_target, "calcium_min"
-        prob += total_iron >= need.iron_target, "iron_min"
-        prob += total_nutrient('sodium') <= need.sodium_limit, "sodium_max"
-        prob += total_nutrient('purine') <= need.purine_limit, "purine_max"
-        prob += total_nutrient('kcal') <= need.kcal_limit, "kcal_max"
-        prob += pulp.lpSum(decision_vars.values()) <= top_k, "max_dishes"
+    @staticmethod
+    def _algo_bandit(dishes: List[Dish], member_id: int, k: int) -> List[Dish]:
+        """Thompson Sampling"""
+        # 从数据库读 alpha, beta
+        sql = "SELECT dish_id, alpha, beta FROM bandit_stats WHERE member_id=%s"
+        conn = pymysql.connect(**Recommender.DB_CONFIG)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, (member_id,))
+                arms = {row[0]: (row[1], row[2]) for row in cur.fetchall()}
+        finally:
+            conn.close()
 
-        # 求解
-        status = prob.solve(self.solver)
+        # 缺省的 Beta(1,1)
+        def beta(d):
+            a, b = arms.get(d.id, (1, 1))
+            return random.betavariate(a, b)
 
-        # 提取结果
-        result = []
-        for (dish_id, servings), var in decision_vars.items():
-            if pulp.value(var) == 1:
-                dish = dish_map[dish_id]
-                result.append({
-                    'dish_id': dish.id,
-                    'name': dish.name,
-                    'emoji': dish.emoji,
-                    'servings': servings,
-                    'portion_g': dish.default_portion_g * servings
-                })
-
-        return result
+        chosen, pool = [], list(dishes)
+        for _ in range(min(k, len(pool))):
+            d = max(pool, key=beta)
+            chosen.append(d)
+            pool.remove(d)
+        return chosen

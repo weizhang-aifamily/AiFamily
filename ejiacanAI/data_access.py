@@ -132,7 +132,7 @@ class EnhancedDataAccess:
                 d.name,
                 d.emoji,
                 d.default_portion_g,
-                d.max_servings,
+                #d.max_servings,
                 d.rating,
                 SUM(nm.match_score * {weight_case}) as weighted_score,
                 COUNT(DISTINCT nm.need_code) as matched_needs_count,
@@ -150,7 +150,7 @@ class EnhancedDataAccess:
             JOIN ejia_need_dish_match nm ON nm.dish_id = d.id
             LEFT JOIN view_dish_nutrients_long dnl ON dnl.dish_id = d.id
             WHERE nm.need_code IN ({need_codes_str})
-            AND nm.match_score >= 0.6
+            AND nm.match_score > 0
             AND d.id NOT IN (
                 SELECT DISTINCT dfr.dish_id
                 FROM ejia_dish_food_rel dfr
@@ -168,27 +168,47 @@ class EnhancedDataAccess:
 
     def fetch_matching_combos_new(self, recommended: List[dict]) -> List[dict]:
         """
-        传入推荐菜品列表，去数据库查套餐，并保留推荐信息
+        传入推荐菜品列表，找到包含这些菜品的套餐，并标记推荐菜品
         """
         if not recommended:
             return []
 
-        # 获取所有可能的菜品ID字段
-        dish_ids = []
+        # 获取推荐菜品的ID
+        recommended_dish_ids = set()
         for rec in recommended:
-            # 尝试多种可能的ID字段
             dish_id = rec.get('dish_id') or rec.get('id')
             if dish_id:
-                dish_ids.append(str(dish_id))
+                recommended_dish_ids.add(dish_id)
 
-        if not dish_ids:
+        if not recommended_dish_ids:
             return []
 
-        ids_str = ','.join(dish_ids)
+        ids_str = ','.join(map(str, recommended_dish_ids))
 
+        # 查询包含推荐菜品的套餐
         sql = f"""
-            SELECT
+            SELECT DISTINCT
                 c.id               AS combo_id,
+                c.combo_name,
+                c.combo_desc,
+                c.meal_type
+            FROM ejia_combo c
+            JOIN ejia_combo_dish_rel cd ON cd.combo_id = c.id
+            WHERE cd.dish_id IN ({ids_str})
+            ORDER BY c.id
+        """
+        combo_rows = self.db.query(sql)
+
+        if not combo_rows:
+            return []
+
+        # 获取这些套餐的所有菜品
+        combo_ids = [str(row['combo_id']) for row in combo_rows]
+        combo_ids_str = ','.join(combo_ids)
+
+        dishes_sql = f"""
+            SELECT
+                c.id AS combo_id,
                 c.combo_name,
                 c.combo_desc,
                 c.meal_type,
@@ -199,28 +219,27 @@ class EnhancedDataAccess:
                 d.default_portion_g
             FROM ejia_combo c
             JOIN ejia_combo_dish_rel cd ON cd.combo_id = c.id
-            JOIN ejia_dish d            ON d.id = cd.dish_id
-            WHERE cd.dish_id IN ({ids_str})
-            ORDER BY c.id
+            JOIN ejia_dish d ON d.id = cd.dish_id
+            WHERE c.id IN ({combo_ids_str})
+            ORDER BY c.id, cd.dish_id
         """
-        rows = self.db.query(sql)
+        dish_rows = self.db.query(dishes_sql)
 
         # 创建推荐信息映射
         rec_info_map = {}
         for rec in recommended:
-            # 统一获取菜品ID
             dish_id = rec.get('dish_id') or rec.get('id')
             if dish_id:
                 rec_info_map[dish_id] = {
                     'servings': rec.get('servings', 1),
                     'portion_g': rec.get('portion_g'),
                     'match_score': rec.get('final_score', 0),
-                    'matched_needs': rec.get('matched_needs', [])
+                    'matched_needs': rec.get('matched_need_codes', [])
                 }
 
         # 按套餐聚合
         combo_map = {}
-        for r in rows:
+        for r in dish_rows:
             cid = r['combo_id']
             dish_id = r['dish_id']
 
@@ -233,31 +252,44 @@ class EnhancedDataAccess:
                     'dishes': []
                 }
 
-            # 获取推荐信息
-            rec_info = rec_info_map.get(dish_id, {})
-            servings = rec_info.get('servings', 1)
-            portion_g = rec_info.get('portion_g', float(r['default_portion_g']))
+            # 检查是否是推荐菜品
+            is_recommended = dish_id in recommended_dish_ids
+            rec_info = rec_info_map.get(dish_id, {}) if is_recommended else {}
 
-            # 获取匹配的需求标签
-            matched_needs = rec_info.get('matched_needs', [])
-            tags = [need['need_code'] for need in matched_needs] if matched_needs else []
-
-            combo_map[cid]['dishes'].append({
+            # 构建菜品信息
+            dish_info = {
                 'dish_id': dish_id,
                 'name': r['name'],
                 'emoji': r['emoji'],
-                'servings': servings,
-                'portion_g': portion_g,
+                'servings': rec_info.get('servings', 1) if is_recommended else 1,
+                'portion_g': rec_info.get('portion_g', float(r['default_portion_g'])) if is_recommended else float(
+                    r['default_portion_g']),
                 'rating': float(r['rating']),
-                'tags': tags,
-                'match_score': rec_info.get('match_score', 0)
-            })
+                'checked': is_recommended,  # 标记是否被推荐
+                'match_score': rec_info.get('match_score', 0) if is_recommended else 0
+            }
 
-            # 计算套餐得分
-            combo_map[cid]['score'] = min(5, len(combo_map[cid]['dishes']) +
-                                          sum(dish.get('match_score', 0) for dish in combo_map[cid]['dishes']) / 2)
+            # 如果是推荐菜品，添加标签信息
+            if is_recommended:
+                matched_needs = rec_info.get('matched_needs', [])
+                dish_info['tags'] = [matched_needs] or []
 
-        return sorted(combo_map.values(), key=lambda x: x['score'], reverse=True)[:5]
+            combo_map[cid]['dishes'].append(dish_info)
+
+            # 计算套餐得分：基于推荐菜品数量和匹配分数
+            if is_recommended:
+                combo_map[cid]['score'] += 1 + rec_info.get('match_score', 0)
+
+        # 按得分倒序并限制数量
+        sorted_combos = sorted(combo_map.values(), key=lambda x: x['score'], reverse=True)[:5]
+
+        # 为每个套餐添加推荐菜品计数
+        for combo in sorted_combos:
+            recommended_count = sum(1 for dish in combo['dishes'] if dish.get('checked'))
+            combo['recommendedCount'] = recommended_count
+            combo['totalCount'] = len(combo['dishes'])
+
+        return sorted_combos
 
     def _load_nutrient_rules(self):
         """加载营养素判断规则"""
@@ -387,3 +419,4 @@ class EnhancedDataAccess:
             processed_rows.append(processed_row)
 
         return processed_rows
+

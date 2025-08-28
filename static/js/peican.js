@@ -500,7 +500,9 @@ function renderMembers() {
         familyMembers = await getMembers(1);
         const memberIds = familyMembers.map(m => m.member_id).join(',');
         dietSolutions = await getDietSolutions(memberIds);
-        comboData = await getCombos(memberIds);
+        const mealType = new Date().getHours() < 10 ? 'breakfast' :
+                 new Date().getHours() < 16 ? 'lunch' : 'dinner';
+        comboData = await getCombos(memberIds, mealType, 1);
 
 // 新增：渲染 smart-guard-bar 的成员
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
@@ -608,7 +610,7 @@ function renderCombos() {
   if (!track) return;
 console.log("comboData" ,comboData)
   track.innerHTML = comboData.map((combo, idx) => `
-    <article class="combo-slide ${idx === 0 ? 'active' : ''}" data-combo="${combo.comboId}">
+    <article class="combo-row">
       <h3 class="combo-name">${combo.comboName}</h3>
       <p class="combo-desc">${combo.comboDesc}</p>
       <div class="dish-list">
@@ -617,14 +619,13 @@ console.log("comboData" ,comboData)
             <input type="checkbox" value="${dish.name}" ${dish.checked ? 'checked' : ''}>
             <img src="https://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
             <span class="dish-name">${dish.name}</span>
-            ${dish.servings ? `<span class="nutri-tag">${dish.servings}人份</span>` :''}
+            ${(dish.tags || []).map(tag => `<span class="nutri-tag">${tag}</span>${dish.match_score}`).join('')}
             ${dish.rating ? `<span class="dish-per">⭐⭐⭐⭐☆ ${dish.rating}</span>` : ''}
           </label>
         `).join('')}
       </div>
     </article>
   `).join('');
-  // initFirstComboSelection();
 }
 
 // 生成食材清单
@@ -737,8 +738,7 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
         renderMembers();
         //updateFilterDetails();
         showAchievement('首次使用', '营养规划师✨');
-          // 新增幻灯片初始化
-  //initSlideshow();
+
 
 renderTasteRow();                 // 生成尝鲜菜
   document.getElementById('refreshTasteInline')
@@ -950,74 +950,7 @@ function updateBasket(){
 /* 初始化 */
 updateBasket();
 
-/* ========== 幻灯片功能 ========== */
-function initSlideshow() {
-  const track = document.querySelector('.slideshow-track');
-  const slides = document.querySelectorAll('.combo-slide');
-  const indicators = document.querySelectorAll('.indicator');
-  const prevBtn = document.getElementById('prevSlide');
-  const nextBtn = document.getElementById('nextSlide');
-  let currentSlide = 0;
 
-  // 更新幻灯片位置
-  function updateSlidePosition() {
-    track.style.transform = `translateX(-${currentSlide * 100}%)`;
-
-    // 更新指示点
-    indicators.forEach((indicator, index) => {
-      indicator.classList.toggle('active', index === currentSlide);
-    });
-  }
-
-  // 切换到下一张
-  function nextSlide() {
-    currentSlide = (currentSlide + 1) % slides.length;
-    updateSlidePosition();
-  }
-
-  // 切换到上一张
-  function prevSlide() {
-    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-    updateSlidePosition();
-  }
-
-  // 点击指示点切换
-  indicators.forEach((indicator, index) => {
-    indicator.addEventListener('click', () => {
-      currentSlide = index;
-      updateSlidePosition();
-    });
-  });
-
-  // 按钮事件绑定
-  nextBtn.addEventListener('click', nextSlide);
-  prevBtn.addEventListener('click', prevSlide);
-
-  // 自动播放（可选）
-  let autoplayInterval = setInterval(nextSlide, 5000);
-
-  // 鼠标悬停时暂停自动播放
-  track.addEventListener('mouseenter', () => clearInterval(autoplayInterval));
-  track.addEventListener('mouseleave', () => {
-    autoplayInterval = setInterval(nextSlide, 5000);
-  });
-
-  // 初始化位置
-  updateSlidePosition();
-}
-
-// 初始化第一个套餐默认全选
-function initFirstComboSelection() {
-  const firstCombo = document.querySelector('.combo-slide[data-combo="morning"]');
-  const checkboxes = firstCombo.querySelectorAll('input[type="checkbox"]');
-
-  checkboxes.forEach(checkbox => {
-    checkbox.checked = true;
-    selectedDishes.push(checkbox.value);
-  });
-
-  updateBasket();
-}
 function renderTasteRow() {
   const container = document.getElementById('tasteRowList');
   const shuffled = [...tasteDishesPool].sort(() => Math.random() - 0.5);
