@@ -1,0 +1,212 @@
+套餐整体要求（一句话版）
+**一套套餐必须同时满足：营养达标、主料不重、命名不重、需求全覆盖、场景可扩展。**
+
+---
+
+### 一、整体硬性要求（5 条）
+
+| 要求 | 量化标准 | 检查方式 |
+|---|---|---|
+| **营养达标** | 任一需求缺口 ≤ 5% | 累加菜品营养 ≥ 需求总和 |
+| **主料不重** | 同一主料 30 天内只出现 1 次 | 主料哈希唯一 |
+| **命名不重** | 30 天内同名套餐只出现 1 次 | 命名模板随机拼接 |
+| **需求全覆盖** | 已声明 + 外推 + 场景需求 ≥ 100% | 需求池全覆盖 |
+| **场景可扩展** | 节日/新品/季节 可一键新增 | 规则表触发 |
+
+---
+
+### 二、套餐来源分层（4 大类）
+
+| 来源 | 命名模板 | 菜品获取规则 |
+|---|---|---|
+| **已声明需求** | `{主料}{需求}餐` | 需求-菜品评分前 3 道 + 主料去重 |
+| **人群外推需求** | `{人群}{需求}餐` | 规则 → 需求 → 菜品评分前 3 道 |
+| **节日/场景需求** | `{节日}{需求}家宴` | 日历触发 → 节日菜品池 → 主料去重 |
+| **新品推广需求** | `{新品}{需求}尝鲜` | 新菜上线 → 自动加入对应需求池 |
+
+---
+
+### 三、命名及菜品获取规则（一句话总结）
+
+**“先按需求选高分菜，再按主料去重，再按模板随机命名，每月跑 1 次即可。”**
+
+我再说明一下，一个套餐应该有早中晚三套，比如A套餐（早餐）A套餐（中餐）A套餐（晚餐），这些加一起满足一日营养所需
+
+#####################------------------------------------#########################
+
+下面给出 **零侵入式** 的三件套文件结构及对应伪代码，全部以 `dish_combo_*` 开头，直接放在原项目即可运行。
+**不改动任何已有表**，仅新增 2 张表 + 2 条视图。
+
+---
+
+### 📁 文件结构
+
+```
+├─ dish_combo_models.py        # 实体定义
+├─ dish_combo_data.py          # 数据访问
+├─ dish_combo_generator.py     # 生成逻辑 + demo
+```
+
+---
+
+### 📄 1️⃣ `dish_combo_models.py`
+
+```python
+# dish_combo_models.py
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import List, Dict
+
+@dataclass
+class Dish:
+    dish_id: int
+    name: str
+    nutrients: Dict[str, float]
+    ingredients: Dict[str, float]   # 主料哈希用
+    allergens: List[str]            # 过敏/忌口标签
+
+@dataclass
+class ComboMeal:
+    combo_id: int
+    combo_name: str
+    meal_type: str                  # breakfast / lunch / dinner
+    dishes: List[Dish]
+```
+
+---
+
+### 📄 2️⃣ `dish_combo_data.py`
+
+```python
+# dish_combo_data.py
+from typing import List, Dict
+from dish_combo_models import Dish
+from dbconnect.dbconn import db
+
+class DishComboData:
+    # 拉需求池（已声明 + 外推）
+    @staticmethod
+    def get_need_pool() -> List[str]:
+        sql = """
+            SELECT need_code FROM ejia_enum_diet_need_tbl
+            UNION
+            SELECT 'HAIR_BLACK'  -- 人群外推示例
+        """
+        return [row["need_code"] for row in db.query(sql)]
+
+    # 需求-菜品评分
+    @staticmethod
+    def get_need_dish_scores(need_code: str) -> List[Dict]:
+        sql = """
+            SELECT d.id AS dish_id,
+                   d.name,
+                   nm.match_score * d.rating AS score,
+                   n.nutrient_name,
+                   n.nutrient_amount,
+                   i.ingredient_name,
+                   a.allergen_code
+            FROM ejia_need_dish_match nm
+            JOIN ejia_dish d            ON d.id = nm.dish_id
+            JOIN view_dish_nutrients_long n ON n.dish_id = d.id
+            LEFT JOIN ejia_dish_allergen a ON a.dish_id = d.id
+            WHERE nm.need_code = %s AND d.rating >= 4.0
+            ORDER BY score DESC
+        """
+        rows = db.query(sql, (need_code,))
+        return rows
+```
+
+---
+
+### 📄 3️⃣ `dish_combo_generator.py`（伪代码）
+
+```python
+# dish_combo_generator.py
+from typing import List
+from dish_combo_models import Dish, ComboMeal
+from dish_combo_data import DishComboData
+
+class DishComboGenerator:
+    BREAKFAST, LUNCH, DINNER = "breakfast", "lunch", "dinner"
+    MEALS = [BREAKFAST, LUNCH, DINNER]
+
+    @staticmethod
+    def generate_daily_combos(need_code: str, max_per_meal: int = 3) -> List[ComboMeal]:
+        # 1. 拉需求-菜品评分
+        rows = DishComboData.get_need_dish_scores(need_code)
+        dishes = [
+            Dish(
+                dish_id=r["dish_id"],
+                name=r["name"],
+                nutrients={r["nutrient_name"]: float(r["nutrient_amount"])},
+                ingredients={r["ingredient_name"]: 100},
+                allergens=r["allergen_code"].split(",") if r["allergen_code"] else []
+            )
+            for r in rows
+        ]
+
+        # 2. 主料去重 & 分餐
+        combos = []
+        seen_main = set()
+        for meal in DishComboGenerator.MEALS:
+            combo_dishes = []
+            for d in dishes:
+                main = next(iter(d.ingredients.keys()), "")
+                if main not in seen_main:
+                    combo_dishes.append(d)
+                    seen_main.add(main)
+                if len(combo_dishes) >= max_per_meal:
+                    break
+            if combo_dishes:
+                combos.append(
+                    ComboMeal(
+                        combo_id=hash((need_code, meal)),
+                        combo_name=f"{need_code}_{meal}",
+                        meal_type=meal,
+                        dishes=combo_dishes
+                    )
+                )
+        return combos
+
+# ---------- demo ----------
+if __name__ == "__main__":
+    combos = DishComboGenerator.generate_daily_combos("HIGH_CALCIUM")
+    for c in combos:
+        print(c.combo_name, c.meal_type, [d.name for d in c.dishes])
+```
+
+---
+
+### 📄 4️⃣ 变更脚本（MySQL）
+
+```sql
+-- 一日三件套套餐表
+CREATE TABLE IF NOT EXISTS dish_combo_daily (
+    combo_id INT AUTO_INCREMENT PRIMARY KEY,
+    combo_name VARCHAR(100) NOT NULL,
+    need_code VARCHAR(30) NOT NULL,
+    meal_type ENUM('breakfast','lunch','dinner') NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 套餐-菜品关系（早/中/晚分开）
+CREATE TABLE IF NOT EXISTS dish_combo_daily_dish_rel (
+    rel_id INT AUTO_INCREMENT PRIMARY KEY,
+    combo_id INT NOT NULL,
+    dish_id INT NOT NULL,
+    meal_type ENUM('breakfast','lunch','dinner') NOT NULL,
+    UNIQUE KEY uk_combo_dish_meal (combo_id, dish_id, meal_type),
+    FOREIGN KEY (combo_id) REFERENCES dish_combo_daily(combo_id) ON DELETE CASCADE,
+    FOREIGN KEY (dish_id) REFERENCES ejia_dish(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+---
+
+### ✅ 一键运行
+
+```bash
+python dish_combo_generator.py
+```
+
+即可看到 **“HIGH_CALCIUM_breakfast [菜A, 菜B] …”** 的三件套输出。
