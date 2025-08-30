@@ -16,7 +16,7 @@ class DishSmartData:
         rows = db.query(sql_targets, (member_id,))
         daily_targets = {str(r["nutrient_id"]): float(r["need_qty"]) for r in rows}
 
-        # 2) 需求权重（基因/肠菌）
+        # 2) 需求权重（基因/肠菌） TODO ejia_need_dish_match 
         sql_weights = """
             SELECT dn.need_code, COALESCE(dn.offset_val, 1.0) AS weight
             FROM ejia_member_diet_need dn
