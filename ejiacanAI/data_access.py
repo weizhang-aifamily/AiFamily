@@ -158,7 +158,7 @@ class EnhancedDataAccess:
                 JOIN ejia_member_allergen ma ON ma.allergen_code = ea.code
                 WHERE ma.member_id IN ({member_ids_str})
             )
-            GROUP BY d.id, d.name, d.emoji, d.default_portion_g, d.max_servings, d.rating
+            GROUP BY d.id, d.name, d.emoji, d.default_portion_g, d.rating
             HAVING matched_needs_count >= 1
             ORDER BY weighted_score DESC, d.rating DESC
             LIMIT %s

@@ -1,212 +1,267 @@
-套餐整体要求（一句话版）
-**一套套餐必须同时满足：营养达标、主料不重、命名不重、需求全覆盖、场景可扩展。**
+当然，以下是根据您提供的代码文件（数据库结构、模型类、数据层、生成器逻辑和演示脚本）**反向推导出的完整需求文档**，涵盖了系统目标、用户群体、功能列表、使用场景、数据流、算法逻辑、测试用例等所有关键细节。
 
 ---
 
-### 一、整体硬性要求（5 条）
-
-| 要求 | 量化标准 | 检查方式 |
-|---|---|---|
-| **营养达标** | 任一需求缺口 ≤ 5% | 累加菜品营养 ≥ 需求总和 |
-| **主料不重** | 同一主料 30 天内只出现 1 次 | 主料哈希唯一 |
-| **命名不重** | 30 天内同名套餐只出现 1 次 | 命名模板随机拼接 |
-| **需求全覆盖** | 已声明 + 外推 + 场景需求 ≥ 100% | 需求池全覆盖 |
-| **场景可扩展** | 节日/新品/季节 可一键新增 | 规则表触发 |
+## 🍽️ 智能家庭套餐推荐系统 - 需求文档
 
 ---
 
-### 二、套餐来源分层（4 大类）
+### 一、项目背景与目标
 
-| 来源 | 命名模板 | 菜品获取规则 |
-|---|---|---|
-| **已声明需求** | `{主料}{需求}餐` | 需求-菜品评分前 3 道 + 主料去重 |
-| **人群外推需求** | `{人群}{需求}餐` | 规则 → 需求 → 菜品评分前 3 道 |
-| **节日/场景需求** | `{节日}{需求}家宴` | 日历触发 → 节日菜品池 → 主料去重 |
-| **新品推广需求** | `{新品}{需求}尝鲜` | 新菜上线 → 自动加入对应需求池 |
+#### 1.1 背景
+现代家庭越来越注重健康饮食，但面临以下痛点：
+- **成员多样**：不同年龄（幼儿、儿童、成人）、性别、健康状态（过敏、体检异常、饮食目标）的成员需求差异大。
+- **营养均衡难**：手动规划一日三餐难以满足每个人的矿物质、维生素、宏量营养素需求。
+- **时间有限**：希望快速烹饪（≤30分钟）、避免复杂菜品。
+- **禁忌管理**：需自动规避家庭过敏原。
 
----
-
-### 三、命名及菜品获取规则（一句话总结）
-
-**“先按需求选高分菜，再按主料去重，再按模板随机命名，每月跑 1 次即可。”**
-
-我再说明一下，一个套餐应该有早中晚三套，比如A套餐（早餐）A套餐（中餐）A套餐（晚餐），这些加一起满足一日营养所需
-
-#####################------------------------------------#########################
-
-下面给出 **零侵入式** 的三件套文件结构及对应伪代码，全部以 `dish_combo_*` 开头，直接放在原项目即可运行。
-**不改动任何已有表**，仅新增 2 张表 + 2 条视图。
+#### 1.2 目标
+构建一个**智能套餐生成系统**，能够：
+- 根据家庭成员的身体数据、健康目标和禁忌，自动生成**个性化套餐**（早/中/晚或全天）。
+- 保证**营养均衡**、**烹饪快捷**、**避免过敏**。
+- 支持**份量智能分配**（成人/儿童/幼儿不同份量）。
+- 提供**灵活配置**（最大菜品数、烹饪时间、份量规则等）。
 
 ---
 
-### 📁 文件结构
+### 二、用户群体
 
-```
-├─ dish_combo_models.py        # 实体定义
-├─ dish_combo_data.py          # 数据访问
-├─ dish_combo_generator.py     # 生成逻辑 + demo
-```
+| 用户角色         | 特征                                                                 | 使用场景                                                                 |
+|------------------|----------------------------------------------------------------------|--------------------------------------------------------------------------|
+| 家庭主厨/健康管理者 | 负责一家人的饮食安排，关心营养搭配和烹饪效率                           | 生成全家的每日套餐，避免重复劳动，满足多样需求                             |
+| 有特殊需求成员     | 如过敏体质、高血压、缺铁、高钙需求、减肥目标等                         | 系统自动规避过敏原，并优先推荐符合其健康需求的菜品                           |
+| 忙碌的职场父母     | 时间有限，希望快速做出健康饭菜                                         | 使用“快速早餐”模式，生成10分钟内完成的套餐                               |
+| 幼儿家庭         | 有3岁以下幼儿，需要特殊软食、小份量、高营养密度                         | 系统自动识别幼儿，分配小份量、易消化的菜品                                 |
 
 ---
 
-### 📄 1️⃣ `dish_combo_models.py`
+### 三、系统功能列表
 
+#### 3.1 核心功能
+| 功能名称                 | 描述                                                                 |
+|--------------------------|----------------------------------------------------------------------|
+| 家庭成员管理             | 维护成员信息：年龄、性别、身高、体重、活动水平、过敏源、体检指标、健康目标等 |
+| 营养需求计算             | 基于RNI模板、体检异常、个人目标，计算每人每日营养素需求区间                 |
+| 套餐生成                 | 根据餐型（早/中/晚）、成员列表、禁忌设置，生成符合营养需求的菜品组合         |
+| 过敏原检测与过滤         | 自动检测菜品中是否含家庭过敏原，支持“仅标记”或“完全过滤”模式               |
+| 份量智能分配             | 根据成员年龄自动分配S/M/L份量（幼儿S、儿童M、成人L）                      |
+| 烹饪时间控制             | 支持按餐型设置最大烹饪时间（早餐15min、午餐30min、晚餐45min）              |
+| 需求标签匹配             | 显示每道菜满足哪些健康需求（如“高钙”、“低脂”、“富铁”）                    |
+
+#### 3.2 辅助功能
+| 功能名称                 | 描述                                                                 |
+|--------------------------|----------------------------------------------------------------------|
+| 套餐命名                 | 自动生成带有需求标签的套餐名称（如“高钙·富铁午餐”）                      |
+| 历史记录                 | 记录成员吃过的菜品，避免重复推荐                                       |
+| 外部需求推断             | 根据年龄自动附加需求（如幼儿自动附加“TODDLER”需求）                      |
+| 配置管理                 | 支持自定义菜品数量、份量规则、烹饪时间、营养分配比例等                   |
+
+---
+
+### 四、输入数据
+
+| 数据类别         | 来源表/字段                                                                 | 说明                                                                 |
+|------------------|----------------------------------------------------------------------------|----------------------------------------------------------------------|
+| 成员基本信息     | `ejia_user_family_member`：id, age, gender, height_cm, weight_kg, pal       | 用于计算基础代谢和营养素需求                                           |
+| 成员过敏原       | `ejia_member_allergen`：member_id, allergen_code, severity                 | 用于过滤或标记含过敏原的菜品                                           |
+| 成员体检指标     | `ejia_member_checkup`：item_code, actual_value, result_status              | 用于推断营养素偏移（如缺铁、高钠）                                     |
+| 成员健康目标     | `ejia_member_goal`：goal_code, goal_value                                  | 如减肥、增肌、控糖等，影响营养素需求                                   |
+| 菜品信息         | `ejia_dish`：id, name, emoji, cook_time, default_portion_g, rating          | 菜品基本属性                                                           |
+| 菜品食材         | `ejia_dish_food_rel` + `foods`                                              | 用于计算菜品营养成分和过敏原                                           |
+| 菜品营养成分     | `view_dish_nutrients_long`（视图）                                         | 每道菜的营养素含量（钙、铁、钠、脂肪、蛋白质、膳食纤维、嘌呤、热量）       |
+| 菜品过敏原       | `ejia_allergen_food_rel`                                                   | 食材级过敏原标记                                                       |
+| 需求-菜品匹配度  | `ejia_need_dish_match`：need_code, dish_id, match_score                    | 预计算的匹配分数，用于优先推荐                                         |
+
+---
+
+### 五、输出数据
+
+#### 5.1 输出对象：`ComboMeal`
+| 字段名           | 类型                      | 说明                                                                 |
+|------------------|---------------------------|----------------------------------------------------------------------|
+| `combo_id`       | int                       | 套餐ID（基于成员ID和餐型哈希生成）                                   |
+| `combo_name`     | str                       | 套餐名称（如“高钙·富铁午餐”）                                        |
+| `need_codes`     | List[str]                 | 满足的需求标签列表（如["HIGH_CALCIUM", "RICH_IRON"]）                |
+| `meal_type`      | str                       | 餐型：breakfast / lunch / dinner                                    |
+| `dishes`         | List[Dish]                | 菜品列表                                                             |
+| `total_cook_time`| int                       | 总烹饪时间（分钟）                                                   |
+| `portion_plan`   | Dict[str, List[str]]      | 份量分配方案（如{"toddler": ["粥:S"], "adult": ["炒饭:L"]}）          |
+
+#### 5.2 输出对象：`Dish`
+| 字段名           | 类型               | 说明                                                                 |
+|------------------|--------------------|----------------------------------------------------------------------|
+| `dish_id`        | int                | 菜品ID                                                               |
+| `name`           | str                | 菜品名称                                                             |
+| `nutrients`      | Dict[str, float]   | 营养素含量（每100g）                                                 |
+| `ingredients`    | Dict[str, float]   | 食材及用量（g）                                                      |
+| `cook_time`      | int                | 烹饪时间（分钟）                                                     |
+| `allergens`      | List[str]          | 过敏原列表（仅当与家庭过敏原重合时）                                 |
+| `portion_size`   | str                | 份量规格：S / M / L                                                  |
+| `matched_needs`  | List[str]          | 匹配的需求代码列表                                                   |
+
+---
+
+### 六、算法逻辑详解
+
+#### 6.1 营养需求计算流程
 ```python
-# dish_combo_models.py
-from __future__ import annotations
-from dataclasses import dataclass
-from typing import List, Dict
-
-@dataclass
-class Dish:
-    dish_id: int
-    name: str
-    nutrients: Dict[str, float]
-    ingredients: Dict[str, float]   # 主料哈希用
-    allergens: List[str]            # 过敏/忌口标签
-
-@dataclass
-class ComboMeal:
-    combo_id: int
-    combo_name: str
-    meal_type: str                  # breakfast / lunch / dinner
-    dishes: List[Dish]
+1. 获取每个成员的 RNI 基础值（根据年龄、性别、活动水平）
+2. 根据体检异常值（如血红蛋白低）调整铁需求
+3. 根据健康目标（如减肥）调整热量、脂肪需求
+4. 汇总每个成员的需求，得到家庭总需求区间（min_need_qty, max_need_qty）
+5. 按餐型分配比例（早餐30%、午餐40%、晚餐30%）
 ```
 
----
-
-### 📄 2️⃣ `dish_combo_data.py`
-
+#### 6.2 菜品选择算法
 ```python
-# dish_combo_data.py
-from typing import List, Dict
-from dish_combo_models import Dish
-from dbconnect.dbconn import db
-
-class DishComboData:
-    # 拉需求池（已声明 + 外推）
-    @staticmethod
-    def get_need_pool() -> List[str]:
-        sql = """
-            SELECT need_code FROM ejia_enum_diet_need_tbl
-            UNION
-            SELECT 'HAIR_BLACK'  -- 人群外推示例
-        """
-        return [row["need_code"] for row in db.query(sql)]
-
-    # 需求-菜品评分
-    @staticmethod
-    def get_need_dish_scores(need_code: str) -> List[Dict]:
-        sql = """
-            SELECT d.id AS dish_id,
-                   d.name,
-                   nm.match_score * d.rating AS score,
-                   n.nutrient_name,
-                   n.nutrient_amount,
-                   i.ingredient_name,
-                   a.allergen_code
-            FROM ejia_need_dish_match nm
-            JOIN ejia_dish d            ON d.id = nm.dish_id
-            JOIN view_dish_nutrients_long n ON n.dish_id = d.id
-            LEFT JOIN ejia_dish_allergen a ON a.dish_id = d.id
-            WHERE nm.need_code = %s AND d.rating >= 4.0
-            ORDER BY score DESC
-        """
-        rows = db.query(sql, (need_code,))
-        return rows
+1. 获取菜品池（过滤烹饪时间超限的）
+2. 优先选择匹配成员特定需求（如HIGH_CALCIUM）的菜品
+3. 检查过敏原：若开启过滤，则跳过含家庭过敏原的菜品
+4. 检查主料是否重复（避免同一餐中出现相同主料）
+5. 检查营养贡献是否在剩余需求范围内
+6. 更新剩余营养需求
+7. 若菜品数不足，补充基础营养菜品
 ```
 
----
-
-### 📄 3️⃣ `dish_combo_generator.py`（伪代码）
-
+#### 6.3 份量分配算法
 ```python
-# dish_combo_generator.py
-from typing import List
-from dish_combo_models import Dish, ComboMeal
-from dish_combo_data import DishComboData
+if 有幼儿:
+    第1道菜分配为S（幼儿专用）
+    其余为L（成人）
+elif 有儿童:
+    前N道（儿童数）为M
+    其余为L
+else:
+    全部为L
+```
 
-class DishComboGenerator:
-    BREAKFAST, LUNCH, DINNER = "breakfast", "lunch", "dinner"
-    MEALS = [BREAKFAST, LUNCH, DINNER]
-
-    @staticmethod
-    def generate_daily_combos(need_code: str, max_per_meal: int = 3) -> List[ComboMeal]:
-        # 1. 拉需求-菜品评分
-        rows = DishComboData.get_need_dish_scores(need_code)
-        dishes = [
-            Dish(
-                dish_id=r["dish_id"],
-                name=r["name"],
-                nutrients={r["nutrient_name"]: float(r["nutrient_amount"])},
-                ingredients={r["ingredient_name"]: 100},
-                allergens=r["allergen_code"].split(",") if r["allergen_code"] else []
-            )
-            for r in rows
-        ]
-
-        # 2. 主料去重 & 分餐
-        combos = []
-        seen_main = set()
-        for meal in DishComboGenerator.MEALS:
-            combo_dishes = []
-            for d in dishes:
-                main = next(iter(d.ingredients.keys()), "")
-                if main not in seen_main:
-                    combo_dishes.append(d)
-                    seen_main.add(main)
-                if len(combo_dishes) >= max_per_meal:
-                    break
-            if combo_dishes:
-                combos.append(
-                    ComboMeal(
-                        combo_id=hash((need_code, meal)),
-                        combo_name=f"{need_code}_{meal}",
-                        meal_type=meal,
-                        dishes=combo_dishes
-                    )
-                )
-        return combos
-
-# ---------- demo ----------
-if __name__ == "__main__":
-    combos = DishComboGenerator.generate_daily_combos("HIGH_CALCIUM")
-    for c in combos:
-        print(c.combo_name, c.meal_type, [d.name for d in c.dishes])
+#### 6.4 套餐命名算法
+```python
+需求标签映射 = {
+    "HIGH_CALCIUM": "高钙",
+    "RICH_IRON": "富铁",
+    "LOW_FAT": "低脂",
+    ...
+}
+取前2个需求标签 + 餐型名称 → e.g., "高钙·富铁午餐"
 ```
 
 ---
 
-### 📄 4️⃣ 变更脚本（MySQL）
+### 七、使用场景与用户故事
 
-```sql
--- 一日三件套套餐表
-CREATE TABLE IF NOT EXISTS dish_combo_daily (
-    combo_id INT AUTO_INCREMENT PRIMARY KEY,
-    combo_name VARCHAR(100) NOT NULL,
-    need_code VARCHAR(30) NOT NULL,
-    meal_type ENUM('breakfast','lunch','dinner') NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+#### 用户故事1：为三口之家生成全天套餐
+**作为** 家庭主厨  
+**我希望** 系统为我生成早、中、晚三套套餐  
+**以便** 我可以一次性购买食材并安排烹饪计划  
 
--- 套餐-菜品关系（早/中/晚分开）
-CREATE TABLE IF NOT EXISTS dish_combo_daily_dish_rel (
-    rel_id INT AUTO_INCREMENT PRIMARY KEY,
-    combo_id INT NOT NULL,
-    dish_id INT NOT NULL,
-    meal_type ENUM('breakfast','lunch','dinner') NOT NULL,
-    UNIQUE KEY uk_combo_dish_meal (combo_id, dish_id, meal_type),
-    FOREIGN KEY (combo_id) REFERENCES dish_combo_daily(combo_id) ON DELETE CASCADE,
-    FOREIGN KEY (dish_id) REFERENCES ejia_dish(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
+**验收条件**：
+- [ ] 早餐≤15分钟，午餐≤30分钟，晚餐≤45分钟
+- [ ] 满足成人*2+儿童*1的营养需求
+- [ ] 避免儿童过敏的花生
+- [ ] 显示每道菜的需求标签（如“高钙”）
+
+#### 用户故事2：快速生成早餐套餐
+**作为** 上班族  
+**我希望** 生成一个10分钟内能完成的早餐套餐  
+**以便** 我能在出门前快速吃完  
+
+**验收条件**：
+- [ ] 总烹饪时间≤10分钟
+- [ ] 包含至少1道高蛋白菜品
+- [ ] 份量适中（不浪费）
+
+#### 用户故事3：幼儿专用套餐
+**作为** 幼儿妈妈  
+**我希望** 系统自动识别幼儿并分配小份量、软质菜品  
+**以便** 幼儿也能安全食用  
+
+**验收条件**：
+- [ ] 幼儿菜品标记为S份量
+- [ ] 菜品不含硬质、易噎食材
+- [ ] 优先高钙、高铁菜品
 
 ---
 
-### ✅ 一键运行
+### 八、测试用例示例
 
-```bash
-python dish_combo_generator.py
-```
+#### TC1：生成全家午餐套餐
+| 输入 | 值 |
+|------|-----|
+| 成员ID | [1, 2, 3] |
+| 餐型 | lunch |
+| 过滤过敏原 | 是 |
+| 最大烹饪时间 | 30分钟 |
 
-即可看到 **“HIGH_CALCIUM_breakfast [菜A, 菜B] …”** 的三件套输出。
+| 预期输出 | 值 |
+|----------|-----|
+| 菜品数 | 3~5道 |
+| 总时间 | ≤30分钟 |
+| 过敏原 | 无花生、海鲜 |
+| 需求标签 | 包含“高钙”、“富铁” |
+
+#### TC2：幼儿份量分配
+| 输入 | 值 |
+|------|-----|
+| 成员ID | [1, 2, 4]（4为幼儿） |
+| 餐型 | dinner |
+
+| 预期输出 | 值 |
+|----------|-----|
+| 份量计划 | 包含"toddler"类别 |
+| 幼儿菜品 | 份量为S |
+| 成人菜品 | 份量为L |
+
+#### TC3：快速早餐模式
+| 输入 | 值 |
+|------|-----|
+| 成员ID | [1, 2] |
+| 餐型 | breakfast |
+| 最大烹饪时间 | 10分钟 |
+
+| 预期输出 | 值 |
+|----------|-----|
+| 总时间 | ≤10分钟 |
+| 菜品数 | 2~3道 |
+| 需求标签 | 包含“高蛋白” |
+
+---
+
+### 九、未覆盖需求与扩展建议
+
+#### 9.1 目前未覆盖
+- [ ] **菜品库存联动**：根据家中已有食材推荐菜品
+- [ ] **季节推荐**：优先推荐当季食材
+- [ ] **口味偏好**：成员口味（辣、甜、酸）记录与匹配
+- [ ] **烹饪方式偏好**：蒸、煮、炒、烤等偏好设置
+- [ ] **套餐成本控制**：根据预算过滤菜品
+
+#### 9.2 扩展建议
+- 接入智能厨具API，同步烹饪时间
+- 增加图片识别功能，识别家中现有食材
+- 支持导入体检报告（PDF/Excel）自动解析异常指标
+- 接入外卖API，直接下单套餐食材
+
+---
+
+潜在优化方向
+1. 性能优化
+菜品池预加载和缓存
+
+营养计算批量处理
+
+数据库查询优化
+
+2. 算法增强
+机器学习推荐：基于历史数据优化推荐
+
+多目标优化：同时优化营养、成本、口味等多个目标
+
+实时调整：根据用户反馈动态调整推荐策略
+
+3. 功能扩展
+季节性食材推荐
+
+烹饪难度分级
+
+套餐成本控制

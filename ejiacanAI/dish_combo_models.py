@@ -1,21 +1,43 @@
 # dish_combo_models.py
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 
 
 @dataclass
+class MergeConfig:
+    """智能合并配置"""
+    # 合并优先级配置
+    merge_priority_rules: List[Tuple[str, int]] = field(default_factory=lambda: [
+        ("NO_SPECIFIC_NEEDS", 1),  # 无特定需求的菜品
+        ("SINGLE_NEED", 2),  # 只满足一个需求
+        ("BALANCED_NEED", 3),  # 均衡营养类
+        ("CORE_NEED", 4),  # 核心需求菜品
+    ])
+
+    # 合并阈值配置
+    nutrient_overlap_threshold: float = 0.7  # 营养重叠度阈值
+    min_similarity_for_merge: float = 0.6  # 最小相似度才合并
+    max_merge_per_meal: int = 2  # 每餐最多合并次数
+
+    # 菜品类型配置
+    non_mergeable_categories: List[str] = field(default_factory=lambda: [
+        "主食", "汤品", "特色菜"
+    ])
+
+    # 目标菜品数量配置（基于家庭成员数）
+    target_dish_counts: Dict[int, int] = field(default_factory=lambda: {
+        1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8
+    })
+
+@dataclass
 class ComboConfig:
-    # 菜品数量配置
+
+    # 份量配置
     base_dish_count: int = 3
     dish_per_adult: int = 1
     dish_per_child: int = 1
     toddler_extra_dish: int = 1
-
-    # 份量配置
-    portion_adult: str = "L"
-    portion_child: str = "M"
-    portion_toddler: str = "S"
     portion_ratios: Dict[str, float] = field(default_factory=lambda: {"S": 0.5, "M": 1.0, "L": 1.5})
 
     # 烹饪时间配置（分钟）
@@ -24,15 +46,12 @@ class ComboConfig:
     cook_time_dinner: int = 45
     cook_time_all: int = 30
 
-    # 营养配置
-    nutrient_tolerance: float = 0.05
-    include_allergens: bool = True
-
     # 各餐型营养分配比例
     nutrient_ratio_breakfast: float = 0.3  # 早餐30%
     nutrient_ratio_lunch: float = 0.4      # 午餐40%
     nutrient_ratio_dinner: float = 0.3     # 晚餐30%
     nutrient_ratio_single: float = 1.0     # 单餐100%
+    merge_config: MergeConfig = field(default_factory=MergeConfig)
 
 @dataclass
 class MemberInfo:

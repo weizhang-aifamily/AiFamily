@@ -1,6 +1,6 @@
 # dish_combo_generator_demo.py
-from dish_combo_generator import DishComboGenerator
-from dish_combo_models import ComboConfig
+from ejiacanAI.dish_combo_generator import DishComboGenerator
+from ejiacanAI.dish_combo_models import ComboConfig
 
 
 def demo_all_features():

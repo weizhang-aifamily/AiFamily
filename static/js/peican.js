@@ -1,4 +1,4 @@
-import { getMembers,getDietSolutions,getCombos } from './familyDataLoader.js';
+import { getMembers,getDietSolutions,getCombos,getDishReco } from './familyDataLoader.js';
 /* ============= 1. 常量数据定义 ============= */
 
 let familyMembers = [
@@ -364,81 +364,22 @@ let comboData = [
         tags: ['高钙 +72 %'],
         checked: true,
         rating: 4.7
-      },
-      {
-        id: 2,
-        name: '牛奶布丁',
-        picSeed: 'pudding',
-        tags: ['钙 +60 %'],
-        checked: true
-      },
-      {
-        id: 3,
-        name: '烤杏仁',
-        picSeed: 'almond',
-        tags: ['VE +45 %'],
-        checked: true,
-        rating: 4.7
       }
     ]
-  },
+  }
+];
+/* ========== 1. 推荐菜数据结构 ========== */
+let dishRecoData = [
   {
-    comboId: 'noon',
-    comboName: '轻盈铁骑宴',
-    comboDesc: '铁吸收 ↑58 %，零负担',
+    comboId: 'morning',
+    comboName: '晨曦钙能宴',
+    comboDesc: '10 分钟补足全天钙 80 %',
     dishes: [
       {
-        id: 4,
-        name: '羽衣甘蓝牛肉卷',
-        picSeed: 'beefwrap',
-        tags: ['铁 +58 %'],
-        checked: false,
-        rating: 4.7
-      },
-      {
-        id: 5,
-        name: '草莓沙拉',
-        picSeed: 'strawberry',
-        tags: ['维C +90 %'],
-        checked: false,
-        rating: 4.7
-      },
-      {
-        id: 6,
-        name: '全麦面包',
-        picSeed: 'bread',
-        tags: ['膳食纤维 +30 %'],
-        checked: false,
-        rating: 4.7
-      }
-    ]
-  },
-  {
-    comboId: 'night',
-    comboName: '晚安平衡宴',
-    comboDesc: '低钠、助眠、修复肌肉',
-    dishes: [
-      {
-        id: 7,
-        name: '香菇蒸鳕鱼',
-        picSeed: 'cod',
-        tags: ['优质蛋白 +40 %'],
-        checked: false,
-        rating: 4.7
-      },
-      {
-        id: 8,
-        name: '清炒芦笋',
-        picSeed: 'asparagus',
-        tags: ['叶酸 +35 %'],
-        checked: false,
-        rating: 4.7
-      },
-      {
-        id: 9,
-        name: '番茄汤',
-        picSeed: 'tomato',
-        tags: ['番茄红素 +50 %'],
+        id: 1,
+        name: '奶酪焗南瓜',
+        picSeed: 'pumpkin',
+        nutri_tags: ['高钙 +72 %'],
         checked: false,
         rating: 4.7
       }
@@ -503,6 +444,7 @@ function renderMembers() {
         const mealType = new Date().getHours() < 10 ? 'breakfast' :
                  new Date().getHours() < 16 ? 'lunch' : 'dinner';
         comboData = await getCombos(memberIds, mealType, 1);
+        dishRecoData = await getDishReco(memberIds, mealType, 1);
 
 // 新增：渲染 smart-guard-bar 的成员
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
@@ -599,6 +541,7 @@ function updateFilterDetails() {
     function generateRecommendations() {
         //generateIngredients();
         renderCombos();
+        renderDishreco();
         generateDishes();
         usageCount++;
         updateAchievementProgress();
@@ -612,17 +555,36 @@ console.log("comboData" ,comboData)
   track.innerHTML = comboData.map((combo, idx) => `
     <article class="combo-row">
       <h3 class="combo-name">${combo.comboName}</h3>
-      <p class="combo-desc">${combo.comboDesc}</p>
+<!--      <p class="combo-desc">${combo.comboDesc}</p>-->
       <div class="dish-list">
         ${combo.dishes.map(dish => `
           <label class="dish-item">
             <input type="checkbox" value="${dish.name}" ${dish.checked ? 'checked' : ''}>
             <img src="https://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
-            <span class="dish-name">${dish.name}</span>
-            ${(dish.tags || []).map(tag => `<span class="nutri-tag">${tag}</span>${dish.match_score}`).join('')}
+            <span class="dish-name">${dish.name}</span>${dish.cookTime}分钟<span></span>
+            ${(dish.tags || []).map(tag => `<span class="nutri-tag">${tag}</span>${dish.portion_size}份`).join('')}
             ${dish.rating ? `<span class="dish-per">⭐⭐⭐⭐☆ ${dish.rating}</span>` : ''}
           </label>
         `).join('')}
+      </div>
+    </article>
+  `).join('');
+}
+/* ========== 2. 加载推荐菜 ========== */
+function renderDishreco() {
+  const track = document.getElementById('dishrecoRowList');
+  if (!track) return;
+console.log("dishRecoData" ,dishRecoData)
+  track.innerHTML = dishRecoData.map((dish, idx) => `
+    <article class="combo-row">
+      <div class="dish-list">
+          <label class="dish-item">
+            <input type="checkbox" value="${dish.name}" ${dish.checked ? 'checked' : ''}>
+            <img src="https://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
+            <span class="dish-name">${dish.name}</span><span>⏱️${dish.cookTime}分钟</span>
+            ${(dish.nutri_tags || []).map(tag => `<span class="nutri-tag">${tag}</span>⚖️${dish.portion_size}份`).join('')}
+            ${dish.rating ? `<span class="dish-per">⭐⭐⭐⭐☆ ${dish.rating}</span>` : ''}
+          </label>
       </div>
     </article>
   `).join('');

@@ -1,9 +1,12 @@
-from flask import Blueprint, jsonify, json, request
-from typing import List, Dict, Optional
+from typing import List, Dict
+
+from flask import Blueprint, jsonify, request
 from dbconnect.dbconn import db
+from ejiacanAI.dish_combo_generator import DishComboGenerator
+from ejiacanAI.dish_combo_models import ComboMeal
 from ejiacanAI.engine import ILPRecommender
 from ejiacanAI.data_access import EnhancedDataAccess
-from ejiacanAI.smart_recommender import SmartRecommender, RecommendationConfig
+from ejiacanAI.smart_recommender import SmartRecommender
 import logging
 logger = logging.getLogger(__name__)
 family_bp = Blueprint('family', __name__, url_prefix='/family')
@@ -61,6 +64,73 @@ def get_combos(member_ids):
         max_results = min(int(request.args.get('max_results', 10)), 50)
 
         # 1. 获取智能推荐结果
+        # recommendations = recommender.recommend(member_ids_list, meal_type, max_results)
+        # 使用套餐生成器生成全天套餐
+        all_day_meals = DishComboGenerator.generate_family_combo(
+            member_ids=member_ids_list,
+            meal_type="all",  # 或者使用传入的 meal_type 参数
+            filter_allergens=True
+        )
+        if not all_day_meals:
+            return jsonify({"status": "success", "data": [], "message": "未找到合适的菜品组合"})
+
+        # 2. 将推荐结果转换为套餐格式（保持原有返回结构）
+        #combos = _convert_recommendations_to_combos(recommendations)
+        # combos = dao.fetch_matching_combos_new(recommendations)
+        combos = _convert_combos_to_response(all_day_meals)
+        return jsonify({
+            "status": "success",
+            "data": combos,
+            "metadata": {
+                "recommendation_type": "smart",
+                "total_recommendations": len(all_day_meals)
+            }
+        })
+
+    except Exception as e:
+        logger.error("Get combos error: %s", str(e))
+
+
+def _convert_combos_to_response(combos: List[ComboMeal]) -> List[Dict]:
+    """将 ComboMeal 对象转换为前端需要的 JSON 格式"""
+    result = []
+
+    for combo in combos:
+        combo_data = {
+            'comboName': combo.combo_name,
+            'mealType': combo.meal_type,
+            'cookTime': combo.total_cook_time,
+            'need_codes': combo.need_codes,
+            'dishes': [],
+            'portion_plan': combo.portion_plan
+        }
+
+        # 转换菜品信息
+        for dish in combo.dishes:
+            dish_data = {
+                'dish_id': dish.dish_id,
+                'name': dish.name,
+                'cookTime': dish.cook_time,
+                'portion_size': dish.portion_size,
+                'nutrients': dish.nutrients,
+                'ingredients': dish.ingredients,
+                'allergens': dish.allergens if hasattr(dish, 'allergens') else [],
+                'tags': getattr(dish, 'matched_needs', [])
+            }
+            combo_data['dishes'].append(dish_data)
+
+        result.append(combo_data)
+
+    return result
+
+@family_bp.route('/getDishReco/<member_ids>', methods=['GET'])
+def getDishReco(member_ids):
+    try:
+        member_ids_list = list(map(int, member_ids.split(',')))
+        meal_type = request.args.get('meal_type', 'lunch')
+        max_results = min(int(request.args.get('max_results', 10)), 50)
+
+        # 1. 获取智能推荐结果
         recommendations = recommender.recommend(member_ids_list, meal_type, max_results)
 
         if not recommendations:
@@ -68,7 +138,7 @@ def get_combos(member_ids):
 
         # 2. 将推荐结果转换为套餐格式（保持原有返回结构）
         #combos = _convert_recommendations_to_combos(recommendations)
-        combos = dao.fetch_matching_combos_new(recommendations)
+        combos = _convert_dishes_to_response(recommendations)
 
         return jsonify({
             "status": "success",
@@ -80,8 +150,41 @@ def get_combos(member_ids):
         })
 
     except Exception as e:
-        logger.error("Get combos error: %s", str(e))
+        logger.error("Get getDishReco error: %s", str(e))
 
+def _convert_dishes_to_response(recommended: List[dict]) -> List[dict]:
+    """
+    传入推荐菜品列表，找到包含这些菜品的套餐，并标记推荐菜品
+    """
+    result = []
+    if not recommended:
+        return []
+
+    for r in recommended:
+        nutri_tags = r.get('matched_need_codes', [])
+        if isinstance(nutri_tags, str):
+            nutri_tags = [nutri_tags]  # 如果是字符串，转为数组
+        elif not isinstance(nutri_tags, list):
+            nutri_tags = []  # 如果不是列表，设为空数组
+        # 构建菜品信息
+        dish_info = {
+            'dish_id': r.get('id') or r.get('dish_id'),  # 兼容不同字段名
+            'name': r.get('name', ''),
+            'emoji': r.get('emoji', '🍽️'),
+            'servings': r.get('servings', 1),
+            'portion_g': r.get('portion_g', r.get('default_portion_g', 100)),
+            'rating': float(r.get('rating', 0)),
+            'checked': "false",  # 标记是否被推荐
+            'match_score': float(r.get('match_score', r.get('final_score', 0))),
+            'nutri-tag': nutri_tags,  # 兼容不同字段名
+            'cookTime': r.get('cook_time', 0),
+            'allergens': r.get('allergens', [])
+        }
+        # 清理空值
+        dish_info = {k: v for k, v in dish_info.items() if v is not None}
+        result.append(dish_info)
+
+    return result
 
 @family_bp.route('getDietSolutions/<member_ids>', methods=['GET'])
 def get_diet_solutions(member_ids):

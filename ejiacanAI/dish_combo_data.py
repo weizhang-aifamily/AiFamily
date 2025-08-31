@@ -1,6 +1,6 @@
 # dish_combo_data.py
 from typing import List, Dict, Tuple, Optional
-from dish_combo_models import Dish, MemberInfo
+from ejiacanAI.dish_combo_models import Dish, MemberInfo
 from dbconnect.dbconn import db
 
 class DishComboData:
@@ -18,34 +18,64 @@ class DishComboData:
         return {str(r["nutrient_code"]): float(r["max_total"]) for r in db.query(sql)}
 
     # 2. 需求池（已声明 + 外推 + 兜底）
+    # dish_combo_data.py
+
     @staticmethod
-    def get_need_pool(member_ids: List[int]) -> List[str]:
+    def get_need_pool(member_ids: List[int]) -> Dict[int, List[str]]:
+        """
+        获取成员需求映射 {member_id: [need_codes]}
+        完全保持原有get_need_pool的逻辑，只改变返回格式
+        """
+        if not member_ids:
+            return {}
+
         ids_str = ",".join(map(str, member_ids))
-        # 已声明
-        declared = [
-            row["need_code"] for row in db.query(
-                f"SELECT DISTINCT need_code FROM ejia_member_diet_need WHERE member_id IN ({ids_str})"
-            )
-        ]
-        # 外推
-        external = [
-            row["code"] for row in db.query(
-                f"""
-                SELECT ec.code
-                FROM ejia_enum_diet_need_tbl ec
-                WHERE ec.is_external = 1
-                  AND ec.code IN (
-                      SELECT CASE
-                          WHEN age BETWEEN 3 AND 12 THEN 'CHILD'
-                          WHEN age < 3 THEN 'TODDLER'
-                          ELSE 'ADULT'
-                      END
-                      FROM ejia_user_family_member WHERE id IN ({ids_str})
-                  )
-                """
-            )
-        ]
-        return list(set(declared + external + ["BALANCED"]))
+
+        # 完全保持原有的SQL逻辑，但修改返回格式
+        sql = f"""
+            SELECT 
+                um.id as member_id,
+                -- 已声明的需求
+                COALESCE(
+                    (SELECT GROUP_CONCAT(DISTINCT dmn.need_code) 
+                     FROM ejia_member_diet_need dmn 
+                     WHERE dmn.member_id = um.id), 
+                    ''
+                ) as declared_needs,
+                -- 外部推断的需求
+                COALESCE(
+                    (SELECT GROUP_CONCAT(DISTINCT ec.code)
+                     FROM ejia_enum_diet_need_tbl ec
+                     WHERE ec.is_external = 1
+                       OR ec.code IN (
+                           SELECT CASE
+                               WHEN um.age BETWEEN 3 AND 12 THEN 'CHILD'
+                               WHEN um.age < 3 THEN 'TODDLER'
+                               ELSE 'ADULT'
+                           END
+                       )),
+                    ''
+                ) as external_needs
+            FROM ejia_user_family_member um
+            WHERE um.id IN ({ids_str})
+        """
+
+        result = {}
+        for row in db.query(sql):
+            member_id = row["member_id"]
+            needs = []
+
+            # 已声明的需求
+            if row["declared_needs"]:
+                needs.extend(row["declared_needs"].split(','))
+
+            # 外部推断的需求
+            if row["external_needs"]:
+                needs.extend(row["external_needs"].split(','))
+
+            result[member_id] = list(set(needs))  # 去重
+
+        return result
 
     # 3. 菜品池 + 过敏原（food_id）
     @staticmethod

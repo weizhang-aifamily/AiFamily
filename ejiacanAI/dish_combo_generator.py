@@ -1,9 +1,9 @@
 # dish_combo_generator.py
 import hashlib
 from typing import List, Dict, Optional, Set
-from dish_combo_models import Dish, ComboMeal, ComboConfig, MemberInfo
-from dish_combo_data import DishComboData
-
+from ejiacanAI.dish_combo_models import Dish, ComboMeal, ComboConfig, MemberInfo
+from ejiacanAI.dish_combo_data import DishComboData
+from ejiacanAI.dish_combo_merge_dish import smart_merge_dishes
 
 class DishComboGenerator:
     CONFIG = ComboConfig()
@@ -127,6 +127,27 @@ class DishComboGenerator:
     @staticmethod
     def _create_single_meal(dishes, dish_tags, member_ids, meal_type, portion_plan, cook_time_limit):
         """创建单个套餐"""
+        # 获取成员信息和营养需求
+        member_info = DishComboData.get_member_info(member_ids)
+        nutrient_ranges = DishComboGenerator._get_family_nutrient_ranges(member_ids)
+
+        print(f"🍽️ 合并前: {len(dishes)}道菜")
+
+        # 调用智能合并（关键修改）
+        merged_dishes = smart_merge_dishes(
+            dishes,
+            member_info,
+            nutrient_ranges,
+            DishComboGenerator.CONFIG.merge_config
+        )
+        # 将需求信息从 dish_tags 设置到每个菜品的 matched_needs 中
+        for dish in merged_dishes:
+            if dish.dish_id in dish_tags:
+                dish.matched_needs = list(dish_tags[dish.dish_id]["needs"])
+            else:
+                dish.matched_needs = ["BALANCED"]  # 默认基础需求
+
+        print(f"🍽️ 合并后: {len(merged_dishes)}道菜")
         combo_id = int(
             hashlib.md5(
                 f"{'-'.join(map(str, member_ids))}-{meal_type}".encode()
@@ -146,7 +167,7 @@ class DishComboGenerator:
             combo_name=DishComboGenerator._generate_meal_name(meal_type, list(all_needs)),
             need_codes=list(all_needs),
             meal_type=meal_type,
-            dishes=dishes,
+            dishes=merged_dishes,
             total_cook_time=total_cook_time,
             portion_plan=portion_plan
         )
@@ -211,9 +232,11 @@ class DishComboGenerator:
         dish_tags = {}
         remaining_nutrients = nutrient_ranges.copy()
 
+        # 获取成员需求映射（替换原来的循环）
+        member_needs_map = data_handler.get_need_pool(member_ids)
         # 先选择满足特定需求的菜品
-        for member_id in member_ids:
-            member_needs = data_handler.get_member_specific_needs(member_id)
+        for member_id,member_needs in member_needs_map.items():
+            # member_needs = data_handler.get_member_specific_needs(member_id)
             for need_code in member_needs:
                 matched_dishes = data_handler.get_dishes_by_need(need_code, 5)
                 for dish_id, score in matched_dishes:
@@ -230,6 +253,7 @@ class DishComboGenerator:
 
                     # 检查过敏原
                     dish_allergens = data_handler.get_dish_allergens(dish_id, family_allergens)
+                    dish.allergens = dish_allergens
                     if filter_allergens and dish_allergens:
                         continue
 
@@ -264,6 +288,7 @@ class DishComboGenerator:
 
             # 检查过敏原
             dish_allergens = data_handler.get_dish_allergens(dish.dish_id, family_allergens)
+            dish.allergens = dish_allergens
             if filter_allergens and dish_allergens:
                 continue
 
@@ -281,54 +306,107 @@ class DishComboGenerator:
     @staticmethod
     def _assign_portion_sizes(dishes: List[Dish], member_info: List[MemberInfo],
                               custom_config: Optional[Dict[str, str]]) -> Dict[str, List[str]]:
-        """分配份量规格"""
-        portion_plan = {}
-
+        """
+        分配份量规格（带营养优化合并）
+        返回每道菜最终的份量规格，前端直接使用
+        """
+        # 如果有自定义配置，直接使用
         if custom_config:
-            # 使用自定义份量配置
             for dish in dishes:
                 dish.portion_size = custom_config.get("default", "M")
-            portion_plan["custom"] = [f"{dish.name}: {dish.portion_size}" for dish in dishes]
-        else:
-            # 智能份量分配
-            has_toddler = any(m.age < 3 for m in member_info)
-            has_child = any(3 <= m.age <= 12 for m in member_info)
+            return {"dishes": [f"{dish.name}:{dish.portion_size}" for dish in dishes]}
 
-            if has_toddler:
-                # 幼儿特殊处理
-                toddler_dishes = dishes[:1]
-                family_dishes = dishes[1:]
+        # 智能营养合并逻辑
+        return DishComboGenerator._assign_portions_intelligent(dishes, member_info)
 
-                for dish in toddler_dishes:
-                    dish.portion_size = DishComboGenerator.CONFIG.portion_toddler
-                for dish in family_dishes:
-                    dish.portion_size = DishComboGenerator.CONFIG.portion_adult
+    @staticmethod
+    def _assign_portions_intelligent(dishes: List[Dish], member_info: List[MemberInfo]) -> Dict[str, List[str]]:
+        """智能份量分配：真正实现营养合并"""
+        # 1. 计算总营养需求
+        total_nutrient_needs = DishComboGenerator._calculate_total_nutrient_needs(member_info)
 
-                portion_plan["toddler"] = [f"{d.name}: {d.portion_size}" for d in toddler_dishes]
-                portion_plan["family"] = [f"{d.name}: {d.portion_size}" for d in family_dishes]
+        # 2. 计算当前菜品的总营养供给
+        current_nutrients = DishComboGenerator._calculate_dish_nutrients(dishes, "M")  # 按中份计算基准
 
-            elif has_child:
-                # 儿童和成人区分
-                child_count = sum(1 for m in member_info if 3 <= m.age <= 12)
-                child_dishes = dishes[:min(child_count, len(dishes))]
-                adult_dishes = dishes[len(child_dishes):]
+        # 3. 找出需要调整的营养素
+        adjustments = DishComboGenerator._calculate_nutrient_adjustments(current_nutrients, total_nutrient_needs)
 
-                for dish in child_dishes:
-                    dish.portion_size = DishComboGenerator.CONFIG.portion_child
-                for dish in adult_dishes:
-                    dish.portion_size = DishComboGenerator.CONFIG.portion_adult
+        # 4. 智能调整份量
+        DishComboGenerator._adjust_dish_portions(dishes, adjustments)
 
-                portion_plan["child"] = [f"{d.name}: {d.portion_size}" for d in child_dishes]
-                portion_plan["adult"] = [f"{d.name}: {d.portion_size}" for d in adult_dishes]
+        # 5. 返回最终结果（前端直接使用）
+        portion_list = [f"{dish.name}:{dish.portion_size}" for dish in dishes]
+        return {"dishes": portion_list}
 
+    @staticmethod
+    def _calculate_total_nutrient_needs(member_info: List[MemberInfo]) -> Dict[str, float]:
+        """估算总营养需求（简化版）"""
+        total_needs = {}
+        for member in member_info:
+            # 简化的营养需求估算，可根据实际业务调整
+            base = 1000  # 基础需求
+            if member.age < 3:
+                multiplier = 0.5  # 幼儿
+            elif member.age <= 12:
+                multiplier = 0.8  # 儿童
             else:
-                # 全是成人
-                for dish in dishes:
-                    dish.portion_size = DishComboGenerator.CONFIG.portion_adult
-                portion_plan["adult"] = [f"{d.name}: {d.portion_size}" for d in dishes]
+                multiplier = 1.0  # 成人
 
-        return portion_plan
+            # 累加各营养素的估算需求
+            for nutrient in ["calcium", "protein", "iron"]:  # 示例营养素
+                total_needs[nutrient] = total_needs.get(nutrient, 0) + base * multiplier
 
+        return total_needs
+
+    @staticmethod
+    def _calculate_dish_nutrients(dishes: List[Dish], base_size: str) -> Dict[str, float]:
+        """计算当前菜品的总营养供给"""
+        total_nutrients = {}
+        ratio = DishComboGenerator.CONFIG.portion_ratios.get(base_size, 1.0)
+
+        for dish in dishes:
+            for nutrient, amount in dish.nutrients.items():
+                total_nutrients[nutrient] = total_nutrients.get(nutrient, 0) + amount * ratio
+
+        return total_nutrients
+
+    @staticmethod
+    def _calculate_nutrient_adjustments(current_nutrients: Dict[str, float],
+                                        total_needs: Dict[str, float]) -> Dict[str, float]:
+        """计算需要调整的营养素比例"""
+        adjustments = {}
+        for nutrient, current_amount in current_nutrients.items():
+            if nutrient in total_needs and total_needs[nutrient] > 0:
+                ratio = current_amount / total_needs[nutrient]
+                adjustments[nutrient] = ratio
+        return adjustments
+
+    @staticmethod
+    def _adjust_dish_portions(dishes: List[Dish], adjustments: Dict[str, float]):
+        """根据营养调整需求智能分配份量"""
+        # 按营养密度排序（高营养密度的菜优先调整）
+        dishes_sorted = sorted(dishes,
+                               key=lambda d: sum(d.nutrients.values()) / max(d.cook_time, 1),
+                               reverse=True)
+
+        for dish in dishes_sorted:
+            # 计算这道菜的营养调整得分
+            adjust_score = 0
+            for nutrient, ratio in adjustments.items():
+                if nutrient in dish.nutrients:
+                    # 如果这种营养素不足，且这道菜富含该营养素，则应该加大份量
+                    if ratio < 0.8:  # 不足
+                        adjust_score += dish.nutrients[nutrient] * (1 - ratio)
+                    elif ratio > 1.2:  # 过剩
+                        adjust_score -= dish.nutrients[nutrient] * (ratio - 1)
+
+            # 根据调整得分决定份量
+            if adjust_score > 50:  # 富含不足的营养素
+                dish.portion_size = "L"
+            elif adjust_score < -30:  # 富含过剩的营养素
+                dish.portion_size = "S"
+            else:
+                dish.portion_size = "M"
     @staticmethod
     def _create_meal_combos(dishes, dish_tags, member_ids, meal_type, portion_plan, cook_time_limit):
         """创建最终套餐"""
@@ -428,6 +506,7 @@ if __name__ == "__main__":
         cook_time_config={"lunch": 40},
         portion_config={"default": "L"}
     )
+    combos_custom = [combos_custom]
     for c in combos_custom:
         print("=== 自定义配置生成的套餐 ===")
         print(f"套餐ID: {c.combo_id}")

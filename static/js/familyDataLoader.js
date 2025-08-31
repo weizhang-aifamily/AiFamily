@@ -35,3 +35,15 @@ export async function getCombos(member_ids = "1,2", mealType = 'lunch', maxResul
   console.error('getCombos：', json.message || json);
   return [];
 }
+export async function getDishReco(member_ids = "1,2", mealType = 'lunch', maxResults = 3) {
+  const url = `/family/getDishReco/${member_ids}?meal_type=${mealType}&max_results=${maxResults}`;
+  const res  = await fetch(url);
+  const json = await res.json();
+
+  if (json.status === 'success') {
+    return json.data;
+  }
+
+  console.error('getDishReco：', json.message || json);
+  return [];
+}

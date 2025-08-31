@@ -156,7 +156,16 @@
     <!-- JS 会填充这里 -->
   </div>
 </section>
-      <section class="combo-section">
+<section class="combo-section">
+  <div class="taste-row">
+    <h3 class="combo-name">推荐菜</h3>
+    <div class="dish-list" id="dishrecoRowList">
+      <!-- JS 动态生成 推荐菜 -->
+    </div>
+    <button class="refresh-taste-inline" id="refreshDishreco">↻ 换一批</button>
+  </div>
+</section>
+<section class="combo-section">
       <!-- 尝尝鲜：同级、一行 3 菜 -->
   <div class="taste-row">
     <h3 class="combo-name">尝尝鲜</h3>
@@ -166,15 +175,15 @@
     <button class="refresh-taste-inline" id="refreshTasteInline">↻ 换一批</button>
   </div>
 </section>
-      <section class="combo-section">
+<section class="combo-section">
       <!-- 近期吃过 -->
-<div class="taste-row">
-  <h3 class="combo-name">近期吃过</h3>
-    <div class="dish-list" id="historyTrack">
-      <!-- JS 动态生成 -->
+    <div class="taste-row">
+      <h3 class="combo-name">近期吃过</h3>
+        <div class="dish-list" id="historyTrack">
+          <!-- JS 动态生成 -->
+        </div>
     </div>
-</div>
-      </section>
+</section>
   </main>
 
 <!-- ===== 营养提篮（悬浮） ===== -->
