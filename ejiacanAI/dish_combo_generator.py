@@ -1,4 +1,6 @@
 # dish_combo_generator.py
+import random
+from datetime import datetime
 import hashlib
 from typing import List, Dict, Optional, Set
 from ejiacanAI.dish_combo_models import Dish, ComboMeal, ComboConfig, MemberInfo
@@ -14,14 +16,18 @@ class DishComboGenerator:
                               filter_allergens: bool = True,
                               meal_type: str = "all",
                               cook_time_config: Optional[Dict[str, int]] = None,
-                              portion_config: Optional[Dict[str, str]] = None) -> List[ComboMeal]:
+                              portion_config: Optional[Dict[str, str]] = None,
+                              refresh_key: int = 0
+                              ) -> List[ComboMeal]:
         """
         生成家庭套餐
         - meal_type="all": 生成早中晚三个套餐，营养合计满足全日需求
         - meal_type="breakfast/lunch/dinner": 生成单个套餐，营养按比例分配
         """
-        data_handler = DishComboData()
+        seed_str = f"{sorted(member_ids)}-{datetime.now().strftime('%Y%m%d')}-{refresh_key}"
+        random.seed(hash(seed_str) % (2 ** 32))
 
+        data_handler = DishComboData()
         # 获取基础信息
         member_info = data_handler.get_member_info(member_ids)
         family_allergens = data_handler.get_family_allergens(member_ids)
@@ -29,64 +35,29 @@ class DishComboGenerator:
 
         if meal_type == "all":
             # 生成三个套餐，营养合计满足全日需求
-            return DishComboGenerator._generate_all_day_meals(
-                member_ids, member_info, nutrient_ranges, family_allergens,
-                filter_allergens, max_per_meal, cook_time_config, portion_config
-            )
+            meals = []
+            for meal_type in ["breakfast", "lunch", "dinner"]:
+                meal = DishComboGenerator._generate_meal_for_type(
+                    member_ids, member_info, nutrient_ranges, family_allergens,
+                    filter_allergens, meal_type, max_per_meal, cook_time_config, portion_config
+                )
+                meals.append(meal)
+            return meals
         else:
             # 生成单个套餐，营养按比例分配
-            return DishComboGenerator._generate_single_meal(
+            return DishComboGenerator._generate_meal_for_type(
                 member_ids, member_info, nutrient_ranges, family_allergens,
                 filter_allergens, meal_type, max_per_meal, cook_time_config, portion_config
             )
 
     @staticmethod
-    def _generate_all_day_meals(member_ids, member_info, full_nutrient_ranges,
-                                family_allergens, filter_allergens, max_per_meal,
-                                cook_time_config, portion_config):
-        """生成全天三个套餐"""
-        meals = []
-
-        # 为每个餐型生成套餐
-        for meal_type in ["breakfast", "lunch", "dinner"]:
-            # 计算该餐型的营养需求比例
-            ratio = getattr(DishComboGenerator.CONFIG, f"nutrient_ratio_{meal_type}")
-            meal_nutrient_ranges = DishComboGenerator._scale_nutrient_ranges(full_nutrient_ranges, ratio)
-
-            # 获取该餐型的烹饪时间限制
-            cook_time_limit = DishComboGenerator._get_cooking_time_limit(meal_type, cook_time_config)
-
-            # 计算菜品数量
-            dish_count = DishComboGenerator._calculate_dish_count(member_info, max_per_meal)
-
-            # 选择菜品
-            selected_dishes, dish_tags = DishComboGenerator._select_dishes(
-                member_ids, dish_count, meal_nutrient_ranges, family_allergens,
-                filter_allergens, cook_time_limit
-            )
-
-            # 分配份量
-            portion_plan = DishComboGenerator._assign_portion_sizes(
-                selected_dishes, member_info, portion_config
-            )
-
-            # 创建套餐
-            meal = DishComboGenerator._create_single_meal(
-                selected_dishes, dish_tags, member_ids, meal_type,
-                portion_plan, cook_time_limit
-            )
-            meals.append(meal)
-
-        return meals
-
-    @staticmethod
-    def _generate_single_meal(member_ids, member_info, full_nutrient_ranges,
-                              family_allergens, filter_allergens, meal_type,
-                              max_per_meal, cook_time_config, portion_config):
-        """生成单个套餐"""
+    def _generate_meal_for_type(member_ids, member_info, full_nutrient_ranges,
+                                family_allergens, filter_allergens, meal_type,
+                                max_per_meal, cook_time_config, portion_config):
+        """生成指定类型的套餐"""
         # 计算该餐型的营养需求比例
-        ratio = getattr(DishComboGenerator.CONFIG, f"nutrient_ratio_{meal_type}",
-                        DishComboGenerator.CONFIG.nutrient_ratio_single)
+        ratio_attr = f"nutrient_ratio_{meal_type}" if meal_type != "all" else "nutrient_ratio_single"
+        ratio = getattr(DishComboGenerator.CONFIG, ratio_attr)
         meal_nutrient_ranges = DishComboGenerator._scale_nutrient_ranges(full_nutrient_ranges, ratio)
 
         # 获取烹饪时间限制
@@ -232,53 +203,66 @@ class DishComboGenerator:
         dish_tags = {}
         remaining_nutrients = nutrient_ranges.copy()
 
-        # 获取成员需求映射（替换原来的循环）
+        # 获取成员需求映射
         member_needs_map = data_handler.get_need_pool(member_ids)
+
         # 先选择满足特定需求的菜品
-        for member_id,member_needs in member_needs_map.items():
-            # member_needs = data_handler.get_member_specific_needs(member_id)
-            for need_code in member_needs:
-                matched_dishes = data_handler.get_dishes_by_need(need_code, 5)
-                for dish_id, score in matched_dishes:
-                    if len(selected_dishes) >= dish_count:
-                        break
+        all_need_codes = list({code for needs in member_needs_map.values() for code in needs})
+        candidate_dishes = data_handler.get_dishes_by_any_needs(all_need_codes, 30)
+        random.shuffle(candidate_dishes)
+        # 1) 把 3 个因子归一化到 0~1
+        m_ratio = min(1.0, len(member_ids) / 6.0)  # 最多算 6 人
+        n_ratio = min(1.0, len(all_need_codes) / 8.0)  # 最多算 8 种需求
+        base = max(2, dish_count * 0.5)  # 至少留 50% 给补充菜
 
-                    dish = data_handler.get_dish_by_id(dish_id)
-                    if not dish:
-                        continue
+        # 2) 加权求候选数
+        candidate_size = int(
+            base
+            + m_ratio * dish_count * 0.25  # 成员权重
+            + n_ratio * dish_count * 0.20  # 需求权重
+        )
 
-                    # 检查烹饪时间
-                    if dish.cook_time > cook_time_limit:
-                        continue
+        # 3) 软上限：保证最后至少有 2 道补充菜
+        candidate_size = min(candidate_size, dish_count - 2)
+        candidate_size = max(candidate_size, 2)  # 下限 2
+        candidate_dishes = candidate_dishes[:max(0, candidate_size)]
 
-                    # 检查过敏原
-                    dish_allergens = data_handler.get_dish_allergens(dish_id, family_allergens)
-                    dish.allergens = dish_allergens
-                    if filter_allergens and dish_allergens:
-                        continue
-
-                    # 检查主料重复（避免相同主料的菜品）
-                    main_ingredient = next(iter(dish.ingredients.keys()), "")
-                    if any(main_ingredient in selected_dish.ingredients for selected_dish in selected_dishes):
-                        continue
-
-                    # 检查营养贡献
-                    if DishComboGenerator._dish_fits_nutrient_range(dish, remaining_nutrients):
-                        selected_dishes.append(dish)
-
-                        # 记录需求标签
-                        if dish_id not in dish_tags:
-                            dish_tags[dish_id] = {"needs": set(), "members": {}}
-                        dish_tags[dish_id]["needs"].add(need_code)
-                        if member_id not in dish_tags[dish_id]["members"]:
-                            dish_tags[dish_id]["members"][member_id] = set()
-                        dish_tags[dish_id]["members"][member_id].add(need_code)
-
-                        # 更新剩余营养需求
-                        DishComboGenerator._update_nutrient_range(dish, remaining_nutrients)
-
-        # 补充基础营养菜品（使用带烹饪时间限制的菜品池）
+        for dish in candidate_dishes:
+            if len(selected_dishes) >= dish_count:
+                break
+            processed = DishComboGenerator._process_dish_for_selection(
+                dish.dish_id, data_handler, cook_time_limit,
+                family_allergens, filter_allergens,
+                selected_dishes, remaining_nutrients
+            )
+            if processed:
+                selected_dishes.append(processed)
+                # 记录需求标签
+                if dish.dish_id not in dish_tags:
+                    dish_tags[dish.dish_id] = {"needs": set(), "members": {}}
+                dish_tags[dish.dish_id]["needs"].update(dish.matched_needs)
+                for mid in member_needs_map:
+                    if mid not in dish_tags[dish.dish_id]["members"]:
+                        dish_tags[dish.dish_id]["members"][mid] = set()
+                    dish_tags[dish.dish_id]["members"][mid].update(dish.matched_needs)
+                DishComboGenerator._update_nutrient_range(processed, remaining_nutrients)
+        # ✅ 新增：给每道菜增加随机扰动分（0.8~1.2倍）
+        for dish in selected_dishes:
+            dish.random_boost = random.uniform(0.8, 1.2)
+        selected_dishes.sort(
+            key=lambda d: (d.match_score or 0) * d.random_boost,
+            reverse=True
+        )
+        # 补充基础营养菜品
         all_dishes = data_handler.get_dish_pool(cook_time_limit)
+        # ✅ 新增：给每道菜增加随机扰动分（0.8~1.2倍）
+        for dish in all_dishes:
+            dish.random_boost = random.uniform(0.8, 1.2)
+        all_dishes.sort(
+            key=lambda d: (d.match_score or 0) * d.random_boost,
+            reverse=True
+        )
+
         for dish in all_dishes:
             if len(selected_dishes) >= dish_count:
                 break
@@ -286,22 +270,45 @@ class DishComboGenerator:
             if dish.dish_id in [d.dish_id for d in selected_dishes]:
                 continue
 
-            # 检查过敏原
-            dish_allergens = data_handler.get_dish_allergens(dish.dish_id, family_allergens)
-            dish.allergens = dish_allergens
-            if filter_allergens and dish_allergens:
-                continue
+            processed_dish = DishComboGenerator._process_dish_for_selection(
+                dish.dish_id, data_handler, cook_time_limit, family_allergens,
+                filter_allergens, selected_dishes, remaining_nutrients
+            )
 
-            # 检查主料重复
-            main_ingredient = next(iter(dish.ingredients.keys()), "")
-            if any(main_ingredient in selected_dish.ingredients for selected_dish in selected_dishes):
-                continue
-
-            if DishComboGenerator._dish_fits_nutrient_range(dish, remaining_nutrients):
-                selected_dishes.append(dish)
-                DishComboGenerator._update_nutrient_range(dish, remaining_nutrients)
+            if processed_dish:
+                selected_dishes.append(processed_dish)
+                DishComboGenerator._update_nutrient_range(processed_dish, remaining_nutrients)
 
         return selected_dishes, dish_tags
+
+    @staticmethod
+    def _process_dish_for_selection(dish_id, data_handler, cook_time_limit, family_allergens,
+                                    filter_allergens, selected_dishes, remaining_nutrients):
+        """处理菜品选择的各种检查逻辑"""
+        dish = data_handler.get_dish_by_id(dish_id)
+        if not dish:
+            return None
+
+        # 检查烹饪时间
+        if dish.cook_time > cook_time_limit:
+            return None
+
+        # 检查过敏原
+        dish_allergens = data_handler.get_dish_allergens(dish_id, family_allergens)
+        dish.allergens = dish_allergens
+        if filter_allergens and dish_allergens:
+            return None
+
+        # 检查主料重复
+        main_ingredient = next(iter(dish.ingredients.keys()), "")
+        if any(main_ingredient in selected_dish.ingredients for selected_dish in selected_dishes):
+            return None
+
+        # 检查营养贡献
+        if not DishComboGenerator._dish_fits_nutrient_range(dish, remaining_nutrients):
+            return None
+
+        return dish
 
     @staticmethod
     def _assign_portion_sizes(dishes: List[Dish], member_info: List[MemberInfo],

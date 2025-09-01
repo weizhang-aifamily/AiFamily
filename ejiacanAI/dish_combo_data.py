@@ -190,6 +190,37 @@ class DishComboData:
         return [(row["dish_id"], float(row["match_score"])) for row in rows]
 
     @staticmethod
+    def get_dishes_by_any_needs(need_codes: List[str], take: int) -> List[Dish]:
+        """
+        返回满足任意 need_code 的空壳 Dish 列表，字段先留空
+        """
+        if not need_codes:
+            return []
+        codes_str = ",".join(f"'{c}'" for c in need_codes)
+        sql = f"""
+            SELECT dish_id,
+                   MAX(match_score) AS max_score,
+                   GROUP_CONCAT(DISTINCT need_code) AS need_codes
+            FROM   ejia_need_dish_match
+            WHERE  need_code IN ({codes_str})
+            GROUP  BY dish_id
+            ORDER  BY max_score DESC
+            LIMIT  {take}
+        """
+        rows = db.query(sql)
+        return [
+            Dish(
+                dish_id=int(r["dish_id"]),
+                name="",  # 先空
+                nutrients={},  # 先空
+                ingredients={},  # 先空
+                cook_time=0,  # 先空
+                matched_needs=str(r["need_codes"]).split(","),
+                match_score=float(r["max_score"])
+            )
+            for r in rows
+        ]
+    @staticmethod
     def get_dish_by_id(dish_id: int) -> Optional[Dish]:
         """根据菜品ID获取完整菜品信息"""
         sql = """
