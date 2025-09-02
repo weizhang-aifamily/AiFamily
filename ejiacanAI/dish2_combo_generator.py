@@ -68,8 +68,8 @@ class MealGeneratorV2:
 
         # 2. 过敏原过滤
         allergens = set(DishComboData.get_family_allergens(req.member_ids))
-        pool = [d for d in pool if not allergens.intersection(set(d.allergen_list.split(",")))]
-
+        pool = [d for d in pool
+                if not allergens.intersection(set((d.allergen_list or "").split(",")))]
         # 3. 目标菜数
         target = req.max_dishes_per_meal or max(2, len(req.member_ids) + 2)
 
@@ -185,7 +185,7 @@ class MealGeneratorV2:
             name=row.dish_name,
             cook_time=row.dish_cook_time,
             ingredients={row.food_description: float(row.food_amount_in_dish_g)},
-            nutrients={row.nutrient_name: float(row.nutrient_in_dish)},
+            nutrients={row.nutrient_name: float(row.nutrient_in_dish or 0)},
             exact_portion=ExactPortion(size="M", grams=int(row.dish_default_portion_g)),
             allergens=row.allergen_list.split(",") if row.allergen_list else [],
             explicit_tags=row.explicit_tags.split(",") if row.explicit_tags else [],

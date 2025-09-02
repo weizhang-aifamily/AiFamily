@@ -85,8 +85,8 @@ class DishFoodNutrient:
     nutrient_per_100g: float
     nutrient_in_dish: float          # 已乘 food_amount_in_dish_g
     allergen_list: Optional[str]     # GROUP_CONCAT 结果
-    explicit_tags: str
-    implicit_tags: str
+    explicit_tags: str = ""
+    implicit_tags: str = ""
 
 
 @dataclass
@@ -98,7 +98,6 @@ class MemberNeedNutrient:
     member_need_id: int
     need_type: Optional[str]
     need_code: str
-    nutrient_id: int
     offset_val: Optional[float]
     need_name: Optional[str]
     icon: Optional[str]

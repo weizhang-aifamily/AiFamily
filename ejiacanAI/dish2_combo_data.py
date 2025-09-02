@@ -17,9 +17,11 @@ class DishComboData:
         sql = """
             SELECT *
             FROM v2_dish_food_nutrient
-            WHERE dish_id IN ({})
+            {}
             ORDER BY dish_id, food_id, nutrient_order
-        """.format(",".join(map(str, dish_ids)) if dish_ids else "NULL")
+        """.format(
+            "WHERE dish_id IN ({})".format(",".join(map(str, dish_ids))) if dish_ids else ""
+        )
         rows = db.query(sql)
         return [DishFoodNutrient(**r) for r in rows]
 
