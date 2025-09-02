@@ -149,13 +149,15 @@ class DishComboGenerator:
             return max(2, custom_count)  # 至少2道菜
 
         # 统计成员结构
-        adult_count = sum(1 for m in member_info if m.age > 12)
-        child_count = sum(1 for m in member_info if 3 <= m.age <= 12)
+        elder_count = sum(1 for m in member_info if m.age >= 70)
+        adult_count = sum(1 for m in member_info if 10 < m.age < 70)
+        child_count = sum(1 for m in member_info if 3 <= m.age <= 10)
         has_toddler = any(m.age < 3 for m in member_info)
 
         # 自动计算
         total_dishes = (
                 DishComboGenerator.CONFIG.base_dish_count +
+                elder_count * DishComboGenerator.CONFIG.dish_per_elder +
                 adult_count * DishComboGenerator.CONFIG.dish_per_adult +
                 child_count * DishComboGenerator.CONFIG.dish_per_child +
                 (DishComboGenerator.CONFIG.toddler_extra_dish if has_toddler else 0)

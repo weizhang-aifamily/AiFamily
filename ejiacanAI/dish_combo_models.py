@@ -35,8 +35,9 @@ class ComboConfig:
 
     # 份量配置
     base_dish_count: int = 3
+    dish_per_elder: int = 1
     dish_per_adult: int = 1
-    dish_per_child: int = 1
+    dish_per_child: int = 0
     toddler_extra_dish: int = 1
     portion_ratios: Dict[str, float] = field(default_factory=lambda: {"S": 0.5, "M": 1.0, "L": 1.5})
 
@@ -85,3 +86,4 @@ class ComboMeal:
     dishes: List[Dish]
     total_cook_time: int = 0  # 新增：总烹饪时间
     portion_plan: Dict[str, List[str]] = field(default_factory=dict)  # 新增：份量分配方案
+

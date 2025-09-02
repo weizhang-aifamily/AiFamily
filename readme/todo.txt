@@ -1,0 +1,177 @@
+过敏原与食材的对应关系：
+SELECT DISTINCT allergen_code
+FROM ejia_member_allergen
+WHERE member_id IN (1,2,3,4);
+2、营养区间是否可实现
+SELECT nutrient_code,
+       SUM(min_need_qty) AS min_total,
+       SUM(max_need_qty) AS max_total
+FROM ejia_member_daily_nutrient_actual
+WHERE member_id IN (1,2,3,4)
+GROUP BY nutrient_code;
+3、把“已声明需求”+“外部推断需求”合并   额外需求能否取到合适的菜？
+SELECT
+    um.id AS member_id,
+    COALESCE(
+        (SELECT GROUP_CONCAT(DISTINCT dmn.need_code)
+         FROM ejia_member_diet_need dmn
+         WHERE dmn.member_id = um.id), ''
+    ) AS declared_needs,
+    COALESCE(
+        (SELECT GROUP_CONCAT(DISTINCT ec.code)
+         FROM ejia_enum_diet_need_tbl ec
+         WHERE ec.is_external = 1
+            OR ec.code IN (
+                CASE
+                    WHEN um.age BETWEEN 3 AND 12 THEN 'CHILD'
+                    WHEN um.age < 3 THEN 'TODDLER'
+                    ELSE 'ADULT'
+                END
+            )), ''
+    ) AS external_needs
+FROM ejia_user_family_member um
+WHERE um.id IN (1,2,3,4);
+4、根据饮食需求need代码挑“种子菜”
+SELECT dish_id,
+       MAX(match_score) AS max_score,
+       GROUP_CONCAT(DISTINCT need_code) AS need_codes
+FROM ejia_need_dish_match
+WHERE need_code IN ('HIGH_PROTEIN','LOW_FAT','ADULT','CHILD','TODDLER')
+GROUP BY dish_id
+ORDER BY max_score DESC
+LIMIT 30;
+5、扩展菜取值优化
+SELECT d.id, d.name, d.cook_time, d.default_portion_g,
+       n.nutrient_code, n.nutrient_amount,
+       f.description AS ingredient
+FROM ejia_dish d
+JOIN view_dish_nutrients_long n ON n.dish_id = d.id
+JOIN ejia_dish_food_rel dfr ON dfr.dish_id = d.id
+JOIN foods f ON f.fdc_id = dfr.food_id
+WHERE d.cook_time <= 30
+ORDER BY d.rating DESC;
+6、⑦ 智能合并？
+当菜品数 > 目标数（例如 4 口人→目标 6 道菜）时，用 dish_combo_merge_dish.py 的算法把“营养重叠度高、需求冗余”的菜合并成一道大份菜，直到达到目标数量。
+合并后再跑一次“总营养是否落在家庭总区间 ±20%”的校验，不通过就回滚。
+
+--------------------------------------------------------
+只针对 `generate_family_combo` 这一个函数，我把它当成黑盒 API 来“挑刺”。下面列的都是**可落地的改进点**，每一条都给出：
+
+- 问题表现
+- 产生原因（定位到代码片段）
+- 最小改动方案（伪代码或 SQL 调整）
+
+------------------------------------------------
+1. 菜品数量计算对「老人」不友好
+------------------------------------------------
+- 表现：70 岁老人仍被算成普通 adult，仅 +1 道菜，经常不够软烂、低盐。
+- 原因：`DishComboGenerator._calculate_dish_count` 只有
+```python
+adult_count = sum(1 for m in member_info if m.age > 12)
+```
+- 改进：再加一个 age >= 60 的分段
+```python
+elder_count = sum(1 for m in member_info if m.age >= 60)
+total_dishes += elder_count * CONFIG.dish_per_elder
+```
+
+------------------------------------------------
+2. 过敏原检查只到 food 级，漏掉「复合调料」
+------------------------------------------------
+- 表现：豆瓣酱本身不过敏，但里面的「小麦」是过敏原，系统没拦住。
+- 原因：`get_dish_allergens` 只查 `ejia_allergen_food_rel`，没有拆配料表。
+- 改进：把调料也当成 food_id，再查一次
+```sql
+SELECT DISTINCT ar.allergen_code
+FROM ejia_allergen_food_rel ar
+JOIN ejia_dish_food_rel dfr ON dfr.food_id = ar.food_id
+JOIN foods f ON f.fdc_id = dfr.food_id
+WHERE dfr.dish_id = ? AND f.description LIKE '%酱%'
+```
+
+------------------------------------------------
+3. 份量分配用固定三档 (S/M/L)，对「减脂期」不精确
+------------------------------------------------
+- 表现：同样给 500 kcal 缺口，系统只能粗暴地把所有菜降档，结果蛋白也一起降。
+- 原因：`_adjust_dish_portions` 只根据「总营养」调档，没有单营养素权重。
+- 改进：把营养素打权重
+```python
+adjust_score += w[nutrient] * dish.nutrients[nutrient] * (1 - ratio)
+```
+权重表 `w = {'protein':2, 'fat':-1, 'carb':0.5}` 可以读配置。
+
+------------------------------------------------
+4. 合并算法会把「汤」合并成主菜，体验奇怪
+------------------------------------------------
+- 表现：西红柿鸡蛋汤 + 清蒸鲈鱼 → 「双拼西红柿鸡蛋鲈鱼」。
+- 原因：`non_mergeable_categories = ["主食","汤品","特色菜"]` 用中文匹配菜名，容易漏。
+- 改进：加一个「可合并」布尔字段到 `ejia_dish`，SQL：
+```sql
+ALTER TABLE ejia_dish ADD COLUMN can_merge TINYINT(1) DEFAULT 1;
+```
+然后在 `_can_merge_dishes` 里直接判断 `if not dish.can_merge: return False`，比字符串靠谱。
+
+------------------------------------------------
+5. 随机种子导致多人同日多次调用结果重复
+------------------------------------------------
+- 表现：同一天刷新页面，套餐不变，用户觉得「没新鲜感」。
+- 原因：
+```python
+seed_str = f"{sorted(member_ids)}-{datetime.now().strftime('%Y%m%d')}-{refresh_key}"
+```
+`refresh_key` 默认 0，前端没传就永远同一天同一串。
+- 改进：把 `refresh_key` 默认设为当前小时
+```python
+refresh_key = refresh_key or datetime.now().hour
+```
+这样每小时内结果固定，但下一小时会变，兼顾缓存与新鲜感。
+
+------------------------------------------------
+6. 早/午/晚营养比例写死，不符合「健身人群」
+------------------------------------------------
+- 表现：健身增肌想把午餐蛋白提到 50%，系统仍是 40%。
+- 原因：
+```python
+nutrient_ratio_lunch = 0.4
+```
+- 改进：把比例做成入参
+```python
+meal_ratios = custom_ratios or CONFIG.nutrient_ratio_lunch
+```
+调用时允许
+```json
+{"lunch":0.5,"dinner":0.3,"breakfast":0.2}
+```
+
+------------------------------------------------
+7. 当菜品池为空时直接抛空列表，用户一脸懵
+------------------------------------------------
+- 表现：四人全部对海鲜过敏，又选了「高蛋白+海鲜」需求，结果返回 []。
+- 原因：没有任何兜底文案。
+- 改进：在 `generate_family_combo` 末尾加
+```python
+if not meals:
+    return [ComboMeal(
+        combo_id=0,
+        combo_name="暂无匹配套餐",
+        dishes=[],
+        note="请放宽过敏原或烹饪时间限制"
+    )]
+```
+
+------------------------------------------------
+8. 合并后菜名可读性差
+------------------------------------------------
+- 表现：`merged_22_33` 这种 ID 前端直接展示，用户看不懂。
+- 原因：`_generate_merged_name` 只靠中文关键字，遇到“香煎三文鱼+黑椒牛排”就失败。
+- 改进：加一个可读映射表
+```json
+"三文鱼": "鱼", "牛排": "牛", "香煎": "煎"
+```
+然后拼成「煎鱼牛双拼」，规则 20 行即可覆盖 90% 场景。
+
+------------------------------------------------
+结论
+------------------------------------------------
+以上 8 条全部是可测、可回滚的小改动，集中在菜品数量、过敏原精度、份量策略、合并规则、随机种子、营养比例、空结果兜底、文案可读性八个维度。
+做完后 `generate_family_combo` 对老人、减脂人群、健身人群、过敏体质、视觉体验都会更合理，而接口签名保持不变。
