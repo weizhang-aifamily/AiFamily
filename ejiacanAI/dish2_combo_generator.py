@@ -100,19 +100,23 @@ class MealGeneratorV2:
     @classmethod
     def _dedup_increase_weight(cls, new: Dish, existing: List[Dish]) -> Dish:
         """
-        主料+做法相似则合并食材克数，返回 None 表示已合并
+        主料去重：如果主料（用量最大的食材）与已选菜品重复，则返回 None
         """
-        key = lambda d: (tuple(sorted(d.ingredients.keys())), d.cook_time // 5)
-        new_key = key(new)
+        if not new.ingredients:
+            return new  # 无食材信息，直接保留
+
+        # 提取主料（用量最大的食材）
+        main_ingredient_new = max(new.ingredients.items(), key=lambda x: x[1])[0]
+
+        # 检查是否与已选菜品主料重复
         for old in existing:
-            if key(old) == new_key:
-                # 累加克数 & 营养素
-                for ing, g in new.ingredients.items():
-                    old.ingredients[ing] = old.ingredients.get(ing, 0) + g
-                for n, v in new.nutrients.items():
-                    old.nutrients[n] = old.nutrients.get(n, 0) + v
-                return None              # 已合并
-        return new
+            if not old.ingredients:
+                continue
+            main_ingredient_old = max(old.ingredients.items(), key=lambda x: x[1])[0]
+            if main_ingredient_new == main_ingredient_old:
+                return None  # 主料重复，丢弃新菜
+
+        return new  # 主料不重复，保留新菜
 
     # -------------------------------------------------
     # 5. 份量微调（S/M/L + 精确克数）
@@ -184,10 +188,217 @@ class MealGeneratorV2:
             dish_id=row.dish_id,
             name=row.dish_name,
             cook_time=row.dish_cook_time,
-            ingredients={row.food_description: float(row.food_amount_in_dish_g)},
+            ingredients={row.food_description: float(row.food_amount_in_dish_g or 0)},
             nutrients={row.nutrient_name: float(row.nutrient_in_dish or 0)},
             exact_portion=ExactPortion(size="M", grams=int(row.dish_default_portion_g)),
             allergens=row.allergen_list.split(",") if row.allergen_list else [],
             explicit_tags=row.explicit_tags.split(",") if row.explicit_tags else [],
             implicit_tags=row.implicit_tags.split(",") if row.implicit_tags else []
         )
+
+    """
+        按餐次独立选菜、独立微调、独立去重
+        """
+    MEAL_RATIO = {"breakfast": 0.30, "lunch": 0.40, "dinner": 0.30}
+    @classmethod
+    def generate_per_meal(cls, req: MealRequest) -> List[ComboMeal]:
+        dish_list = DishComboData.list_dish_food_nutrient([])  # 一次性拉全表
+        dish_list = cls.build_true_dishes(dish_list)
+        rng = random.Random(req.refresh_key)
+        rng.shuffle(dish_list)
+        need_list = DishComboData.list_member_need_nutrient(req.member_ids)
+
+        daily_range = cls._calc_daily_range(need_list, req.deficit_kcal)
+
+        # 根据请求决定要生成几餐
+        if req.meal_type == "all":
+            meals_to_build = ["breakfast", "lunch", "dinner"]
+        else:
+            meals_to_build = [req.meal_type]
+
+        # 逐餐处理
+        combo_meals: List[ComboMeal] = []
+        for meal_code in meals_to_build:
+            meal_range = cls._build_single_meal_range(daily_range, meal_code)
+            dishes = cls._select_dishes_for_meal(
+                dish_list, meal_range, meal_code, req
+            )
+            cls._scale_portions(dishes, meal_range)  # 按餐次独立缩放
+            combo_meals.append(
+                cls._build_combo_meal(meal_code, dishes)
+            )
+        return combo_meals
+
+    # -------------------------------------------------
+    # 为单餐构建需求区间
+    # -------------------------------------------------
+    @classmethod
+    def _build_single_meal_range(
+            cls, daily: Dict[str, Dict[str, float]], meal_code: str
+    ) -> Dict[str, Dict[str, float]]:
+        ratio = cls.MEAL_RATIO[meal_code]
+        return {k: {"min": v["min"] * ratio, "max": v["max"] * ratio}
+                for k, v in daily.items()}
+
+    # -------------------------------------------------
+    # 为单餐选菜
+    # -------------------------------------------------
+    @classmethod
+    def _select_dishes_for_meal(
+            cls,
+            dish_list: List[Dish],
+            meal_range: Dict[str, Dict[str, float]],
+            meal_code: str,
+            req: MealRequest
+    ) -> List[Dish]:
+        rng = random.Random(req.refresh_key)
+
+        # 1. 过敏原过滤
+        allergens = set(DishComboData.get_family_allergens(req.member_ids))
+
+        # 2. 先过滤：①餐次匹配 ②烹饪时间 ③不过敏
+        pool = [
+            d for d in dish_list
+            if (d.meal_type_code == meal_code or meal_code == "all")
+               and d.cook_time <= req.cook_time_limit
+
+               and not allergens.intersection(set(d.allergens))
+        ]
+
+        # 3. 随机洗牌
+        rng.shuffle(pool)
+
+        # 4. 打分
+        def score(d: Dish) -> int:
+            return len(d.explicit_tags) + len(d.implicit_tags)
+
+        pool.sort(key=score, reverse=True)
+
+        # 5. 选够目标数
+        target = req.max_dishes_per_meal or max(2, len(req.member_ids) + 2)
+        dishes: List[Dish] = []
+        remaining = meal_range.copy()
+
+        for row in pool:
+            if len(dishes) >= target:
+                break
+            # dish = cls._build_dish(row)
+            dish = cls._dedup_increase_weight(row, dishes)
+            if dish:
+                cls._update_remaining(dish, remaining)
+                dishes.append(dish)
+        return dishes
+
+    # -------------------------------------------------
+    # 打包单餐
+    # -------------------------------------------------
+    @classmethod
+    def _build_combo_meal(cls, meal_code: str, dishes: List[Dish]) -> ComboMeal:
+        cook = sum(d.cook_time for d in dishes)
+        shopping = defaultdict(float)
+        for d in dishes:
+            for ing, g in d.ingredients.items():
+                shopping[ing] += g
+
+        name_map = {"breakfast": "早餐", "lunch": "午餐", "dinner": "晚餐"}
+        return ComboMeal(
+            combo_id=abs(hash(meal_code + str(random.randint(0, 9999)))) % 100000,
+            combo_name=name_map.get(meal_code, meal_code),
+            need_codes=[],
+            meal_type=meal_code,
+            dishes=dishes,
+            total_cook_time=cook,
+            portion_plan={},
+            shopping_list=dict(shopping)
+        )
+
+    from typing import Dict, List, Tuple
+    from collections import defaultdict
+    from ejiacanAI.dish2_combo_models import Dish, DishFoodNutrient, ExactPortion
+
+    from typing import Dict, List
+    from collections import defaultdict
+    from ejiacanAI.dish2_combo_models import Dish, ExactPortion, DishFoodNutrient
+
+    def build_true_dishes(wide_rows: List[DishFoodNutrient]) -> List[Dish]:
+        """
+        把“菜品 × 食材 × 营养素”宽表聚合成真正的 Dish 对象列表
+        """
+        # dish_id -> food_id -> List[DishFoodNutrient]
+        dish_map: Dict[int, Dict[int, List[DishFoodNutrient]]] = defaultdict(lambda: defaultdict(list))
+        for r in wide_rows:
+            dish_map[r.dish_id][r.food_id].append(r)
+
+        dishes: List[Dish] = []
+        for dish_id, food_map in dish_map.items():
+            # 1. 取 dish 级元数据（所有行都一样，取第一行即可）
+            meta = next(iter(food_map.values()))[0]  # 任意取一条
+            dish_name = meta.dish_name
+            dish_emoji = meta.dish_emoji or ""
+            cook_time = meta.dish_cook_time
+            default_portion = meta.dish_default_portion_g
+
+            meal_type_code = ""
+            series_id = None
+            series_name = ""
+            category_id = None
+            category_name = ""
+            tag_id = None
+            tag_name = ""
+
+            # 2. 遍历所有行，收集第一个出现的非空值
+            for rows_all in food_map.values():
+                for r in rows_all:
+                    if r.dish_meal_type_code and not meal_type_code:
+                        meal_type_code = r.dish_meal_type_code
+                    if r.series_id is not None and series_id is None:
+                        series_id = r.series_id
+                        series_name = r.series_name or ""
+                    if r.category_id is not None and category_id is None:
+                        category_id = r.category_id
+                        category_name = r.category_name or ""
+                    if r.tag_id is not None and tag_id is None:
+                        tag_id = r.tag_id
+                        tag_name = r.tag_name or ""
+                    # 一旦全部都有了，可以提前退出
+                    if all([meal_type_code, series_id, category_id, tag_id]):
+                        break
+
+            # 2. 按食材聚合
+            ingredients: Dict[str, float] = {}
+            nutrients: Dict[str, float] = defaultdict(float)
+            allergens: set[str] = set()
+            explicit_tags: set[str] = set()
+            implicit_tags: set[str] = set()
+
+            for food_id, rows in food_map.items():
+                # 2-1 食材 & 用量
+                first = rows[0]
+                ingredients[first.food_description] = float(first.food_amount_in_dish_g or 0)
+
+                # 2-2 营养素（已乘克数）
+                for r in rows:
+                    if r.nutrient_name and r.nutrient_in_dish is not None:
+                        nutrients[r.nutrient_name] += float(r.nutrient_in_dish)
+
+                # 2-3 标签 & 过敏原（每行都重复，但 set 去重）
+                if first.allergen_list:
+                    allergens.update(a.strip() for a in first.allergen_list.split(",") if a.strip())
+                if first.explicit_tags:
+                    explicit_tags.update(t.strip() for t in first.explicit_tags.split(",") if t.strip())
+                if first.implicit_tags:
+                    implicit_tags.update(t.strip() for t in first.implicit_tags.split(",") if t.strip())
+
+            dishes.append(Dish(
+                dish_id=dish_id,
+                name=dish_name,
+                cook_time=cook_time,
+                ingredients=ingredients,
+                nutrients=dict(nutrients),
+                exact_portion=ExactPortion(size="M", grams=default_portion),
+                allergens=list(allergens),
+                explicit_tags=list(explicit_tags),
+                implicit_tags=list(implicit_tags),
+                meal_type_code=meal_type_code
+            ))
+        return dishes

@@ -8,10 +8,12 @@ if __name__ == "__main__":
         meal_type="all",        # 生成三餐
         refresh_key=42,         # 每次换种子即可洗牌
         cook_time_limit=30,     # 30 分钟以内
-        deficit_kcal=0          # 无热量缺口
+        deficit_kcal=0,          # 无热量缺口
+        dish_series=1
     )
 
-    meals = MealGeneratorV2.generate(req)
+    # meals = MealGeneratorV2.generate(req)
+    meals = MealGeneratorV2.generate_per_meal(req)
 
     print("========  Demo 输出  ========")
     for m in meals:

@@ -16,6 +16,7 @@ class MealRequest:
     max_dishes_per_meal: int = 0    # 0 表示自动计算
     cook_time_limit: int = 30       # 分钟
     deficit_kcal: int = 0           # 热量缺口
+    dish_series: int = 1
 
 @dataclass
 class ExactPortion:
@@ -37,6 +38,7 @@ class Dish:
     # 选菜用的标签
     explicit_tags: List[str]        # need-dish 显性标签
     implicit_tags: List[str]        # dish_category 隐性标签
+    meal_type_code: Optional[str] = None
 
 @dataclass
 class ComboMeal:
@@ -65,6 +67,10 @@ class DishFoodNutrient:
     dish_meal_type_name: Optional[str]
     category_id: Optional[int]
     category_name: Optional[str]
+    series_id: Optional[int]
+    series_name: Optional[str]
+    tag_id: Optional[int]
+    tag_name: Optional[str]
     category_match_score: Optional[float]
     food_id: int
     food_amount_in_dish_g: int
@@ -87,6 +93,7 @@ class DishFoodNutrient:
     allergen_list: Optional[str]     # GROUP_CONCAT 结果
     explicit_tags: str = ""
     implicit_tags: str = ""
+    meal_type_code: Optional[str] = None
 
 
 @dataclass
