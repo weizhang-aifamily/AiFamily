@@ -9,7 +9,7 @@ if __name__ == "__main__":
         refresh_key=42,         # 每次换种子即可洗牌
         cook_time_limit=30,     # 30 分钟以内
         deficit_kcal=0,          # 无热量缺口
-        dish_series=1
+        dish_series=None,  # 菜系ID
     )
 
     # meals = MealGeneratorV2.generate(req)

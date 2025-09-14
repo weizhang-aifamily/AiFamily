@@ -16,9 +16,9 @@ class DishComboData:
         """
         sql = """
             SELECT *
-            FROM v2_dish_food_nutrient
+            FROM v3_dish_food_complete_view
             {}
-            ORDER BY dish_id, food_id, nutrient_order
+            ORDER BY dish_id, food_id
         """.format(
             "WHERE dish_id IN ({})".format(",".join(map(str, dish_ids))) if dish_ids else ""
         )

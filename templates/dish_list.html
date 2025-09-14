@@ -1,0 +1,29 @@
+<!doctype html>
+<title>菜品列表</title>
+<h2>菜品列表</h2>
+<table border="1" cellpadding="4">
+  <thead>
+    <tr>
+      <th>名称</th><th>评分</th><th>烹饪时间</th>
+      <th>分类</th><th>匹配分</th><th>关系类型</th>
+      <th>菜系</th><th>标签</th><th>餐型</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in dishes %}
+    <tr>
+      <td>{{ r.name }}</td>
+      <td>{{ r.rating or '-' }}</td>
+      <td>{{ r.dish_cook_time }} 分</td>
+      <td>{{ r.category_name or '-' }}</td>
+      <td>{{ r.category_match_score or '-' }}</td>
+      <td>{{ r.category_rel_type or '-' }}</td>
+      <td>{{ r.series_name or '-' }}</td>
+      <td>{{ r.tag_name or '-' }}</td>
+      <td>{{ r.meal_type_name or '-' }}</td>
+      <td><a href="{{ url_for('dish.dish_edit', dish_id=r.dish_id) }}">编辑</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>

@@ -1,0 +1,66 @@
+<!doctype html>
+<title>菜品编辑</title>
+<h2>菜品：{{ rows[0].name if rows else '' }}</h2>
+<form method="post" action="{{ url_for('dish.dish_save', dish_id=request.view_args['dish_id']) }}">
+
+  {# 按固定顺序渲染 4 种 rel_type #}
+  {% for rel_type in ['category', 'series', 'tag', 'mealtype'] %}
+    {% set r = (rows | selectattr('category_rel_type', 'eq', rel_type) | list | first) or {} %}
+
+    <fieldset>
+      <legend>
+        {% if rel_type == 'category' %}分类{% elif rel_type == 'series' %}菜系{% elif rel_type == 'tag' %}标签{% else %}餐型{% endif %}
+      </legend>
+
+      {% if rel_type == 'category' %}
+        <label>分类：
+          <select name="category_id">
+            <option value="">--无--</option>
+            {% for c in categories %}
+              <option value="{{ c.id }}" {% if c.id==r.get('category_id') %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </label><br>
+        <label>匹配分：
+          <input type="number" step="0.01" name="category_match_score" value="{{ r.get('category_match_score') or '' }}">
+        </label><br>
+      {% endif %}
+
+      {% if rel_type == 'series' %}
+        <label>菜系：
+          <select name="series_id">
+            <option value="">--无--</option>
+            {% for s in series %}
+              <option value="{{ s.id }}" {% if s.id==r.get('series_id') %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </label><br>
+      {% endif %}
+
+      {% if rel_type == 'tag' %}
+        <label>标签：
+          <select name="tag_id">
+            <option value="">--无--</option>
+            {% for t in tags %}
+              <option value="{{ t.id }}" {% if t.id==r.get('tag_id') %}selected{% endif %}>{{ t.name }}</option>
+            {% endfor %}
+          </select>
+        </label><br>
+      {% endif %}
+
+      {% if rel_type == 'mealtype' %}
+        <label>餐型：
+          <select name="meal_type">
+            <option value="">--无--</option>
+            {% for m in meals %}
+              <option value="{{ m.id }}" {% if m.id==r.get('meal_type') %}selected{% endif %}>{{ m.name }}</option>
+            {% endfor %}
+          </select>
+        </label><br>
+      {% endif %}
+    </fieldset>
+  {% endfor %}
+
+  <button type="submit">保存全部</button>
+</form>
+<a href="{{ url_for('dish.dish_list') }}">返回列表</a>
