@@ -9,12 +9,7 @@ class DishListItem:
     name: str
     rating: Optional[float]
     dish_cook_time: int
-    category_name: Optional[str]
-    category_match_score: Optional[float]
-    category_rel_type: Optional[str]
-    series_name: Optional[str]
-    tag_name: Optional[str]
-    meal_type_name: Optional[str]
+    tags: Optional[str]
 
 @dataclass
 class DishPage2SaveCmd:

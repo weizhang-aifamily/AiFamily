@@ -10,28 +10,12 @@ class DishData:
         字段顺序与页面列顺序保持一致。
         """
         sql = """
-            SELECT  d.id            AS dish_id,
+            SELECT d.dish_id            AS dish_id,
                     d.name,
                     d.rating,
-                    d.cook_time     AS dish_cook_time,
-                    c.name          AS category_name,
-                    dcr.match_score AS category_match_score,
-                    dcr.rel_type    AS category_rel_type,
-                    s.series_name,
-                    t.tag_name,
-                    m.meal_type_name
-            FROM    ejia_dish d
-            LEFT JOIN ejia_dish_category_rel dcr
-                   ON d.id = dcr.dish_id
-            LEFT JOIN ejia_dish_category_tbl c
-                   ON dcr.category_id = c.id AND dcr.rel_type = 'category'
-            LEFT JOIN ejia_dish_series_tbl s
-                   ON dcr.category_id = s.series_id AND dcr.rel_type = 'series'
-            LEFT JOIN ejia_dish_tags_tbl t
-                   ON dcr.category_id = t.tag_id AND dcr.rel_type = 'tag'
-            LEFT JOIN ejia_dish_meal_type m 
-                    ON dcr.category_id = m.id AND dcr.rel_type = 'mealtype' 
-            ORDER BY d.id
+                    d.dish_cook_time     AS dish_cook_time,
+                    d.tags AS tags
+                    FROM v3_dish_list d
         """
         rows = db.query(sql)
         return [DishListItem(**r) for r in rows]
@@ -39,30 +23,13 @@ class DishData:
     @staticmethod
     def get_dish_meta(dish_id: int) ->  List[Dict]:
         sql = """
-            SELECT  d.id            AS dish_id,
+            SELECT d.dish_id            AS dish_id,
                     d.name,
-                    c.id            AS category_id,
-                    c.name          AS category_name,
-                    dcr.match_score AS category_match_score,
-                    dcr.rel_type    AS category_rel_type,
-                    s.series_id,
-                    s.series_name,
-                    t.tag_id,
-                    t.tag_name,
-                    mt.meal_type,
-                    mt.meal_type_name
-            FROM    ejia_dish d
-              LEFT JOIN ejia_dish_category_rel dcr
-                   ON d.id = dcr.dish_id
-            LEFT JOIN ejia_dish_category_tbl c
-                   ON dcr.category_id = c.id AND dcr.rel_type = 'category'
-            LEFT JOIN ejia_dish_series_tbl s
-                   ON dcr.category_id = s.series_id AND dcr.rel_type = 'series'
-            LEFT JOIN ejia_dish_tags_tbl t
-                   ON dcr.category_id = t.tag_id AND dcr.rel_type = 'tag'
-            LEFT JOIN ejia_dish_meal_type mt 
-                    ON dcr.category_id = mt.id AND dcr.rel_type = 'mealtype' 
-            WHERE   d.id = %s
+                    d.rating,
+                    d.dish_cook_time     AS dish_cook_time,
+                    d.tags AS tags
+                    FROM v3_dish_list_json d
+            WHERE   d.dish_id = %s
         """
         return db.query(sql, dish_id)
 
@@ -77,7 +44,18 @@ class DishData:
 
     @staticmethod
     def list_tags() -> List[Dict]:
-        return db.query("SELECT tag_id AS id, tag_name AS name FROM ejia_dish_tags_tbl ORDER BY tag_id")
+        sql = """
+            SELECT
+                id          AS id,
+                group_code  AS group_code,
+                group_name  AS group_name,
+                tag_code    AS tag_code,
+                tag_name    AS tag_name,
+                sort        AS sort
+            FROM ejia_dish_tag_tbl
+            ORDER BY group_code, sort
+        """
+        return db.query(sql)
 
     @staticmethod
     def list_meal_types() -> List[Dict]:

@@ -15,16 +15,13 @@ def dish_list():
 @dish_bp.route("/dish/<int:dish_id>")
 def dish_edit(dish_id):
     meta   = DishData.get_dish_meta(dish_id)
-    cats   = DishData.list_categories()
-    series = DishData.list_series()
+    # cats   = DishData.list_categories()
+    # series = DishData.list_series()
     tags   = DishData.list_tags()
-    meals  = DishData.list_meal_types()
+    # meals  = DishData.list_meal_types()
     return render_template("dish_edit.html",
                            rows=meta,
-                           categories=cats,
-                           series=series,
-                           tags=tags,
-                           meals=meals)
+                           tags=tags)
 
 # ------------- 页面2：保存 -------------
 @dish_bp.route("/dish/<int:dish_id>/save", methods=["POST"])

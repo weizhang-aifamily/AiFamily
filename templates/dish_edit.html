@@ -1,66 +1,55 @@
 <!doctype html>
 <title>菜品编辑</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 2rem; }
+    h1 { text-align: center; margin-bottom: 2rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax: 360px, 1fr); gap: 1.5rem; }
+    .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 1rem 1.5rem; }
+    .card h2 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    .meta { color: #666; font-size: .9rem; margin-bottom: 1rem; }
+    .form-group { margin-bottom: .75rem; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: .25rem; }
+    select[multiple] { width: 100%; padding: .25rem .5rem; border: 1px solid #ccc; border-radius: 4px; font-size: .9rem; }
+  </style>
 <h2>菜品：{{ rows[0].name if rows else '' }}</h2>
 <form method="post" action="{{ url_for('dish.dish_save', dish_id=request.view_args['dish_id']) }}">
+<div class="cards">
+        {% for r in rows %}
+          {# 当前菜品已有标签 code 集合 #}
+          {% set own_codes = r.tags | map(attribute='code') | list %}
 
-  {# 按固定顺序渲染 4 种 rel_type #}
-  {% for rel_type in ['category', 'series', 'tag', 'mealtype'] %}
-    {% set r = (rows | selectattr('category_rel_type', 'eq', rel_type) | list | first) or {} %}
+          <div class="card">
+            <h2>{{ r.name }}</h2>
+            <div class="meta">
+              评分：{{ r.rating }} | 耗时：{{ r.dish_cook_time }} 分钟
+            </div>
 
-    <fieldset>
-      <legend>
-        {% if rel_type == 'category' %}分类{% elif rel_type == 'series' %}菜系{% elif rel_type == 'tag' %}标签{% else %}餐型{% endif %}
-      </legend>
-
-      {% if rel_type == 'category' %}
-        <label>分类：
-          <select name="category_id">
-            <option value="">--无--</option>
-            {% for c in categories %}
-              <option value="{{ c.id }}" {% if c.id==r.get('category_id') %}selected{% endif %}>{{ c.name }}</option>
-            {% endfor %}
-          </select>
-        </label><br>
-        <label>匹配分：
-          <input type="number" step="0.01" name="category_match_score" value="{{ r.get('category_match_score') or '' }}">
-        </label><br>
-      {% endif %}
-
-      {% if rel_type == 'series' %}
-        <label>菜系：
-          <select name="series_id">
-            <option value="">--无--</option>
-            {% for s in series %}
-              <option value="{{ s.id }}" {% if s.id==r.get('series_id') %}selected{% endif %}>{{ s.name }}</option>
-            {% endfor %}
-          </select>
-        </label><br>
-      {% endif %}
-
-      {% if rel_type == 'tag' %}
-        <label>标签：
-          <select name="tag_id">
-            <option value="">--无--</option>
+            {# 按 group_code 分组渲染下拉框 #}
+            {% set g_map = {} %}
             {% for t in tags %}
-              <option value="{{ t.id }}" {% if t.id==r.get('tag_id') %}selected{% endif %}>{{ t.name }}</option>
+              {% set g = t.group_code %}
+              {% if g not in g_map %}{% set _ = g_map.update({g: []}) %}{% endif %}
+              {% set _ = g_map[g].append(t) %}
             {% endfor %}
-          </select>
-        </label><br>
-      {% endif %}
 
-      {% if rel_type == 'mealtype' %}
-        <label>餐型：
-          <select name="meal_type">
-            <option value="">--无--</option>
-            {% for m in meals %}
-              <option value="{{ m.id }}" {% if m.id==r.get('meal_type') %}selected{% endif %}>{{ m.name }}</option>
+            {% for g_code, g_tags in g_map.items() %}
+              <div class="form-group">
+                <label>{{ g_tags[0].group_name }}</label>
+                <select multiple name="tags_{{ r.dish_id }}_{{ g_code }}[]">
+                  {% for t in g_tags %}
+                    <option value="{{ t.id }}" {% if t.code in own_codes %}selected{% endif %}>
+                      {{ t.tag_name }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
             {% endfor %}
-          </select>
-        </label><br>
-      {% endif %}
-    </fieldset>
-  {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
 
-  <button type="submit">保存全部</button>
+      <div style="text-align: center; margin-top: 2rem;">
+        <button type="submit">保存全部</button>
+      </div>
 </form>
 <a href="{{ url_for('dish.dish_list') }}">返回列表</a>
