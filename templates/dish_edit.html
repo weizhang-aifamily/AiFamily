@@ -13,40 +13,62 @@
   </style>
 <h2>菜品：{{ rows[0].name if rows else '' }}</h2>
 <form method="post" action="{{ url_for('dish.dish_save', dish_id=request.view_args['dish_id']) }}">
-<div class="cards">
-        {% for r in rows %}
-          {# 当前菜品已有标签 code 集合 #}
-          {% set own_codes = r.tags | map(attribute='code') | list %}
 
-          <div class="card">
-            <h2>{{ r.name }}</h2>
-            <div class="meta">
-              评分：{{ r.rating }} | 耗时：{{ r.dish_cook_time }} 分钟
+ <div class="cards">
+            <!-- 使用Jinja2模板语法直接渲染 -->
+            {% for r in rows %}
+            <div class="card">
+                <h2>{{ r.name }}</h2>
+                <div class="meta">
+                    评分：{{ r.rating }} | 耗时：{{ r.dish_cook_time }} 分钟
+                </div>
+
+                {# 按组分类标签 #}
+                {% set g_all = {} %}
+                {% for t in tags %}
+                    {% set g = t.group_code %}
+                    {% if g not in g_all %}
+                        {% set _ = g_all.update({g: {'name': t.group_name, 'tags': []}}) %}
+                    {% endif %}
+                    {% set _ = g_all[g]['tags'].append(t) %}
+                {% endfor %}
+
+                {# 当前菜品已有标签 #}
+                {% set own_codes = r.tags | map(attribute='code') | list %}
+
+                {# 渲染每个标签组 #}
+                {% for g_code, g_data in g_all.items() %}
+                <div class="form-group">
+                    <label>{{ g_data.name }}</label>
+                    <div class="tag-row" id="{{ g_code }}_{{ r.dish_id }}">
+                        {# 渲染已选择的标签 #}
+                        {% for tag in r.tags if tag.group == g_code %}
+                        <select name="tags_{{ r.dish_id }}_{{ g_code }}[]">
+                            <option value="">请选择</option>
+                            {% for opt in g_data.tags %}
+                            <option value="{{ opt.tag_code }}" {{ 'selected' if opt.tag_code == tag.code }}>
+                                {{ opt.tag_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% endfor %}
+
+                        {# 如果没有已选标签，添加一个空的选择框 #}
+                        {% if not r.tags | selectattr('group', 'equalto', g_code) | list %}
+                        <select name="tags_{{ r.dish_id }}_{{ g_code }}[]">
+                            <option value="">请选择</option>
+                            {% for opt in g_data.tags %}
+                            <option value="{{ opt.tag_code }}">{{ opt.tag_name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+                    </div>
+                    <button class="add-btn" onclick="addTagOption('{{ g_code }}_{{ r.dish_id }}', 'tags_{{ r.dish_id }}_{{ g_code }}[]')">+ 添加更多</button>
+                </div>
+                {% endfor %}
             </div>
-
-            {# 按 group_code 分组渲染下拉框 #}
-            {% set g_map = {} %}
-            {% for t in tags %}
-              {% set g = t.group_code %}
-              {% if g not in g_map %}{% set _ = g_map.update({g: []}) %}{% endif %}
-              {% set _ = g_map[g].append(t) %}
             {% endfor %}
-
-            {% for g_code, g_tags in g_map.items() %}
-              <div class="form-group">
-                <label>{{ g_tags[0].group_name }}</label>
-                <select multiple name="tags_{{ r.dish_id }}_{{ g_code }}[]">
-                  {% for t in g_tags %}
-                    <option value="{{ t.id }}" {% if t.code in own_codes %}selected{% endif %}>
-                      {{ t.tag_name }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
-            {% endfor %}
-          </div>
-        {% endfor %}
-      </div>
+        </div>
 
       <div style="text-align: center; margin-top: 2rem;">
         <button type="submit">保存全部</button>

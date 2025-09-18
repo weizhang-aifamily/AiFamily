@@ -1,4 +1,5 @@
 from flask import Blueprint, Flask, render_template, request, redirect, url_for
+import json
 from management.dish_data import DishData
 from management.dish_models import DishPage2SaveCmd
 
@@ -19,6 +20,15 @@ def dish_edit(dish_id):
     # series = DishData.list_series()
     tags   = DishData.list_tags()
     # meals  = DishData.list_meal_types()
+    # 解析meta中每个菜品的tags字段（从JSON字符串转换为Python对象）
+    for row in meta:
+        if isinstance(row.get('tags'), str):
+            try:
+                row['tags'] = json.loads(row['tags'])
+            except json.JSONDecodeError:
+                row['tags'] = []  # 如果解析失败，设置为空列表
+        elif row.get('tags') is None:
+            row['tags'] = []  # 如果为None，也设置为空列表
     return render_template("dish_edit.html",
                            rows=meta,
                            tags=tags)
