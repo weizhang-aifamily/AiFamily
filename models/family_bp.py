@@ -2,6 +2,8 @@ from typing import List, Dict
 
 from flask import Blueprint, jsonify, request
 from dbconnect.dbconn import db
+from ejiacanAI.dish2_combo_generator import MealGeneratorV2
+from ejiacanAI.dish2_combo_models import MealRequest
 from ejiacanAI.dish_combo_generator import DishComboGenerator
 from ejiacanAI.dish_combo_models import ComboMeal
 from ejiacanAI.engine import ILPRecommender
@@ -66,21 +68,34 @@ def get_combos(member_ids):
         # 1. 获取智能推荐结果
         # recommendations = recommender.recommend(member_ids_list, meal_type, max_results)
         # 使用套餐生成器生成全天套餐
-        all_day_meals = DishComboGenerator.generate_family_combo(
+        # all_day_meals = DishComboGenerator.generate_family_combo(
+        #     member_ids=member_ids_list,
+        #     meal_type="all",  # 或者使用传入的 meal_type 参数
+        #     filter_allergens=True
+        # )
+
+        req = MealRequest(
             member_ids=member_ids_list,
-            meal_type="all",  # 或者使用传入的 meal_type 参数
-            filter_allergens=True
+            meal_type=meal_type,  # 生成三餐
+            refresh_key=max_results,  # 每次换种子即可洗牌
+            cook_time_limit=30,  # 30 分钟以内
+            deficit_kcal=0,  # 无热量缺口
+            dish_series=None,  # 菜系ID
         )
+
+        all_day_meals = MealGeneratorV2.generate_per_meal(req)
+
+
         if not all_day_meals:
             return jsonify({"status": "success", "data": [], "message": "未找到合适的菜品组合"})
 
         # 2. 将推荐结果转换为套餐格式（保持原有返回结构）
         #combos = _convert_recommendations_to_combos(recommendations)
         # combos = dao.fetch_matching_combos_new(recommendations)
-        combos = _convert_combos_to_response(all_day_meals)
+        # combos = _convert_combos_to_response(all_day_meals)
         return jsonify({
             "status": "success",
-            "data": combos,
+            "data": all_day_meals,
             "metadata": {
                 "recommendation_type": "smart",
                 "total_recommendations": len(all_day_meals)

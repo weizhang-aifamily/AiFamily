@@ -554,7 +554,7 @@ function renderCombos() {
 console.log("comboData" ,comboData)
   track.innerHTML = comboData.map((combo, idx) => `
     <article class="combo-row">
-      <h3 class="combo-name">${combo.comboName}</h3>
+<!--      <h3 class="combo-name">${combo.comboName}</h3>-->
 <!--      <p class="combo-desc">${combo.comboDesc}</p>-->
       <div class="dish-list">
         ${combo.dishes.map(dish => `
