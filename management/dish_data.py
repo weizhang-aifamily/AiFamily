@@ -21,26 +21,46 @@ class DishData:
         return [DishListItem(**r) for r in rows]
 # --------------- 页面2 单菜下拉框数据 ---------------
     @staticmethod
-    def get_dish_meta(dish_id: int) ->  List[Dict]:
+    def get_dish_tags(dish_id: int) -> List[Dict]:
         sql = """
-            SELECT d.dish_id            AS dish_id,
-                    d.name,
+                SELECT 
+                    d.id as dish_id,
+                    d.name as dish_name,
                     d.rating,
-                    d.dish_cook_time     AS dish_cook_time,
-                    d.tags AS tags
-                    FROM v3_dish_list_json d
-            WHERE   d.dish_id = %s
-        """
+                    d.cook_time,
+                    dtt.id as tag_id,
+                    dtt.group_code,
+                    dtt.group_name, 
+                    dtt.tag_code,
+                    dtt.tag_name 
+                FROM ejia_dish d
+                LEFT JOIN ejia_dish_tag_rel dtr ON d.id = dtr.dish_id
+                LEFT JOIN ejia_dish_tag_tbl dtt ON dtr.tag_id = dtt.id
+                WHERE d.id = %s 
+                ORDER BY dtt.group_code, dtt.sort;
+            """
         return db.query(sql, dish_id)
 
-    # --------------- 下拉框备选项 ---------------
     @staticmethod
-    def list_categories() -> List[Dict]:
-        return db.query("SELECT id, name FROM ejia_dish_category_tbl ORDER BY id")
-
-    @staticmethod
-    def list_series() -> List[Dict]:
-        return db.query("SELECT series_id AS id, series_name AS name FROM ejia_dish_series_tbl ORDER BY series_id")
+    def get_dish_food(dish_id: int) -> List[Dict]:
+        sql = """
+            SELECT 
+                d.id as dish_id,
+                d.name as dish_name,
+                d.rating,
+                d.cook_time,
+                fn.foodCode,
+                fn.category1,
+                fn.category2,
+                fn.foodName,
+                dfr.amount_grams
+            FROM ejia_dish d
+            LEFT JOIN ejia_dish_food_rel dfr ON d.id = dfr.dish_id
+            LEFT JOIN food_nutrition fn ON fn.foodCode = dfr.food_id
+            WHERE d.id = %s
+            ;
+            """
+        return db.query(sql, dish_id)
 
     @staticmethod
     def list_tags() -> List[Dict]:
@@ -57,47 +77,40 @@ class DishData:
         """
         return db.query(sql)
 
-    @staticmethod
-    def list_meal_types() -> List[Dict]:
-        return db.query("SELECT id, meal_type_name AS name FROM ejia_dish_meal_type ORDER BY id")
     # --------------- 页面2 保存 ---------------
     @staticmethod
-    def save_dish(cmd: DishPage2SaveCmd) -> None:
+    def save_dish_tags(dish_id: int, tag_ids: List[int]) -> None:
         """
-        先删再插，保持与原有 rel 表逻辑一致。
-        所有下拉框值均可能为 None，表示清空对应关系。
+        幂等保存菜品标签关系
+        :param dish_id: 菜品主键
+        :param tag_ids: 需要绑定的 tag_id 列表（空列表=清空）
         """
-        # 1. 清空该菜品的所有相关 rel 记录
-        db.execute("""
-            DELETE FROM ejia_dish_category_rel
-            WHERE  dish_id = %s
-              AND  rel_type IN ('category', 'series', 'tag')
-        """, cmd.dish_id)
+        # 1. 清空旧关系
+        db.execute("DELETE FROM ejia_dish_tag_rel WHERE dish_id = %s", dish_id)
 
-        # 2. 分类
-        if cmd.category_id is not None:
-            db.execute("""
-                INSERT INTO ejia_dish_category_rel(dish_id, category_id, rel_type, match_score)
-                VALUES (%s, %s, 'category', %s)
-            """, (cmd.dish_id, cmd.category_id, cmd.category_match_score or 0))
+        # 2. 批量写入新关系
+        if tag_ids:
+            db.executemany(
+                "INSERT INTO ejia_dish_tag_rel(dish_id, tag_id) VALUES (%s, %s)",
+                [(dish_id, tid) for tid in tag_ids]
+            )
 
-        # 3. 菜系
-        if cmd.series_id is not None:
-            db.execute("""
-                INSERT INTO ejia_dish_category_rel(dish_id, category_id, rel_type)
-                VALUES (%s, %s, 'series')
-            """, (cmd.dish_id, cmd.series_id))
+    @staticmethod
+    def save_dish_foods(dish_id: int, food_codes: List[str], amount_grams: List[int]) -> None:
+        """
+        幂等保存菜品食材关系
+        :param dish_id: 菜品主键
+        :param food_codes: 食材代码列表
+        :param amount_grams: 对应的用量列表（克）
+        """
+        # 1. 清空旧关系
+        db.execute("DELETE FROM ejia_dish_food_rel WHERE dish_id = %s", dish_id)
 
-        # 4. 标签
-        if cmd.tag_id is not None:
-            db.execute("""
-                INSERT INTO ejia_dish_category_rel(dish_id, category_id, rel_type)
-                VALUES (%s, %s, 'tag')
-            """, (cmd.dish_id, cmd.tag_id))
+        # 2. 批量写入新关系
+        if food_codes and len(food_codes) == len(amount_grams):
+            data = [(dish_id, food_code, amount) for food_code, amount in zip(food_codes, amount_grams)]
 
-        # 5. 餐型（直接更新原表即可）
-        if cmd.meal_type is not None:
-            db.execute("""
-                INSERT INTO ejia_dish_category_rel(dish_id, category_id, rel_type)
-                VALUES (%s, %s, 'mealtype')
-            """, (cmd.dish_id, cmd.meal_type))
+            db.executemany(
+                "INSERT INTO ejia_dish_food_rel(dish_id, food_id, amount_grams) VALUES (%s, %s, %s)",
+                data
+            )

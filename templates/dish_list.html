@@ -16,7 +16,7 @@
       <td>{{ r.rating or '-' }}</td>
       <td>{{ r.dish_cook_time }} 分钟</td>
       <td>{{ r.tags or '-' }}</td>
-      <td><a href="{{ url_for('dish.dish_edit', dish_id=r.dish_id) }}">编辑</a></td>
+      <td><a href="{{ url_for('dish.dish_edit', dish_id=r.dish_id) }}">编辑tags</a></td>
     </tr>
   {% endfor %}
   </tbody>

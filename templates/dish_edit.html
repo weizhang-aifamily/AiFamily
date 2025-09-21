@@ -1,77 +1,144 @@
 <!doctype html>
 <title>菜品编辑</title>
 <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 2rem; }
-    h1 { text-align: center; margin-bottom: 2rem; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax: 360px, 1fr); gap: 1.5rem; }
-    .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 1rem 1.5rem; }
-    .card h2 { margin: 0 0 .5rem; font-size: 1.25rem; }
-    .meta { color: #666; font-size: .9rem; margin-bottom: 1rem; }
-    .form-group { margin-bottom: .75rem; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: .25rem; }
-    select[multiple] { width: 100%; padding: .25rem .5rem; border: 1px solid #ccc; border-radius: 4px; font-size: .9rem; }
-  </style>
-<h2>菜品：{{ rows[0].name if rows else '' }}</h2>
-<form method="post" action="{{ url_for('dish.dish_save', dish_id=request.view_args['dish_id']) }}">
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f5f5;margin:0;padding:2rem}
+  h1{text-align:center;margin-bottom:2rem}
+  .card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:1rem 1.5rem;margin:0 auto;max-width:680px}
+  .card h2{margin:0 0 .5rem;font-size:1.25rem}
+  .meta{color:#666;font-size:.9rem;margin-bottom:1rem}
+  .form-group{margin-bottom:1.5rem}
+  .form-group label.group-label{display:block;font-weight:600;margin-bottom:.5rem}
+  .checkbox-group{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:.5rem}
+  .checkbox-item{display:flex;align-items:center;gap:.5rem}
+  .checkbox-item input[type="checkbox"]{width:auto;margin:0}
+  .add-more{background:#fff;border:1px solid #007bff;color:#007bff;padding:.25rem .6rem;border-radius:4px;cursor:pointer;font-size:.8rem;margin-top:.5rem}
+  .actions{text-align:center;margin-top:2rem}
+  .actions button{padding:.5rem 1.5rem;background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer}
+  .actions a{margin-left:1rem;color:#007bff;text-decoration:none}
 
- <div class="cards">
-            <!-- 使用Jinja2模板语法直接渲染 -->
-            {% for r in rows %}
-            <div class="card">
-                <h2>{{ r.name }}</h2>
-                <div class="meta">
-                    评分：{{ r.rating }} | 耗时：{{ r.dish_cook_time }} 分钟
-                </div>
+  /* 食材相关样式 */
+  .food-section {margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1.5rem;}
+  .food-item {display: flex; align-items: center; padding: .75rem; background: #f9f9f9; border-radius: 6px; margin-bottom: .75rem;}
+  .food-info {flex-grow: 1;}
+  .food-name {font-weight: 500; margin-bottom: .25rem;}
+  .food-categories {font-size: .85rem; color: #666;}
+  .food-amount {display: flex; align-items: center; gap: .5rem; margin-top: .5rem;}
+  .food-amount input {width: 80px; padding: .25rem; border: 1px solid #ddd; border-radius: 4px;}
+  .food-actions {display: flex; gap: .5rem;}
+  .btn-remove {color: #dc3545; background: none; border: none; cursor: pointer; font-size: 1.2rem;}
+  .add-food-form {background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-top: 1rem;}
+  .form-row {display: flex; gap: 1rem; margin-bottom: 1rem;}
+  .form-field {flex: 1;}
+  .form-field label {display: block; margin-bottom: .25rem; font-weight: 500; font-size: .9rem;}
+  .form-field input, .form-field select {width: 100%; padding: .5rem; border: 1px solid #ddd; border-radius: 4px;}
+  .btn-add-food {background: #28a745; color: white; border: none; padding: .5rem 1rem; border-radius: 4px; cursor: pointer;}
+  .empty-state {text-align: center; color: #6c757d; padding: 1.5rem; background: #f8f9fa; border-radius: 6px;}
+</style>
 
-                {# 按组分类标签 #}
-                {% set g_all = {} %}
-                {% for t in tags %}
-                    {% set g = t.group_code %}
-                    {% if g not in g_all %}
-                        {% set _ = g_all.update({g: {'name': t.group_name, 'tags': []}}) %}
-                    {% endif %}
-                    {% set _ = g_all[g]['tags'].append(t) %}
-                {% endfor %}
+<h1>菜品编辑</h1>
 
-                {# 当前菜品已有标签 #}
-                {% set own_codes = r.tags | map(attribute='code') | list %}
+<form method="post" action="{{ url_for('dish.save_dish', dish_id=rows[0].dish_id) }}">
 
-                {# 渲染每个标签组 #}
-                {% for g_code, g_data in g_all.items() %}
-                <div class="form-group">
-                    <label>{{ g_data.name }}</label>
-                    <div class="tag-row" id="{{ g_code }}_{{ r.dish_id }}">
-                        {# 渲染已选择的标签 #}
-                        {% for tag in r.tags if tag.group == g_code %}
-                        <select name="tags_{{ r.dish_id }}_{{ g_code }}[]">
-                            <option value="">请选择</option>
-                            {% for opt in g_data.tags %}
-                            <option value="{{ opt.tag_code }}" {{ 'selected' if opt.tag_code == tag.code }}>
-                                {{ opt.tag_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        {% endfor %}
+  {% set r = rows[0] %}   {# 只处理单道菜 #}
+  <div class="card">
+    <h2>{{ r.name }}</h2>
+    <div class="meta">评分：{{ r.rating }} | 耗时：{{ r.dish_cook_time }} 分钟</div>
 
-                        {# 如果没有已选标签，添加一个空的选择框 #}
-                        {% if not r.tags | selectattr('group', 'equalto', g_code) | list %}
-                        <select name="tags_{{ r.dish_id }}_{{ g_code }}[]">
-                            <option value="">请选择</option>
-                            {% for opt in g_data.tags %}
-                            <option value="{{ opt.tag_code }}">{{ opt.tag_name }}</option>
-                            {% endfor %}
-                        </select>
-                        {% endif %}
-                    </div>
-                    <button class="add-btn" onclick="addTagOption('{{ g_code }}_{{ r.dish_id }}', 'tags_{{ r.dish_id }}_{{ g_code }}[]')">+ 添加更多</button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endfor %}
+    {# 1. 全部候选标签按组归集 #}
+    {% set group_dict = dict() %}
+    {% for t in tags %}
+      {% set g = t.group_code %}
+      {% if g not in group_dict %}
+        {% set _ = group_dict.update({g: {'name': t.group_name, 'tags': []}}) %}
+      {% endif %}
+      {% set _ = group_dict[g]['tags'].append(t) %}
+    {% endfor %}
+
+    {# 2. 已绑定标签 #}
+    {% set bound_tag_ids = [] %}
+    {% for t in r.tags %}
+      {% set _ = bound_tag_ids.append(t.code) %}
+    {% endfor %}
+
+    {# 3. 逐组渲染复选框 #}
+    {% for g_code, group_data in group_dict.items() %}
+    <div class="form-group">
+      <label class="group-label">{{ group_data.name }}</label>
+      <div class="checkbox-group">
+        {% for tag in group_data.tags %}
+        <div class="checkbox-item">
+          <input type="checkbox"
+                 name="tags[]"
+                 value="{{ tag.id }}"
+                 id="tag-{{ tag.id }}"
+                 {% if tag.tag_code in bound_tag_ids %}checked{% endif %}>
+          <label for="tag-{{ tag.id }}">{{ tag.tag_name }}</label>
         </div>
-
-      <div style="text-align: center; margin-top: 2rem;">
-        <button type="submit">保存全部</button>
+        {% endfor %}
       </div>
+    </div>
+    {% endfor %}
+
+    {# 4. 食材信息部分 #}
+    <div class="food-section">
+      <label class="group-label">食材列表</label>
+
+      {% if r.food %}
+        {% for food in r.food %}
+        <div class="food-item" id="div_{{ food.code }}">
+          <div class="food-info">
+            <div class="food-name">{{ food.name }} ({{ food.code }})</div>
+            <div class="food-categories">{{ food.category1 }} {% if food.category2 %}/ {{ food.category2 }}{% endif %}</div>
+            <div class="food-amount">
+              <label>用量（克）:</label>
+              <input type="number" name="amount_grams_{{ food.code }}" value="{{ food.amount_grams if food.amount_grams else 0 }}" min="0" step="1">
+              <input type="hidden" name="food_codes" value="{{ food.code }}">
+            </div>
+          </div>
+          <div class="food-actions">
+            <button type="button" class="btn-remove" onclick="removeFood('{{ food.code }}')">×</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">暂无食材信息</div>
+      {% endif %}
+
+      {# 添加食材表单 #}
+      <div class="add-food-form">
+        <h3>添加食材</h3>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="food_code">食材代码</label>
+            <input type="text" name="food_codes" placeholder="输入食材代码">
+          </div>
+          <div class="form-field">
+            <label for="amount_grams">用量（克）</label>
+            <input type="number" name="amount_grams" placeholder="输入用量" min="0" step="1" value="0">
+          </div>
+        </div>
+        <button type="submit" class="btn-add-food">添加食材并保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="submit">保存全部</button>
+    <a href="{{ url_for('dish.dish_list') }}">返回列表</a>
+  </div>
 </form>
-<a href="{{ url_for('dish.dish_list') }}">返回列表</a>
+
+<script>
+  function removeFood(foodCode) {
+      // 直接找到对应的用量输入框和隐藏字段
+      const amountInput = document.querySelector(`input[name="amount_grams_${foodCode}"]`);
+      const hiddenInput = document.querySelector(`input[name="food_codes"][value="${foodCode}"]`);
+
+      // 移除这两个元素
+      if (amountInput) amountInput.remove();
+      if (hiddenInput) hiddenInput.remove();
+      const div_food = document.querySelector(`div[id="div_${foodCode}"]`);
+      div_food.style.backgroundColor = 'gray';
+      console.log('已移除食材:', foodCode);
+  }
+</script>
