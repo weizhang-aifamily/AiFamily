@@ -15,7 +15,7 @@ class DishData:
                     d.rating,
                     d.dish_cook_time     AS dish_cook_time,
                     d.tags AS tags
-                    FROM v3_dish_list d
+                    FROM v3_dish_list_all d
         """
         rows = db.query(sql)
         return [DishListItem(**r) for r in rows]

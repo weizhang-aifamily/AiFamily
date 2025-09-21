@@ -190,23 +190,7 @@ class DishFoodNutrient:
     allergen_code: Optional[str]
     allergen_name: Optional[str]
 
-    # 分类信息
-    category_id: Optional[int]
-    category_name: Optional[str]
-    category_match_score: Optional[float]
-    category_rel_type: Optional[str]
-
-    # 菜系信息
-    series_id: Optional[int]
-    series_name: Optional[str]
-
-    # 标签信息
-    tag_id: Optional[int]
-    tag_name: Optional[str]
-
-    # 餐型信息
-    meal_type: Optional[str]
-    meal_type_name: Optional[str]
+    tags_json: Optional[str]
 
 
 @dataclass
@@ -220,7 +204,7 @@ class Dish:
     allergens: List[str]
     explicit_tags: List[str]  # 标签
     implicit_tags: List[str]  # 分类
-    dish_series: Optional[int]  # 菜系ID
+    dish_series: Optional[str]  # 菜系ID
     meal_type_code: Optional[str]  # 餐型
     rating: Optional[float]  # 评分
     description: Optional[str]  # 描述

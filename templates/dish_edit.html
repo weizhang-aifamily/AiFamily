@@ -117,7 +117,7 @@
             <input type="number" name="amount_grams" placeholder="输入用量" min="0" step="1" value="0">
           </div>
         </div>
-        <button type="submit" class="btn-add-food">添加食材并保存</button>
+        <button type="button" class="btn-add-food" onclick="addFoodRow()">添加食材</button>
       </div>
     </div>
   </div>
@@ -129,6 +129,17 @@
 </form>
 
 <script>
+  function addFoodRow() {
+    const formRows = document.querySelectorAll('.add-food-form .form-row');
+    const lastRow = formRows[formRows.length - 1];
+    const newRow = lastRow.cloneNode(true);
+
+    // 清空新行的输入值
+    newRow.querySelectorAll('input').forEach(input => input.value = '');
+    newRow.querySelector('input[name="amount_grams"]').value = '0';
+
+    lastRow.parentNode.insertBefore(newRow, lastRow.nextSibling);
+  }
   function removeFood(foodCode) {
       // 直接找到对应的用量输入框和隐藏字段
       const amountInput = document.querySelector(`input[name="amount_grams_${foodCode}"]`);

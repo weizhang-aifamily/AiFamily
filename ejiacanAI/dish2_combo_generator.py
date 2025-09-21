@@ -1,6 +1,7 @@
 # meal_generator_v2.py
+import json
 import random
-from typing import List, Dict
+from typing import List, Dict, Optional
 from collections import defaultdict
 from ejiacanAI.dish2_combo_models import MealRequest, ComboMeal, Dish, ExactPortion, DishFoodNutrient
 from ejiacanAI.dish2_combo_data import DishComboData   # 统一数据入口
@@ -264,96 +265,8 @@ class MealGeneratorV2:
     from collections import defaultdict
     from ejiacanAI.dish2_combo_models import Dish, ExactPortion, DishFoodNutrient
 
-    def build_true_dishesbak(wide_rows: List[DishFoodNutrient], req: MealRequest) -> List[Dish]:
-        """
-        把“菜品 × 食材 × 营养素”宽表聚合成真正的 Dish 对象列表
-        """
-        # dish_id -> food_id -> List[DishFoodNutrient]
-        dish_map: Dict[int, Dict[int, List[DishFoodNutrient]]] = defaultdict(lambda: defaultdict(list))
-        for r in wide_rows:
-            dish_map[r.dish_id][r.food_id].append(r)
-
-        dishes: List[Dish] = []
-        for dish_id, food_map in dish_map.items():
-            # 1. 取 dish 级元数据（所有行都一样，取第一行即可）
-            meta = next(iter(food_map.values()))[0]  # 任意取一条
-
-            dish_name = meta.dish_name
-            dish_emoji = meta.dish_emoji or ""
-            cook_time = meta.dish_cook_time
-            default_portion = meta.dish_default_portion_g
-
-            meal_type_code = ""
-            series_id = None
-            series_name = ""
-            category_id = None
-            category_name = ""
-            tag_id = None
-            tag_name = ""
-
-            # 2. 遍历所有行，收集第一个出现的非空值
-            for rows_all in food_map.values():
-                for r in rows_all:
-                    if r.dish_meal_type_code and not meal_type_code:
-                        meal_type_code = r.dish_meal_type_code
-                    if r.series_id is not None and series_id is None:
-                        series_id = r.series_id
-                        series_name = r.series_name or ""
-                    if r.category_id is not None and category_id is None:
-                        category_id = r.category_id
-                        category_name = r.category_name or ""
-                    if r.tag_id is not None and tag_id is None:
-                        tag_id = r.tag_id
-                        tag_name = r.tag_name or ""
-                    # 一旦全部都有了，可以提前退出
-                    if all([meal_type_code, series_id, category_id, tag_id]):
-                        break
-
-            # 2. 按食材聚合
-            ingredients: Dict[str, float] = {}
-            nutrients: Dict[str, float] = defaultdict(float)
-            allergens: set[str] = set()
-            explicit_tags: set[str] = set()
-            implicit_tags: set[str] = set()
-            series_id: int
-
-            for food_id, rows in food_map.items():
-                # 2-1 食材 & 用量
-                first = rows[0]
-                ingredients[first.food_description] = float(first.food_amount_in_dish_g or 0)
-
-                # 2-2 营养素（已乘克数）
-                for r in rows:
-                    if r.nutrient_name and r.nutrient_in_dish is not None:
-                        nutrients[r.nutrient_name] += float(r.nutrient_in_dish)
-
-                # 2-3 标签 & 过敏原（每行都重复，但 set 去重）
-                if first.allergen_list:
-                    allergens.update(a.strip() for a in first.allergen_list.split(",") if a.strip())
-                if first.explicit_tags: # tag_id
-                    explicit_tags.update(t.strip() for t in first.explicit_tags.split(",") if t.strip())
-                if first.implicit_tags: # category_id
-                    implicit_tags.update(t.strip() for t in first.implicit_tags.split(",") if t.strip())
-                if first.series_id: # series_id
-                    series_id = first.series_id
-
-            dishes.append(Dish(
-                dish_id=dish_id,
-                name=dish_name,
-                cook_time=cook_time,
-                ingredients=ingredients,
-                nutrients=dict(nutrients),
-                exact_portion=ExactPortion(size="M", grams=default_portion),
-                allergens=list(allergens),
-                explicit_tags=list(explicit_tags),
-                implicit_tags=list(implicit_tags),
-                dish_series=series_id,
-                meal_type_code=meal_type_code
-            ))
-        return dishes
-
-
-    def build_true_dishes(wide_rows: List[DishFoodNutrient], req: MealRequest) -> List[Dish]:
+    @classmethod
+    def build_true_dishes(cls, wide_rows: List[DishFoodNutrient], req: MealRequest) -> List[Dish]:
         """
         把 dish_food_complete_view 宽表聚合成真正的 Dish 对象列表
         并进行初步过滤（level_la, qingzhen, sushi等）
@@ -385,39 +298,14 @@ class MealGeneratorV2:
             rating = meta.dish_rating
             description = meta.dish_description
 
-            # 4. 收集分类、菜系、标签信息
-            meal_type_code = meta.meal_type
-            series_id = meta.series_id
-            series_name = meta.series_name
-            category_id = meta.category_id
-            category_name = meta.category_name
-            tag_id = meta.tag_id
-            tag_name = meta.tag_name
-
-            # 2. 遍历所有行，收集第一个出现的非空值
-            for rows_all in food_map.values():
-                for r in rows_all:
-                    if r.meal_type and not meal_type_code:
-                        meal_type_code = r.meal_type
-                    if r.series_id is not None and series_id is None:
-                        series_id = r.series_id
-                        series_name = r.series_name or ""
-                    if r.category_id is not None and category_id is None:
-                        category_id = r.category_id
-                        category_name = r.category_name or ""
-                    if r.tag_id is not None and tag_id is None:
-                        tag_id = r.tag_id
-                        tag_name = r.tag_name or ""
-                    # 一旦全部都有了，可以提前退出
-                    if all([meal_type_code, series_id, category_id, tag_id]):
-                        break
-
             # 5. 按食材聚合
             ingredients: Dict[str, float] = {}
             nutrients: Dict[str, float] = defaultdict(float)
             allergens: set[str] = set()
             explicit_tags: set[str] = set()
             implicit_tags: set[str] = set()
+            dish_series: Optional[str] = None  # 菜系ID
+            meal_type_code: Optional[str] = None
 
             for food_id, rows in food_map.items():
                 # 5-1 食材 & 用量
@@ -437,13 +325,14 @@ class MealGeneratorV2:
                 if first.allergen_code:
                     allergens.add(first.allergen_code)
 
-            # 6. 收集标签信息
-            if tag_name:
-                explicit_tags.add(f"{tag_id}:{tag_name},")
-            if category_name:
-                implicit_tags.add(f"{category_id}:{category_name},")
-            if series_name:
-                implicit_tags.add(f"{series_id}:{series_name},")
+                # 6. 收集标签信息
+                if first.tags_json:
+                    dish_series = cls.extract_group_items(first.tags_json,'cuisine')
+                    meal_type_code = cls.extract_group_items(first.tags_json,'meal_time')
+                    dish_series = dish_series[:dish_series.find(':')]
+                    meal_type_code = meal_type_code[:meal_type_code.find(':')]
+                    explicit_tags.add(cls.extract_group_items(first.tags_json,'cuisine'))
+                    implicit_tags.add(cls.extract_group_items(first.tags_json,'meal_time'))
 
             # 7. 创建 Dish 对象
             dishes.append(Dish(
@@ -456,7 +345,7 @@ class MealGeneratorV2:
                 allergens=list(allergens),
                 explicit_tags=list(explicit_tags),
                 implicit_tags=list(implicit_tags),
-                dish_series=series_id,
+                dish_series=dish_series,
                 meal_type_code=meal_type_code,
                 rating=rating,
                 description=description
@@ -464,6 +353,40 @@ class MealGeneratorV2:
 
         return dishes
 
+    @classmethod
+    def extract_group_items(cls, json_str, target_group):
+        """
+        从数据列表中提取指定分组的信息
+
+        Args:
+            data_list: 包含多个字典的列表
+            target_group: 要提取的分组名称，如'meal_time', 'cuisine'等
+
+        Returns:
+            str: 指定分组的信息，格式如"code：name"或多个用逗号相隔
+        """
+        if not json_str or not target_group:
+            return ""
+
+        try:
+            # 将JSON字符串解析为Python列表
+            data_list = json.loads(json_str)
+
+            group_items = []
+
+            for item in data_list:
+                if isinstance(item, dict) and item.get('group') == target_group:
+                    code = item.get('code', '')
+                    name = item.get('name', '')
+                    if code and name:
+                        group_items.append(f"{code}:{name}")
+
+            return '，'.join(group_items)
+
+        except json.JSONDecodeError:
+            return "无效的JSON格式"
+        except Exception as e:
+            return f"处理出错: {str(e)}"
 
     @classmethod
     def filter_dishes(cls, dish_list: List[Dish], req: MealRequest) -> List[Dish]:
