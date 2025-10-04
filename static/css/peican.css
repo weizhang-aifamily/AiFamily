@@ -949,7 +949,7 @@ body {
       white-space: nowrap;      /* 禁止换行 */
   overflow-x: auto;         /* 水平方向超出时显示滚动条 */
   overflow-y: hidden;       /* 垂直方向隐藏滚动条 */
-  display: flex;            /* 使用flex布局可以更好地控制子元素排列 */
+  display: grid;            /* 使用flex布局可以更好地控制子元素排列 */
 
   scroll-snap-type: x mandatory; /* 可选：滚动时吸附到子项 */
   padding: 10px 0;          /* 可选：增加内边距 */
@@ -1112,7 +1112,6 @@ body {
 
 /* 菜品容器：横向滚动 */
 .combo-row .dish-list {
-  display: flex;
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 8px;

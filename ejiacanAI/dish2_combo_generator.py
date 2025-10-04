@@ -1,5 +1,6 @@
 # meal_generator_v2.py
 import json
+import logging
 import random
 from typing import List, Dict, Optional
 from collections import defaultdict
@@ -144,7 +145,7 @@ class MealGeneratorV2:
     MEAL_RATIO = {"breakfast": 0.30, "lunch": 0.40, "dinner": 0.30}
     @classmethod
     def generate_per_meal(cls, req: MealRequest) -> List[ComboMeal]:
-        dish_list_wide = DishComboData.list_dish_food_nutrient([])  # 一次性拉全表
+        dish_list_wide = DishComboData.list_dish_food_nutrient([],req)  # 一次性拉全表
         # 过滤一部分不满足req的dish，如level_la，qingzhen，sushi等，除memberneed
         dish_list = cls.build_true_dishes(dish_list_wide, req)
         # 只保留符合要求的菜系、种类、时间、应季等
@@ -204,9 +205,10 @@ class MealGeneratorV2:
         # 2. 先过滤：①餐次匹配 ②烹饪时间 ③不过敏
         pool = [
             d for d in dish_list
-            if (d.meal_type_code == meal_code or meal_code == "all")
+            if ("all" == meal_code or meal_code in cls.tag_pick(d, 'meal_time', 'code'))
                and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
-               and (not req.dish_series or d.dish_series in req.dish_series)
+               and (not req.dish_series or any(series in cls.tag_pick(d, 'cuisine', 'code')
+                                        for series in req.dish_series))
                and not allergens.intersection(set(d.allergens))
         ]
 
@@ -257,16 +259,119 @@ class MealGeneratorV2:
             shopping_list=dict(shopping)
         )
 
-    from typing import Dict, List, Tuple
-    from collections import defaultdict
-    from ejiacanAI.dish2_combo_models import Dish, DishFoodNutrient, ExactPortion
-
     from typing import Dict, List
-    from collections import defaultdict
     from ejiacanAI.dish2_combo_models import Dish, ExactPortion, DishFoodNutrient
 
     @classmethod
     def build_true_dishes(cls, wide_rows: List[DishFoodNutrient], req: MealRequest) -> List[Dish]:
+        dish_map = cls._group_by_dish_and_food(wide_rows)
+        dishes: List[Dish] = []
+
+        for dish_id, food_map in dish_map.items():
+            meta = cls._get_meta(food_map)
+            ingredients, nutrients, allergens = cls._aggregate_foods(food_map)
+            dish_tags = cls._build_dish_tags(meta.tags_json)  # 2. 新 tag 结构
+
+            # 3. 一次性把 CSV 里“多余”字段也带上
+            dishes.append(Dish(
+                dish_id=dish_id,
+                name=meta.dish_name,
+                dish_emoji=meta.dish_emoji,  # 🔥
+                cook_time=meta.dish_cook_time,
+                default_portion=meta.dish_default_portion_g,
+                rating=meta.dish_rating,
+                description=meta.dish_description,
+                explicit_tags=meta.need_tags.split(",") if meta.need_tags else [],
+
+                ingredients=ingredients,
+                nutrients=nutrients,
+                exact_portion=ExactPortion(size="M", grams=meta.dish_default_portion_g),
+                allergens=list(allergens),
+
+                dish_tags=dish_tags,  # 新版 map
+            ))
+        return dishes
+
+    # ------------------ 下面全是小工具 ------------------
+    @staticmethod
+    def _group_by_dish_and_food(wide_rows):
+        d = defaultdict(lambda: defaultdict(list))
+        for r in wide_rows:
+            d[r.dish_id][r.food_id].append(r)
+        return d
+
+    @staticmethod
+    def _get_meta(food_map):
+        return next(iter(food_map.values()))[0]
+
+    @classmethod
+    def _aggregate_foods(cls, food_map):
+        ingredients: Dict[str, float] = {}
+        nutrients: Dict[str, float] = defaultdict(float)
+        allergens: set[str] = set()
+        NUTRIENT_MAPPING = {
+            # 宏量
+            'protein': 'Protein',
+            'fat': 'Fat',
+            'CHO': 'Carbohydrate',
+            'dietaryFiber': 'DietaryFiber',
+            'ash': 'Ash',
+            # 能量
+            'energyKCal': 'EnergyKCal',
+            'energyKJ': 'EnergyKJ',
+            # 矿物质
+            'Ca': 'Calcium', 'P': 'Phosphorus', 'K': 'Potassium',
+            'Na': 'Sodium', 'Mg': 'Magnesium', 'Fe': 'Iron',
+            'Zn': 'Zinc', 'Se': 'Selenium', 'Cu': 'Copper',
+            'Mn': 'Manganese',
+            # 维生素
+            'vitaminA': 'VitaminA',
+            'carotene': 'Carotene',
+            'retinol': 'Retinol',
+            'thiamin': 'Thiamin',
+            'riboflavin': 'Riboflavin',
+            'niacin': 'Niacin',
+            'vitaminC': 'VitaminC',
+            'vitaminETotal': 'VitaminETotal',
+            'vitaminE1': 'VitaminE1',
+            'vitaminE2': 'VitaminE2',
+            'vitaminE3': 'VitaminE3',
+            # 其他
+            'cholesterol': 'Cholesterol',
+            'water': 'Water',
+            'edible': 'EdibleRatio'
+        }
+        for food_id, rows in food_map.items():
+            first = rows[0]
+            ingredients[first.foodName] = float(first.food_amount_grams or 0)
+
+            for field, key in NUTRIENT_MAPPING.items():
+                val = getattr(first, field, None)
+                if val is not None:
+                    nutrients[key] += float(val) * float(first.food_amount_grams) / 100
+
+            if first.allergen_code:
+                allergens.add(first.allergen_code)
+        return ingredients, dict(nutrients), allergens
+
+    @staticmethod
+    def _build_dish_tags(tags_json: Optional[str]) -> Dict[str, List[Dict[str, str]]]:
+        """按 group 聚合成 map：group -> [{code: xx, name: yy}, ...]"""
+        if not tags_json:
+            return {}
+        try:
+            tags = json.loads(tags_json)
+        except Exception as e:
+            logging.warn("invalid tags_json: %s  error: %s", tags_json, e)
+            return {}
+        bucket: Dict[str, List[Dict[str, str]]] = defaultdict(list)
+        for tag in tags:
+            group = tag.get('group')
+            if group:
+                bucket[group].append({'code': tag.get('code'), 'name': tag.get('name')})
+        return dict(bucket)
+    @classmethod
+    def build_true_dishes_bak(cls, wide_rows: List[DishFoodNutrient], req: MealRequest) -> List[Dish]:
         """
         把 dish_food_complete_view 宽表聚合成真正的 Dish 对象列表
         并进行初步过滤（level_la, qingzhen, sushi等）
@@ -387,7 +492,10 @@ class MealGeneratorV2:
             return "无效的JSON格式"
         except Exception as e:
             return f"处理出错: {str(e)}"
-
+    @staticmethod
+    def tag_pick(dish: Dish, group: str, pick='code'):
+        """通用取标签工具：group=分组名，pick='code'|'name'"""
+        return [t[pick] for t in dish.dish_tags.get(group, [])]
     @classmethod
     def filter_dishes(cls, dish_list: List[Dish], req: MealRequest) -> List[Dish]:
         # 创建结果列表而不是在原列表上修改
@@ -404,9 +512,10 @@ class MealGeneratorV2:
                 continue
 
             # 检查菜品系列
-            if (hasattr(dish, 'dish_series') and dish.dish_series is not None and
+            dish_series = cls.tag_pick(dish, 'cuisine', 'code')
+            if (dish_series and dish_series is not None and
                     req.dish_series and
-                    dish.dish_series not in req.dish_series):
+                    dish_series not in req.dish_series):
                 continue
 
             # 如果通过所有过滤条件，添加到结果列表

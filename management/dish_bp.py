@@ -1,3 +1,5 @@
+from typing import List, Dict
+
 from flask import Blueprint, Flask, render_template, request, redirect, url_for
 import json
 from management.dish_data import DishData
@@ -9,8 +11,22 @@ dish_bp = Blueprint('dish', __name__, url_prefix='/dish')
 # ------------- 页面1：dish 列表 -------------
 @dish_bp.route("/dishes")
 def dish_list():
-    rows = DishData.list_dish_page()
-    return render_template("dish_list.html", dishes=rows)
+    # 1. 把前端多选框值合并成 List[str]
+    selected_tags = request.args.getlist("tags")  # ['lu','yue','brunch']
+
+    # 2. 查数据
+    rows = DishData.list_dish_page(tag_codes=selected_tags)
+
+    # 3. 复用原逻辑
+    cuisineTags = DishData.list_oneTags("cuisine")
+    mealtimetags = DishData.list_oneTags("meal_time")
+
+    # 4. 回显用
+    return render_template("dish_list.html",
+                           dishes=rows,
+                           cuisineTags=cuisineTags,
+                           mealtimetags=mealtimetags,
+                           selected_tags=selected_tags)
 
 # ------------- 页面2：单菜编辑 -------------
 @dish_bp.route("/<int:dish_id>")
@@ -94,3 +110,59 @@ def save_dish(dish_id: int):
     # 保存食材
     DishData.save_dish_foods(dish_id, food_codes, food_amounts)
     return redirect(url_for("dish.dish_list"))
+# ------------- 给某个dish打上标签，根据ejia_enum_diet_need_nutrient_rule定义 -------------
+@dish_bp.route("/<int:dish_id>/needtag", methods=["POST"],endpoint="needtag_dish")
+def needtag_dish(dish_id: int):
+    """读规则 → 算营养 → 比阈值 → 写标签"""
+    rules = DishData.get_need_rule()
+    rows = DishData.get_dish_food_nut(dish_id)  # 原始食材行
+    total = _calc_per_100g_raw(rows)  # 手动算
+
+    hit_codes = []
+    for rule in rules:
+        val = total.get(rule.nutrient_name)
+        if val is None:
+            continue
+        ok = False
+        if rule.comparison_operator == ">=":
+            ok = val >= rule.threshold_value
+        elif rule.comparison_operator == "<=":
+            ok = val <= rule.threshold_value
+        if ok:
+            hit_codes.append(rule.need_code)
+
+    DishData.update_dish_needtag(dish_id, hit_codes)
+    return redirect(url_for("dish.dish_list"))
+
+def _calc_per_100g_raw(rows: List[dict]) -> Dict[str, float]:
+    """
+    手动按用量重新计算每100g成品菜的营养素
+    视图里：
+        营养列 = 每100g食材可食部含量
+        food_amount_grams = 该食材在菜品里的用量(g)
+    公式：
+        贡献 = 营养列 * food_amount_grams * edible / 100
+    再按菜品总重归一化到100g成品
+    """
+    # 菜品总重（生食总克数）
+    total_weight = sum(float(r['food_amount_grams']) for r in rows)
+    if total_weight == 0:
+        return {}
+    nutrient_cols = [
+        "energyKCal", "protein", "fat", "CHO", "dietaryFiber",
+        "cholesterol", "vitaminA", "thiamin", "riboflavin", "niacin",
+        "vitaminC", "vitaminETotal", "Ca", "P", "K", "Na", "Mg",
+        "Fe", "Zn", "Se", "Cu", "Mn"
+    ]
+    total = {col: 0.0 for col in nutrient_cols}
+
+    for r in rows:
+        w = float(r['food_amount_grams'])
+        edible = float(r['edible']) / 100.0  # 可食部比例
+        for col in nutrient_cols:
+            per100g = float(r.get(col, 0))  # 每100g可食部含量
+            total[col] += per100g * w * edible / 100.0
+
+    # 归一化到每100g成品
+    factor = 100.0 / total_weight
+    return {col: val * factor for col, val in total.items()}

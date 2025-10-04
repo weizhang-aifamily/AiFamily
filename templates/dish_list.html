@@ -1,11 +1,36 @@
 <!doctype html>
 <title>菜品列表</title>
 <h2>菜品列表</h2>
+<form method="get" action="{{ url_for('dish.dish_list') }}">
+  菜系：<br>
+  {% for tag in cuisineTags %}
+    <label>
+      <input type="checkbox" name="tags" value="{{ tag.tag_code }}"
+             {% if tag.tag_code in selected_tags %}checked{% endif %}>
+      {{ tag.tag_name }}
+    </label>
+  {% endfor %}<br>
+
+  餐次：<br>
+  {% for tag in mealtimetags %}
+    <label>
+      <input type="checkbox" name="tags" value="{{ tag.tag_code }}"
+             {% if tag.tag_code in selected_tags %}checked{% endif %}>
+      {{ tag.tag_name }}
+    </label>
+  {% endfor %}<br>
+  <button type="submit">查询</button>
+</form>
+
+排序：做法、口味（显性标签）；人群、主食（隐性标签）
 <table border="1" cellpadding="4">
   <thead>
     <tr>
-      <th>名称</th><th>评分</th><th>烹饪时间</th>
+      <th>名称</th>
+      <th>评分</th>
+      <th>烹饪时间</th>
       <th>标签</th>
+      <th>need标签</th>
       <th>操作</th>
     </tr>
   </thead>
@@ -16,7 +41,13 @@
       <td>{{ r.rating or '-' }}</td>
       <td>{{ r.dish_cook_time }} 分钟</td>
       <td>{{ r.tags or '-' }}</td>
+      <td>{{ r.need_tags or '-' }}</td>
       <td><a href="{{ url_for('dish.dish_edit', dish_id=r.dish_id) }}">编辑</a></td>
+        <td><form method="post"
+            action="{{ url_for('dish.needtag_dish', dish_id=r.dish_id) }}"
+            style="display:inline;">
+        <button type="submit" onclick="return confirm('重新生成需求标签？')">生成标签</button>
+      </form></td>
     </tr>
   {% endfor %}
   </tbody>

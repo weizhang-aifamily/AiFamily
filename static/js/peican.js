@@ -561,8 +561,9 @@ console.log("comboData" ,comboData)
           <label class="dish-item">
             <input type="checkbox" value="${dish.name}" ${dish.checked ? 'checked' : ''}>
             <img src="https://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
-            <span class="dish-name">${dish.name}</span>${dish.cookTime}分钟<span></span>
-            ${(dish.tags || []).map(tag => `<span class="nutri-tag">${tag}</span>${dish.portion_size}份`).join('')}
+            <span class="dish-name">${dish.name}</span>
+            <span>${dish.cook_time}分钟</span>${dish.exact_portion.size}份
+            ${(dish.explicit_tags || []).map(tag => `<span class="nutri-tag">${tag}</span>`).join('')}
             ${dish.rating ? `<span class="dish-per">⭐⭐⭐⭐☆ ${dish.rating}</span>` : ''}
           </label>
         `).join('')}

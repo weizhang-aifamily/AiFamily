@@ -5,11 +5,11 @@ from ejiacanAI.dish2_combo_generator import MealGeneratorV2
 if __name__ == "__main__":
     req = MealRequest(
         member_ids=[1, 2, 3],   # 假设库里 1,2,3 有需求
-        meal_type="all",        # 生成三餐
+        meal_type="all",        # 生成三餐 all
         refresh_key=42,         # 每次换种子即可洗牌
         cook_time_limit=30,     # 30 分钟以内
         deficit_kcal=0,          # 无热量缺口
-        dish_series=None,  # 菜系ID
+        dish_series='yue',  # 菜系
     )
 
     # meals = MealGeneratorV2.generate(req)

@@ -1,21 +1,43 @@
 from typing import List, Dict, Optional
-from management.dish_models import DishListItem, DishPage2SaveCmd
+from management.dish_models import DishListItem, DishPage2SaveCmd, NutrientRule
 from dbconnect.dbconn import db
 
 class DishData:
     @staticmethod
-    def list_dish_page() -> List[DishListItem]:
+    def list_dish_page(tag_codes: List[str] = None) -> List[DishListItem]:
         """
         返回页面1所需扁平字段，一行即一菜，无嵌套。
         字段顺序与页面列顺序保持一致。
+        如果 tag_codes 为空则查全表。
         """
-        sql = """
-            SELECT d.dish_id            AS dish_id,
-                    d.name,
-                    d.rating,
-                    d.dish_cook_time     AS dish_cook_time,
-                    d.tags AS tags
-                    FROM v3_dish_list_all d
+        if tag_codes:
+            # ① 拼占位串
+            in_str = ",".join([f"'{t.strip()}'" for t in tag_codes])
+            # ② 关键：having 计数 = 传入 tag 个数
+            where_tag = f"""
+              AND d.dish_id IN (
+                  SELECT d.id
+                  FROM ejia_dish d
+                  JOIN ejia_dish_tag_rel dtr ON d.id = dtr.dish_id
+                  JOIN ejia_dish_tag_tbl dtt ON dtr.tag_id = dtt.id
+                  WHERE dtt.tag_code IN ({in_str})
+                  GROUP BY d.id
+                  HAVING COUNT(DISTINCT dtt.tag_code) = {len(tag_codes)}
+              )
+            """
+        else:
+            where_tag = ""
+
+        sql = f"""
+            SELECT d.dish_id,
+                   d.name,
+                   d.rating,
+                   d.dish_cook_time,
+                   d.tags,
+                   d.need_tags
+            FROM v3_dish_list_all d
+            WHERE 1=1 {where_tag}
+            
         """
         rows = db.query(sql)
         return [DishListItem(**r) for r in rows]
@@ -76,6 +98,21 @@ class DishData:
             ORDER BY group_code, sort
         """
         return db.query(sql)
+    @staticmethod
+    def list_oneTags(group_code: str) -> List[Dict]:
+        sql = """
+            SELECT
+                id          AS id,
+                group_code  AS group_code,
+                group_name  AS group_name,
+                tag_code    AS tag_code,
+                tag_name    AS tag_name,
+                sort        AS sort
+            FROM ejia_dish_tag_tbl
+            where group_code = %s
+            ORDER BY sort
+        """
+        return db.query(sql, group_code)
 
     # --------------- 页面2 保存 ---------------
     @staticmethod
@@ -114,3 +151,40 @@ class DishData:
                 "INSERT INTO ejia_dish_food_rel(dish_id, food_id, amount_grams) VALUES (%s, %s, %s)",
                 data
             )
+
+# ----------- 1. 读取需求标签规则表 -----------
+    @staticmethod
+    def get_need_rule() -> List[NutrientRule]:
+        sql = """
+            SELECT id, need_code, nutrient_name,
+                   comparison_operator, threshold_value, unit
+            FROM ejia_enum_diet_need_nutrient_rule
+        """
+        rows = db.query(sql)
+        return [NutrientRule(**r) for r in rows]
+
+    @staticmethod
+    def get_dish_food_nut(dish_id: int) -> List[Dict]:
+        """
+        原样返回 v3_dish_food_complete_view 里该菜品的所有食材行
+        不做任何汇总、转换，供上层按需处理
+        """
+        sql = """
+            SELECT *
+            FROM v3_dish_food_complete_view
+            WHERE dish_id = %s
+        """
+        return db.query(sql, dish_id)
+    @staticmethod
+    def update_dish_needtag(dish_id: int, need_codes: List[str]) -> None:
+        """
+        幂等更新 ejia_dish.need_tags 字段
+        空列表表示清空
+        """
+        # 去重并保持顺序
+        sorted_codes = sorted(set(need_codes))
+        tag_str = ",".join(sorted_codes) if sorted_codes else ""
+        db.execute(
+            "UPDATE ejia_dish SET need_tags = %s WHERE id = %s",
+            (tag_str, dish_id)
+        )

@@ -18,7 +18,7 @@ class MealRequest:
     deficit_kcal: int = 0           # 热量缺口
     explicit_tags: List[str] = field(default_factory=list)  # 标签
     implicit_tags: List[str] = field(default_factory=list)  # 分类
-    dish_series: Optional[int] = None  # 菜系ID
+    dish_series: Optional[str] = None  # 菜系ID
 
 @dataclass
 class ExactPortion:
@@ -143,6 +143,7 @@ class DishFoodNutrient:
     dish_rating: Optional[float]
     dish_default_portion_g: int
     dish_cook_time: int
+    need_tags: str
 
     # 食材信息
     food_id: int
@@ -196,15 +197,19 @@ class DishFoodNutrient:
 @dataclass
 class Dish:
     dish_id: int
+    dish_emoji: str
     name: str
     cook_time: int
     ingredients: Dict[str, float]  # 食材名称 -> 克数
     nutrients: Dict[str, float]  # 营养素编码 -> 含量
+    default_portion: int
     exact_portion: ExactPortion
     allergens: List[str]
-    explicit_tags: List[str]  # 标签
-    implicit_tags: List[str]  # 分类
-    dish_series: Optional[str]  # 菜系ID
-    meal_type_code: Optional[str]  # 餐型
-    rating: Optional[float]  # 评分
-    description: Optional[str]  # 描述
+    dish_tags: Dict[str, List[Dict[str, str]]]
+    # 以下全部给默认值
+    explicit_tags: List[str] = field(default_factory=list)
+    implicit_tags: List[str] = field(default_factory=list)
+    dish_series: Optional[str] = None
+    meal_type_code: Optional[str] = None
+    rating: Optional[float] = None
+    description: Optional[str] = None
