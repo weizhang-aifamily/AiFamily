@@ -15,9 +15,6 @@ class DishComboData:
         must_tags = []
         if req.meal_type and req.meal_type != "all":
             must_tags.append(req.meal_type)
-        if req.dish_series is not None:
-            must_tags.append(req.dish_series)
-        # must_tags.extend(req.explicit_tags)  # 外部再传进来的
         must_tags = [t for t in must_tags if t]  # 去空
 
         # 2. 拼 tag 子查询（必须全部满足）

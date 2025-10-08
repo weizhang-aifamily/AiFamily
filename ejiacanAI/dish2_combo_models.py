@@ -19,6 +19,7 @@ class MealRequest:
     explicit_tags: List[str] = field(default_factory=list)  # 标签
     implicit_tags: List[str] = field(default_factory=list)  # 分类
     dish_series: Optional[str] = None  # 菜系ID
+    dish_category: Optional[str] = None # 菜品类别
 
 @dataclass
 class ExactPortion:

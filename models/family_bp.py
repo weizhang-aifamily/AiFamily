@@ -10,6 +10,9 @@ from ejiacanAI.engine import ILPRecommender
 from ejiacanAI.data_access import EnhancedDataAccess
 from ejiacanAI.smart_recommender import SmartRecommender
 import logging
+
+from management.dish_data import DishData
+
 logger = logging.getLogger(__name__)
 family_bp = Blueprint('family', __name__, url_prefix='/family')
 
@@ -58,12 +61,14 @@ def get_members(user_id):
 dao = EnhancedDataAccess(db)
 engine = ILPRecommender()
 
+@family_bp.route('/getCombos/', methods=['GET'])
 @family_bp.route('/getCombos/<member_ids>', methods=['GET'])
-def get_combos(member_ids):
+def get_combos(member_ids=None):
     try:
-        member_ids_list = list(map(int, member_ids.split(',')))
         meal_type = request.args.get('meal_type', 'lunch')
-        max_results = min(int(request.args.get('max_results', 10)), 50)
+        cuisine = request.args.get('cuisine', None)
+        category = request.args.get('category', None)
+        activeSolutions = request.args.get('activeSolutions', None)
 
         # 1. 获取智能推荐结果
         # recommendations = recommender.recommend(member_ids_list, meal_type, max_results)
@@ -73,18 +78,31 @@ def get_combos(member_ids):
         #     meal_type="all",  # 或者使用传入的 meal_type 参数
         #     filter_allergens=True
         # )
-
-        req = MealRequest(
-            member_ids=member_ids_list,
-            meal_type=meal_type,  # 生成三餐
-            refresh_key=max_results,  # 每次换种子即可洗牌
-            cook_time_limit=30,  # 30 分钟以内
-            deficit_kcal=0,  # 无热量缺口
-            dish_series=None,  # 菜系ID
-        )
-
-        all_day_meals = MealGeneratorV2.generate_per_meal(req)
-
+        if member_ids is None:
+            req = MealRequest(
+                member_ids=[0],
+                meal_type=meal_type,  # 生成三餐
+                refresh_key=3,  # 每次换种子即可洗牌
+                cook_time_limit=30,  # 30 分钟以内
+                deficit_kcal=0,  # 无热量缺口
+                dish_series=cuisine,  # 菜系ID
+                dish_category=category,
+                explicit_tags=activeSolutions.split(","),
+            )
+            all_day_meals = MealGeneratorV2.generate_per_meal_default(req)
+        else:
+            member_ids_list = list(map(int, member_ids.split(',')))
+            req = MealRequest(
+                member_ids=member_ids_list,
+                meal_type=meal_type,  # 生成三餐
+                refresh_key=3,  # 每次换种子即可洗牌
+                cook_time_limit=30,  # 30 分钟以内
+                deficit_kcal=0,  # 无热量缺口
+                dish_series=cuisine,  # 菜系ID
+                dish_category=category,
+                explicit_tags=activeSolutions.split(","),
+            )
+            all_day_meals = MealGeneratorV2.generate_per_meal(req)
 
         if not all_day_meals:
             return jsonify({"status": "success", "data": [], "message": "未找到合适的菜品组合"})
@@ -201,32 +219,61 @@ def _convert_dishes_to_response(recommended: List[dict]) -> List[dict]:
 
     return result
 
+
+@family_bp.route('getDietSolutions/', methods=['GET'])
 @family_bp.route('getDietSolutions/<member_ids>', methods=['GET'])
-def get_diet_solutions(member_ids):
+def get_diet_solutions(member_ids=None):
     """
+    /family/getDietSolutions/
     /family/getDietSolutions/1,2,3
     """
     try:
-        # 把 "1,2,3" 转成元组供 SQL IN
-        ids_tuple = tuple(map(int, member_ids.split(',')))
-        if len(ids_tuple) == 1:
-            ids_tuple = (ids_tuple[0], -1)  # 单元素 IN 兼容
+        # 如果没有传入 member_ids，查询所有记录
+        if member_ids is None:
+            sql = """
+                  SELECT DISTINCT ds.code, \
+                                  ds.name, \
+                                  ds.icon, \
+                                  ds.desc_text
+                  FROM ejia_enum_diet_need_tbl ds where ds.is_select = 1
+                  """
+            rows = db.query(sql)
+        else:
+            # 把 "1,2,3" 转成元组供 SQL IN
+            ids_tuple = tuple(map(int, member_ids.split(',')))
+            if len(ids_tuple) == 1:
+                ids_tuple = (ids_tuple[0], -1)  # 单元素 IN 兼容
 
-        sql = """
-              SELECT DISTINCT ds.code, \
-                              ds.name, \
-                              ds.icon, \
-                              ds.desc_text
-              FROM ejia_member_diet_need dn
-                       JOIN ejia_enum_diet_need_tbl ds ON dn.need_code = ds.code
-              WHERE dn.member_id IN %s \
-              """
+            sql = """
+                  SELECT DISTINCT ds.code, \
+                                  ds.name, \
+                                  ds.icon, \
+                                  ds.desc_text
+                  FROM ejia_member_diet_need dn
+                           JOIN ejia_enum_diet_need_tbl ds ON dn.need_code = ds.code
+                  WHERE dn.member_id IN %s
+                  """
+            rows = db.query(sql, (ids_tuple,))
 
-        rows = db.query(sql, (ids_tuple,))
         result = {r['code']: {'name': r['name'], 'icon': r['icon'], 'desc': r['desc_text']} for r in rows}
         return jsonify({"status": "success", "data": result})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@family_bp.route('/getTagTbl/<group_code>', methods=['GET'])
+def getTagTbl(group_code):
+    try:
+        cuisineTags = DishData.list_oneTags(group_code)
+        if not cuisineTags:
+            return jsonify({"status": "success", "data": [], "message": "未找到tags"})
+
+        return jsonify({
+            "status": "success",
+            "data": cuisineTags
+        })
+
+    except Exception as e:
+        logger.error("Get getDishReco error: %s", str(e))
 
 
 # 初始化

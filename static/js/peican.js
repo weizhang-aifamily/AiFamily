@@ -1,6 +1,6 @@
-import { getMembers,getDietSolutions,getCombos,getDishReco } from './familyDataLoader.js';
+import { getMembers,getDietSolutions,getCombos,getDishReco,getTagTbl  } from './familyDataLoader.js';
 /* ============= 1. 常量数据定义 ============= */
-
+let memberIds;
 let familyMembers = [
       {
     id: 1, name: '爸爸', avatar: '👨', needs: ['lowFat'], displayNeeds: ['低脂'], healthStatus: '良好',
@@ -31,7 +31,13 @@ let dietSolutions = {
     black_hair: { name: '低脂', icon: '🥑', desc: '脂肪<50g/日' },
     highIron: { name: '补铁', icon: '🧲', desc: '铁≥15mg/日' }
 };
-
+let cuisineTags = {};
+let activeCuisines = new Set();
+let categoryTags = {};
+let activeCategories = new Set();
+const cuisineSelectBox = document.getElementById('cuisineSelectBox');   // 外层容器
+const cuisineToggle    = document.getElementById('cuisineToggle');      // 展开/收起按钮
+const cuisineDropdown  = document.getElementById('cuisineDropdown');    // 下拉列表（ul）
 let ingredientPool = {
   highCalcium: [
     {
@@ -436,15 +442,19 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (hour >= 16) mealType = '晚餐';
         mealTimeSubtitle.textContent = `精选${mealType}`;
     }
-function renderMembers() {
+function initMembers() {
     (async () => {
         familyMembers = await getMembers(1);
-        const memberIds = familyMembers.map(m => m.member_id).join(',');
-        dietSolutions = await getDietSolutions(memberIds);
+//        familyMembers = await getMembers(0);
+        memberIds = familyMembers.map(m => m.member_id).join(',');
+//        dietSolutions = await getDietSolutions(memberIds);
         const mealType = new Date().getHours() < 10 ? 'breakfast' :
                  new Date().getHours() < 16 ? 'lunch' : 'dinner';
-        comboData = await getCombos(memberIds, mealType, 1);
-        dishRecoData = await getDishReco(memberIds, mealType, 1);
+//        comboData = await getCombos(memberIds, mealType, 1);
+//        dishRecoData = await getDishReco(memberIds, mealType, 1);
+        cuisineTags = await getTagTbl('cuisine');
+        categoryTags = await getTagTbl('category');
+        console.log(categoryTags);
 
 // 新增：渲染 smart-guard-bar 的成员
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
@@ -464,6 +474,8 @@ guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
     // 动态生成过敏源和忌口详情
     //updateFilterDetails();
     updateSolutions();
+//    renderCuisineTags();
+    renderCategoryTags();
     })();
 }
 
@@ -509,11 +521,18 @@ function updateFilterDetails() {
     }
 
     function updateSolutions() {
-    activeSolutions = new Set(
-    activeMembers.flatMap(m => (m.needs || []).filter(Boolean)));
+    (async () => {
+    dietSolutions = await getDietSolutions(memberIds);
+    if (activeMembers.length > 0) {
+            // 如果有活跃成员，使用成员的 needs
+            activeSolutions = new Set(
+                activeMembers.flatMap(m => (m.needs || []).filter(Boolean))
+            );
+        } else {
+            // 如果没有活跃成员，使用所有可用的饮食方案
+            activeSolutions = new Set(Object.keys(dietSolutions));
+        }
     // 直接用全局 dietSolutions 渲染标签
-        console.log('activeSolutions:', activeSolutions);
-        console.log('dietSolutions:', dietSolutions);
     solutionTags.innerHTML = [...activeSolutions]
         .filter(code => dietSolutions[code])      // 防止后端缺项
         .map(code => `
@@ -536,19 +555,95 @@ function updateFilterDetails() {
     });
 
     generateRecommendations();
+    })();
 }
 
+function renderCuisineTags() {
+    if (!Array.isArray(cuisineTags)) return;
+
+    // 按 sort 升序
+    cuisineTags.sort((a, b) => a.sort - b.sort);
+
+    // 直接用数组渲染
+    cuisineDropdown.innerHTML = cuisineTags.map(
+        ({ tag_code, tag_name }) => {
+            const selected = activeCuisines.has(tag_code) ? 'selected' : '';
+            return `<li data-code="${tag_code}" class="${selected}">${tag_name}</li>`;
+        }
+    ).join('');
+
+    // 绑定点击
+    cuisineDropdown.querySelectorAll('li').forEach(li => {
+        li.addEventListener('click', () => {
+            const code = li.dataset.code;
+            li.classList.toggle('selected');
+            activeCuisines.has(code) ? activeCuisines.delete(code) : activeCuisines.add(code);
+            generateRecommendations();
+        });
+    });
+}
+
+/* ---------- 展开/收起 ---------- */
+cuisineToggle?.addEventListener('click', () => {
+    cuisineSelectBox.classList.toggle('open');
+});
+function renderCategoryTags() {
+    if (!Array.isArray(categoryTags)) return;
+
+    // 按 sort 升序
+    categoryTags.sort((a, b) => a.sort - b.sort);
+
+    // 用复选框形式渲染到 categorySelectBox
+    const categorySelectBox = document.getElementById('categorySelectBox');
+    categorySelectBox.innerHTML = categoryTags.map(
+        ({ tag_code, tag_name }) => {
+            const checked = activeCategories.has(tag_code) ? 'checked' : '';
+            return `
+                <div class="checkbox-item">
+                    <label>
+                        <input type="checkbox" value="${tag_code}" ${checked}>
+                        <span>${tag_name}</span>
+                    </label>
+                </div>
+            `;
+        }
+    ).join('');
+
+    // 绑定点击事件
+    categorySelectBox.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const code = checkbox.value;
+            checkbox.checked ? activeCategories.add(code) : activeCategories.delete(code);
+            generateRecommendations();
+        });
+    });
+}
+function getActiveSolutions() {
+    return Array.from(document.querySelectorAll('#solutionTags .solution-tag.active'))
+        .map(tag => tag.getAttribute('data-solution'))
+        .join(',');
+}
     function generateRecommendations() {
         //generateIngredients();
-        renderCombos();
-        renderDishreco();
+        generateCombos();
+//        generateDishreco();
         generateDishes();
         usageCount++;
         updateAchievementProgress();
     }
 
 /* ========== 2. 加载套餐 ========== */
-function renderCombos() {
+function generateCombos() {
+    const cuisineStr = [...activeCuisines].join(',');
+    const categoryStr = [...activeCategories].join(',');
+    const activeSolutions = getActiveSolutions();
+    //    console.log('选中饮食方案：', activeSolutions);
+    (async () => {
+//    const pamemberIds = memberIds || 0;
+        comboData = await getCombos(memberIds, activeSolutions, cuisineStr, categoryStr);
+//        dishRecoData = await getDishReco(memberIds, mealType, 1);
+
+
   const track = document.getElementById('combos');
   if (!track) return;
 console.log("comboData" ,comboData)
@@ -559,7 +654,7 @@ console.log("comboData" ,comboData)
       <div class="dish-list">
         ${combo.dishes.map(dish => `
           <label class="dish-item">
-            <input type="checkbox" value="${dish.name}" ${dish.checked ? 'checked' : ''}>
+            <input type="checkbox" value="${dish.dish_id}" checked>
             <img src="https://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
             <span class="dish-name">${dish.name}</span>
             <span>${dish.cook_time}分钟</span>${dish.exact_portion.size}份
@@ -570,9 +665,15 @@ console.log("comboData" ,comboData)
       </div>
     </article>
   `).join('');
+})();
 }
 /* ========== 2. 加载推荐菜 ========== */
-function renderDishreco() {
+function generateDishreco() {
+    (async () => {
+        const mealType = new Date().getHours() < 10 ? 'breakfast' :
+                 new Date().getHours() < 16 ? 'lunch' : 'dinner';
+//        comboData = await getCombos(memberIds, mealType, 1);
+        dishRecoData = await getDishReco(memberIds, mealType, 1);
   const track = document.getElementById('dishrecoRowList');
   if (!track) return;
 console.log("dishRecoData" ,dishRecoData)
@@ -589,6 +690,7 @@ console.log("dishRecoData" ,dishRecoData)
       </div>
     </article>
   `).join('');
+  })();
 }
 
 // 生成食材清单
@@ -698,7 +800,7 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
     function init() {
         setMealTime();
         initBudgetRange();
-        renderMembers();
+        initMembers();
         //updateFilterDetails();
         showAchievement('首次使用', '营养规划师✨');
 

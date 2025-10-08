@@ -4,6 +4,8 @@ import logging
 import random
 from typing import List, Dict, Optional
 from collections import defaultdict
+
+from ejiacanAI.MealStructureGenerator import MealStructureGenerator
 from ejiacanAI.dish2_combo_models import MealRequest, ComboMeal, Dish, ExactPortion, DishFoodNutrient
 from ejiacanAI.dish2_combo_data import DishComboData   # 统一数据入口
 
@@ -143,6 +145,37 @@ class MealGeneratorV2:
         按餐次独立选菜、独立微调、独立去重
         """
     MEAL_RATIO = {"breakfast": 0.30, "lunch": 0.40, "dinner": 0.30}
+
+    @classmethod
+    def generate_per_meal_default(cls, req: MealRequest) -> List[ComboMeal]:
+        dish_list_wide = DishComboData.list_dish_food_nutrient([], req)  # 一次性拉全表
+        # 过滤一部分不满足req的dish，如level_la，qingzhen，sushi等，除memberneed
+        dish_list = cls.build_true_dishes(dish_list_wide, req)
+        # 只保留符合要求的菜系、种类、时间、应季等
+        filtered_dishes = cls.filter_dishes(dish_list, req)
+        rng = random.Random(req.refresh_key)
+        rng.shuffle(filtered_dishes)
+        need_list = DishComboData.list_member_need_nutrient(req.member_ids)
+        daily_range = cls._calc_daily_range(need_list, req.deficit_kcal)
+
+        # 根据请求决定要生成几餐
+        if req.meal_type == "all":
+            meals_to_build = ["breakfast", "lunch", "dinner"]
+        else:
+            meals_to_build = [req.meal_type]
+
+        # 逐餐处理
+        combo_meals: List[ComboMeal] = []
+        for meal_code in meals_to_build:
+            meal_range = cls._build_single_meal_range(daily_range, meal_code)
+            dishes = cls._select_dishes_for_meal(
+                filtered_dishes, meal_range, meal_code, req
+            )
+            # cls._scale_portions(dishes, meal_range)  # 按餐次独立缩放
+            combo_meals.append(
+                cls._build_combo_meal(meal_code, dishes)
+            )
+        return combo_meals
     @classmethod
     def generate_per_meal(cls, req: MealRequest) -> List[ComboMeal]:
         dish_list_wide = DishComboData.list_dish_food_nutrient([],req)  # 一次性拉全表
@@ -190,7 +223,7 @@ class MealGeneratorV2:
     # 为单餐选菜
     # -------------------------------------------------
     @classmethod
-    def _select_dishes_for_meal(
+    def _select_dishes_for_meal_bak(
             cls,
             dish_list: List[Dish],
             meal_range: Dict[str, Dict[str, float]],
@@ -206,10 +239,10 @@ class MealGeneratorV2:
         pool = [
             d for d in dish_list
             if ("all" == meal_code or meal_code in cls.tag_pick(d, 'meal_time', 'code'))
-               and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
-               and (not req.dish_series or any(series in cls.tag_pick(d, 'cuisine', 'code')
-                                        for series in req.dish_series))
-               and not allergens.intersection(set(d.allergens))
+               # and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
+               # and (not req.dish_series or any(series in cls.tag_pick(d, 'cuisine', 'code')
+               #                                 for series in req.dish_series.split(',')))
+               # and not allergens.intersection(set(d.allergens))
         ]
 
         # 3. 随机洗牌
@@ -217,8 +250,25 @@ class MealGeneratorV2:
 
         # 4. 打分
         def score(d: Dish) -> int:
-            return len(d.explicit_tags) + len(d.implicit_tags)
+            base_score = len(d.explicit_tags)
 
+            # 计算 req.explicit_tags 和 dish.explicit_tags 的匹配度
+            if hasattr(req, 'explicit_tags') and req.explicit_tags:
+                # 确保 req.explicit_tags 是列表形式
+                req_tags = req.explicit_tags
+                if isinstance(req_tags, str):
+                    req_tags = req_tags.split(",")
+
+                # 计算匹配的标签数量
+                matched_tags = set(req_tags) & set(d.explicit_tags)
+                match_score = len(matched_tags) * 2  # 给匹配的标签更高权重
+
+                # 基础分 + 匹配分
+                return base_score + match_score
+            else:
+                return base_score
+
+        # 按分数排序（降序）
         pool.sort(key=score, reverse=True)
 
         # 5. 选够目标数
@@ -236,6 +286,171 @@ class MealGeneratorV2:
                 dishes.append(dish)
         return dishes
 
+    @classmethod
+    def _select_dishes_for_meal(
+            cls,
+            dish_list: List[Dish],
+            meal_range: Dict[str, Dict[str, float]],
+            meal_code: str,
+            req: MealRequest
+    ) -> List[Dish]:
+        rng = random.Random(req.refresh_key)
+
+        # 1. 过敏原过滤
+        allergens = set(DishComboData.get_family_allergens(req.member_ids))
+
+        # 2. 生成餐次结构配置
+        target = req.max_dishes_per_meal or max(2, len(req.member_ids) + 2)
+        meal_structure = MealStructureGenerator.generate_meal_structure(
+            target, len(req.member_ids), req
+        )
+
+        # 3. 先过滤：①餐次匹配 ②烹饪时间 ③不过敏
+        pool = [
+            d for d in dish_list
+            if ("all" == meal_code or meal_code in cls.tag_pick(d, 'meal_time', 'code'))
+               # and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
+               # and (not req.dish_series or any(series in cls.tag_pick(d, 'cuisine', 'code')
+               #                                 for series in req.dish_series.split(',')))
+               # and not allergens.intersection(set(d.allergens))
+        ]
+
+        # 4. 按餐次结构分类菜品
+        categorized_dishes = cls._categorize_dishes_by_structure(pool)
+
+        # 5. 随机洗牌每个分类
+        for category in categorized_dishes:
+            rng.shuffle(categorized_dishes[category])
+
+        # 6. 打分函数（保持不变）
+        def score(d: Dish) -> int:
+            base_score = len(d.explicit_tags)
+
+            # 计算 req.explicit_tags 和 dish.explicit_tags 的匹配度
+            if hasattr(req, 'explicit_tags') and req.explicit_tags:
+                req_tags = req.explicit_tags
+                if isinstance(req_tags, str):
+                    req_tags = req_tags.split(",")
+
+                matched_tags = set(req_tags) & set(d.explicit_tags)
+                match_score = len(matched_tags) * 2
+                return base_score + match_score
+            else:
+                return base_score
+
+        # 7. 按餐次结构选择菜品
+        dishes: List[Dish] = []
+        remaining = meal_range.copy()
+
+        # 按优先级选择：主菜 -> 配菜 -> 主食 -> 汤品
+        selection_order = [
+            ('main_dishes', meal_structure.main_dishes),
+            ('side_dishes', meal_structure.side_dishes),
+            ('staple_foods', meal_structure.staple_foods),
+            ('soups', meal_structure.soups)
+        ]
+
+        for category, target_count in selection_order:
+            if target_count == 0:
+                continue
+
+            category_pool = categorized_dishes.get(category, [])
+
+            # 按分数排序（降序）
+            category_pool.sort(key=score, reverse=True)
+
+            selected_count = 0
+            for dish in category_pool:
+                if selected_count >= target_count:
+                    break
+
+                selected_dish = cls._dedup_increase_weight(dish, dishes)
+                if selected_dish:
+                    cls._update_remaining(selected_dish, remaining)
+                    dishes.append(selected_dish)
+                    selected_count += 1
+
+        # 8. 如果按结构选择不够，用原有逻辑补充
+        if len(dishes) < target:
+            remaining_pool = [d for d in pool if d not in dishes]
+            remaining_pool.sort(key=score, reverse=True)
+
+            for dish in remaining_pool:
+                if len(dishes) >= target:
+                    break
+                selected_dish = cls._dedup_increase_weight(dish, dishes)
+                if selected_dish:
+                    cls._update_remaining(selected_dish, remaining)
+                    dishes.append(selected_dish)
+
+        return dishes
+
+    @classmethod
+    def _categorize_dishes_by_structure(cls, dish_list: List[Dish]) -> Dict[str, List[Dish]]:
+        """根据餐次结构对菜品进行分类"""
+        categorized = {
+            'main_dishes': [],
+            'side_dishes': [],
+            'staple_foods': [],
+            'soups': []
+        }
+
+        for dish in dish_list:
+            category = cls._classify_dish_category(dish)
+            if category in categorized:
+                categorized[category].append(dish)
+
+        return categorized
+
+    @classmethod
+    def _classify_dish_category(cls, dish: Dish) -> str:
+        """判断菜品属于哪个类别"""
+        dish_tags = getattr(dish, 'dish_tags', {}) or {}
+
+        # 1. 优先使用 dish_tags 中的明确分类
+        # 主食判断
+        staple_tags = dish_tags.get('staple', [])
+        for tag in staple_tags:
+            code = tag.get('code', '')
+            if code == 'yes':  # 明确标记为主食
+                return 'staple_foods'
+
+        # 2. 使用 vege 标签进行荤素分类
+        vege_tags = dish_tags.get('vege', [])
+        for tag in vege_tags:
+            code = tag.get('code', '')
+            # 荤菜类别
+            if code in ['meat','seafood']:
+                return 'main_dishes'
+            # 素菜类别
+            elif code in ['vege', 'vegan', 'egg']:
+                return 'side_dishes'
+
+        # 3. 使用 category 判断汤品
+        category_tags = dish_tags.get('category', [])
+        for tag in category_tags:
+            code = tag.get('code', '')
+            if code in ['soups']:  # 汤品烹饪方法
+                return 'soups'
+
+        # 4. 根据营养素含量进行智能判断
+        nutrients = getattr(dish, 'nutrients', {}) or {}
+        protein = nutrients.get('Protein', 0)
+        carbs = nutrients.get('Carbohydrate', 0)
+
+        # 高碳水且低蛋白的可能是主食
+        if carbs > 40 and protein < 10:
+            return 'staple_foods'
+
+        # 高蛋白的可能是主菜
+        if protein > 20:
+            return 'main_dishes'
+        elif protein > 8:
+            return 'side_dishes'
+
+        # 5. 最终默认分类
+        # 如果以上都无法判断，保守地分类为配菜
+        return 'side_dishes'
     # -------------------------------------------------
     # 打包单餐
     # -------------------------------------------------
@@ -513,9 +728,11 @@ class MealGeneratorV2:
 
             # 检查菜品系列
             dish_series = cls.tag_pick(dish, 'cuisine', 'code')
-            if (dish_series and dish_series is not None and
-                    req.dish_series and
-                    dish_series not in req.dish_series):
+            raw = req.dish_series
+            allowed = {s.strip() for s in raw.split(',')} if raw else set()
+
+            # 检查两个集合是否有交集
+            if allowed and not any(series in allowed for series in dish_series):
                 continue
 
             # 如果通过所有过滤条件，添加到结果列表

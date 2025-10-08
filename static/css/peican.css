@@ -1537,3 +1537,80 @@ position:fixed; inset:0;
   background:#f0fdf8;
   border-style:solid;
 }
+/* -------------- 一行容器 -------------- */
+.cuisine-select {
+    position: relative;
+    display: inline-block;
+    min-width: 200px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* -------------- 标题栏（始终可见） -------------- */
+.cuisine-toggle {
+    padding: 6px 28px 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+    position: relative;
+}
+/* 下拉箭头 */
+.cuisine-toggle::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid #666;
+    transition: transform .2s;
+}
+.cuisine-select.open .cuisine-toggle::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* -------------- 下拉列表（默认收起） -------------- */
+.cuisine-dropdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin: 4px 0 0;
+    padding: 4px 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .3s ease;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    z-index: 999;
+}
+.cuisine-select.open .cuisine-dropdown {
+    max-height: 220px;          /* 足够放 10 个 li */
+    overflow-y: auto;
+}
+
+/* -------------- 每个选项 -------------- */
+.cuisine-dropdown li {
+    list-style: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cuisine-dropdown li:hover {
+    background: #f2f2f2;
+}
+.cuisine-dropdown li.selected {
+    background: #1890ff;
+    color: #fff;
+}

@@ -23,8 +23,10 @@ export async function getDietSolutions(member_ids = "1,2") {
   console.error('getDietSolutions：', json.message || json);
   return [];
 }
-export async function getCombos(member_ids = "1,2", mealType = 'lunch', maxResults = 3) {
-  const url = `/family/getCombos/${member_ids}?meal_type=${mealType}&max_results=${maxResults}`;
+export async function getCombos(member_ids = "1,2", activeSolutions = 'highCalcium,lowFat', cuisine = 'sichuan') {
+const mealType = new Date().getHours() < 10 ? 'breakfast' :
+                 new Date().getHours() < 16 ? 'lunch' : 'dinner';
+  const url = `/family/getCombos/${member_ids}?meal_type=${mealType}&cuisine=${cuisine}&activeSolutions=${activeSolutions}`;
   const res  = await fetch(url);
   const json = await res.json();
 
@@ -33,6 +35,18 @@ export async function getCombos(member_ids = "1,2", mealType = 'lunch', maxResul
   }
 
   console.error('getCombos：', json.message || json);
+  return [];
+}
+export async function getTagTbl(group_code = "cuisine") {
+  const url = `/family/getTagTbl/${group_code}`;
+  const res  = await fetch(url);
+  const json = await res.json();
+
+  if (json.status === 'success') {
+    return json.data;
+  }
+
+  console.error('getTagTbl：', json.message || json);
   return [];
 }
 export async function getDishReco(member_ids = "1,2", mealType = 'lunch', maxResults = 3) {
