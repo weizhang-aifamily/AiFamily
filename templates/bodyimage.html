@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>营养分析与身材预测</title>
+    <link rel="stylesheet" href="/static/css/bodyimage.css">
+</head>
+<body>
+    <h1>🍎 智能营养分析与身材预测</h1>
+
+    <div class="container">
+        <div class="input-section">
+            <h2>📊 输入营养数据</h2>
+            <form id="nutritionForm">
+                <button type="submit">🔮 开始智能分析</button>
+                <div class="form-group">
+                    <label for="predictionDays">预测时间范围:</label>
+                    <select id="predictionDays" name="predictionDays" required>
+                        <option value="30">30天</option>
+                        <option value="90" selected>90天</option>
+                        <option value="180">180天</option>
+                        <option value="365">1年</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="gender">性别:</label>
+                    <select id="gender" name="gender" required>
+                        <option value="male">男性</option>
+                        <option value="female">女性</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">年龄:</label>
+                    <input type="number" id="age" name="age" value="30" min="1" max="120" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="ageGroup">年龄段:</label>
+                    <select id="ageGroup" name="ageGroup" required>
+                        <option value="child">儿童 (1-12岁)</option>
+                        <option value="teen">少年 (13-17岁)</option>
+                        <option value="young">青年 (18-35岁)</option>
+                        <option value="middle" selected>中年 (36-59岁)</option>
+                        <option value="senior">老年 (60岁+)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="height">身高 (cm):</label>
+                    <input type="number" id="height" name="height" value="175" min="100" max="250" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="weight">当前体重 (kg):</label>
+                    <input type="number" id="weight" name="weight" value="70" min="30" max="200" step="0.1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="calories">今日摄入总热量 (kcal):</label>
+                    <input type="number" id="calories" name="calories" value="2200" min="500" max="5000" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="protein">蛋白质摄入量 (g):</label>
+                    <input type="number" id="protein" name="protein" value="80" min="0" max="500" step="0.1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="fat">脂肪摄入量 (g):</label>
+                    <input type="number" id="fat" name="fat" value="65" min="0" max="200" step="0.1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="carbs">碳水化合物摄入量 (g):</label>
+                    <input type="number" id="carbs" name="carbs" value="250" min="0" max="1000" step="0.1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="exerciseFrequency">运动频率:</label>
+                    <select id="exerciseFrequency" name="exerciseFrequency" required>
+                        <option value="sedentary">久坐 (几乎不运动)</option>
+                        <option value="light">轻度 (每周1-2次)</option>
+                        <option value="moderate" selected>中度 (每周3-4次)</option>
+                        <option value="active">活跃 (每周5-6次)</option>
+                        <option value="athlete">运动员 (每天训练)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="exerciseDuration">单次运动时长:</label>
+                    <select id="exerciseDuration" name="exerciseDuration" required>
+                        <option value="short">30分钟以内</option>
+                        <option value="medium" selected>30-60分钟</option>
+                        <option value="long">60-90分钟</option>
+                        <option value="extended">90分钟以上</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="exerciseIntensity">运动强度:</label>
+                    <select id="exerciseIntensity" name="exerciseIntensity" required>
+                        <option value="low">低强度 (散步、瑜伽)</option>
+                        <option value="medium" selected>中强度 (快走、骑车)</option>
+                        <option value="high">高强度 (跑步、游泳)</option>
+                        <option value="veryHigh">极高强度 (HIIT、力量训练)</option>
+                    </select>
+                </div>
+
+
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>正在使用专利算法进行分析...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+        </div>
+
+        <div class="result-section">
+            <!-- 用户卡片 -->
+            <div class="user-card" id="userCard">
+                <div class="user-card-header">
+                    <div class="user-info">
+                        <h3>👤 用户概况</h3>
+                        <p id="userBasicInfo">请先输入数据并进行分析</p>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">?</div>
+                </div>
+
+                <div class="user-stats" id="userStats" style="display: none;">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statBMI">-</div>
+                        <div class="stat-label">当前BMI</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statBMR">-</div>
+                        <div class="stat-label">基础代谢</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statWeightChange">-</div>
+                        <div class="stat-label">30天预测</div>
+                    </div>
+                </div>
+
+                <div class="body-image-preview" id="bodyImagePreview" style="display: none;">
+                    <img id="bodyImage" src="" alt="身材预览">
+                    <div class="image-info" id="imageInfo"></div>
+                </div>
+
+                <div style="text-align: center; margin-top: 15px; color: #667eea;">
+                    <span class="collapse-icon">▼</span> 点击查看详细分析
+                </div>
+            </div>
+
+            <!-- 详细信息区域 -->
+            <div class="detail-section" id="detailSection">
+                <div class="detail-tabs">
+                    <button class="tab-button active" data-tab="nutrition">营养分析</button>
+                    <button class="tab-button" data-tab="prediction">体重预测</button>
+                    <button class="tab-button" data-tab="advice">专业建议</button>
+                </div>
+
+<div class="tab-content active" id="tabNutrition">
+    <div id="nutritionContent">
+        <div class="patent-badge">专利算法 v${result.patent_algorithm_version}</div>
+
+        <!-- 代谢分析卡片保持不变 -->
+        <div class="result-card">
+            <h4>📊 代谢分析</h4>
+            <div class="result-value">基础代谢率: <strong>${pred.advanced_bmr}</strong> kcal/天</div>
+            <div class="result-value">运动消耗: <strong>${pred.exercise_energy}</strong> kcal/天</div>
+            <div class="result-value">总能量消耗: <strong>${pred.total_tdee}</strong> kcal/天</div>
+            <div class="result-value">代谢适应性: <strong>${pred.metabolic_adaptation}%</strong></div>
+        </div>
+
+        <!-- 新增：营养进度条 -->
+        <div class="result-card">
+            <h4>⚖️ 营养摄入分析</h4>
+            <div class="nutrition-bars" id="nutritionBars">
+                <!-- 进度条将通过JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 营养协同分析保持不变 -->
+        <div class="result-card" style="margin-top: 20px;">
+            <h4>🧪 营养协同分析</h4>
+            <div class="result-value">协同得分: <strong>${pred.synergy_score}/100</strong></div>
+            <div class="result-value">蛋白质供能: <strong>${(diffs.actual_ratios.protein * 100).toFixed(1)}%</strong></div>
+            <div class="result-value">脂肪供能: <strong>${(diffs.actual_ratios.fat * 100).toFixed(1)}%</strong></div>
+            <div class="result-value">碳水供能: <strong>${(diffs.actual_ratios.carbs * 100).toFixed(1)}%</strong></div>
+        </div>
+    </div>
+</div>
+
+                <div class="tab-content" id="tabPrediction">
+                    <div id="predictionContent">
+                        <!-- 体重预测内容将通过JS动态生成 -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tabAdvice">
+                    <div id="adviceContent">
+                        <!-- 专业建议内容将通过JS动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/nutritionAnalyzer.js"></script>
+    <script src="/static/js/bodyimage.js"></script>
+</body>
+</html>

@@ -166,3 +166,8 @@ def _calc_per_100g_raw(rows: List[dict]) -> Dict[str, float]:
     # 归一化到每100g成品
     factor = 100.0 / total_weight
     return {col: val * factor for col, val in total.items()}
+
+@dish_bp.route("/bodyimage")
+def body_image():
+
+    return render_template("bodyimage.html")

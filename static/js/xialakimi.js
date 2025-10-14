@@ -1,6 +1,6 @@
 const pullOverlay = document.getElementById('pullOverlay');
 const panel   = document.getElementById('hiddenPanel');
-const arrow   = document.getElementById('toggleArrow');
+const arrow   = document.getElementById('bodyImage');
 const closePanelBtn= document.getElementById('closePanelBtn');
 let startY    = 0;
 /* ========== 1. 量高度 ========== */
@@ -47,13 +47,13 @@ document.addEventListener('touchend', e => {
 /* 统一收口：所有“关闭”动作都走这里 */
 function openPanel() {
   document.body.classList.add('panel-open');
-  arrow.textContent = '↑';
+//  arrow.textContent = '↑';
   resetInlineStyle();                      // 打开时也清一次，避免残留
 }
 
 function closePanel() {
   document.body.classList.remove('panel-open');
-  arrow.textContent = '↓';
+//  arrow.textContent = '↓';
   resetInlineStyle();                      // 关键：清行内样式
 }
 

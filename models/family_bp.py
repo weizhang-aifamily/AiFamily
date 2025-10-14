@@ -29,9 +29,13 @@ def get_members(user_id):
             f.gender      AS gender,
             f.birthday    AS birth_date,
             f.relation    AS relation,
-            ''            AS oxygen_level,
-            ''            AS blood_pressure,
-            ''            AS birth_rate,
+            f.height_cm   AS height_cm,
+            f.weight_kg   AS weight_kg,
+            f.age         AS age,
+            f.age_group   AS ageGroup,
+            f.exerciseFrequency,
+            f.exerciseDuration,
+            f.exerciseIntensity,
             GROUP_CONCAT(DISTINCT d.need_code) AS needs,
             GROUP_CONCAT(DISTINCT a.name)      AS allergens
         FROM ejia_user_family_member f

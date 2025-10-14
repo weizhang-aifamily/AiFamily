@@ -1,4 +1,6 @@
 import { getMembers,getDietSolutions,getCombos,getDishReco,getTagTbl  } from './familyDataLoader.js';
+import { displayNutrients } from './nutritionDisplay.js';
+
 /* ============= 1. 常量数据定义 ============= */
 let memberIds;
 let familyMembers = [
@@ -454,7 +456,6 @@ function initMembers() {
 //        dishRecoData = await getDishReco(memberIds, mealType, 1);
         cuisineTags = await getTagTbl('cuisine');
         categoryTags = await getTagTbl('category');
-        console.log(categoryTags);
 
 // 新增：渲染 smart-guard-bar 的成员
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
@@ -471,6 +472,7 @@ guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
         });
     });
     activeMembers = [...familyMembers];
+    window.activeMembers = activeMembers;
     // 动态生成过敏源和忌口详情
     //updateFilterDetails();
     updateSolutions();
@@ -516,6 +518,7 @@ function updateFilterDetails() {
             const member = familyMembers.find(m => m.id === id);
             if (member) activeMembers.push(member);
         });
+        window.activeMembers = activeMembers;
         //updateSolutions();
         //syncGuardBarMembers();
     }
@@ -637,16 +640,20 @@ function generateCombos() {
     const cuisineStr = [...activeCuisines].join(',');
     const categoryStr = [...activeCategories].join(',');
     const activeSolutions = getActiveSolutions();
-    //    console.log('选中饮食方案：', activeSolutions);
     (async () => {
 //    const pamemberIds = memberIds || 0;
         comboData = await getCombos(memberIds, activeSolutions, cuisineStr, categoryStr);
 //        dishRecoData = await getDishReco(memberIds, mealType, 1);
-
-
+        //显示营养元素及身材图片
+        console.log('comboData：', comboData);
+        displayNutrients(comboData);
   const track = document.getElementById('combos');
   if (!track) return;
-console.log("comboData" ,comboData)
+    const totalDishes = comboData.reduce((sum, combo) => sum + combo.dishes.length, 0);
+
+    // 2. 写到页面
+    const maxInput = document.getElementById('max_dishes');
+    if (maxInput) maxInput.value = totalDishes;
   track.innerHTML = comboData.map((combo, idx) => `
     <article class="combo-row">
 <!--      <h3 class="combo-name">${combo.comboName}</h3>-->
@@ -655,11 +662,16 @@ console.log("comboData" ,comboData)
         ${combo.dishes.map(dish => `
           <label class="dish-item">
             <input type="checkbox" value="${dish.dish_id}" checked>
-            <img src="https://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
+            <img src="://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
             <span class="dish-name">${dish.name}</span>
-            <span>${dish.cook_time}分钟</span>${dish.exact_portion.size}份
+            ${dish.exact_portion.size}份
             ${(dish.explicit_tags || []).map(tag => `<span class="nutri-tag">${tag}</span>`).join('')}
-            ${dish.rating ? `<span class="dish-per">⭐⭐⭐⭐☆ ${dish.rating}</span>` : ''}
+            <span class="dish-per">
+                <span class="dot calories-dot">•${Math.round(dish.nutrients.EnergyKCal)}</span>
+                <span class="dot protein-dot">•${Math.round(dish.nutrients.Protein)}</span>
+                <span class="dot fat-dot">•${Math.round(dish.nutrients.Fat)}</span>
+                <span class="dot carbs-dot">•${Math.round(dish.nutrients.Carbohydrate)}</span>
+            </span>
           </label>
         `).join('')}
       </div>
@@ -667,6 +679,7 @@ console.log("comboData" ,comboData)
   `).join('');
 })();
 }
+
 /* ========== 2. 加载推荐菜 ========== */
 function generateDishreco() {
     (async () => {
@@ -676,7 +689,6 @@ function generateDishreco() {
         dishRecoData = await getDishReco(memberIds, mealType, 1);
   const track = document.getElementById('dishrecoRowList');
   if (!track) return;
-console.log("dishRecoData" ,dishRecoData)
   track.innerHTML = dishRecoData.map((dish, idx) => `
     <article class="combo-row">
       <div class="dish-list">
@@ -734,7 +746,7 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
     const pricePer100g = ingredientPrice[ing.name] || 5; // 缺省 5 元
     totalCost += (grams / 100) * pricePer100g;
   });
-  document.getElementById('budgetSpent').textContent = `预估¥${totalCost.toFixed(1)}`;
+//  document.getElementById('budgetSpent').textContent = `预估¥${totalCost.toFixed(1)}`;
 
     document.querySelectorAll('.food-card').forEach(card =>
         card.addEventListener('click', () => showReplaceModal(JSON.parse(card.dataset.ingredient), card))
@@ -950,28 +962,6 @@ function initBudgetRange() {
   const BUDGET_RANGE = { min: 20, max: 200, step: 5, default: 80 };
 
 }
-/* ========== 今日营养仪表盘 ========== */
-const nutrientTargets = { calories:2000, protein:60, calcium:800, iron:15, sodium:2000, fat:60 };
-let currentIntake = { calories:0, protein:0, calcium:0, iron:0, sodium:0, fat:0 };
-
-function renderDash(){
-  Object.keys(nutrientTargets).forEach(key=>{
-    const percent = Math.round(currentIntake[key]/nutrientTargets[key]*100);
-    const li = document.querySelector(`.dash-bars li[data-nutrient="${key}"]`);
-    const bar = li.querySelector('i');
-    const val = li.querySelector('.val');
-    bar.style.width = Math.min(percent,100)+'%';
-    val.textContent = (percent>100?'+':'')+(percent-100)+'%';
-    li.querySelector('.bar').dataset.status =
-      percent>120?'danger':percent>100?'warning':'';
-  });
-}
-document.getElementById('miniRefresh').addEventListener('click',()=>{
-  // 这里后续接入真实计算
-  renderDash();
-});
-renderDash();
-
 /* ========== 同类替换滑杆 ========== */
 // 在每个 .food-card 下方插入滑杆（示例）
 document.querySelectorAll('.food-card').forEach(card=>{
@@ -992,7 +982,7 @@ document.querySelectorAll('.food-card').forEach(card=>{
 });
 /* ===== 套餐勾选逻辑 ===== */
 const basketCountEl  = document.getElementById('basketCount');
-const openBasketBtn  = document.getElementById('openBasket');
+//const openBasketBtn  = document.getElementById('openBasket');
 let selectedDishes = [];
 
 document.addEventListener('change', e=>{
@@ -1008,8 +998,8 @@ document.addEventListener('change', e=>{
 
 function updateBasket(){
   const count = selectedDishes.length;
-  basketCountEl.textContent = `已选 ${count} 道菜`;
-  openBasketBtn.disabled = count === 0;
+  basketCountEl.textContent = `${count} 道菜`;
+//  openBasketBtn.disabled = count === 0;
 }
 
 /* 初始化 */

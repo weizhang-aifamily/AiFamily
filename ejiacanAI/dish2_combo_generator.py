@@ -458,9 +458,15 @@ class MealGeneratorV2:
     def _build_combo_meal(cls, meal_code: str, dishes: List[Dish]) -> ComboMeal:
         cook = sum(d.cook_time for d in dishes)
         shopping = defaultdict(float)
+        nutrients = defaultdict(float)  # 新增：营养素汇总
+
         for d in dishes:
+            # 汇总购物清单
             for ing, g in d.ingredients.items():
                 shopping[ing] += g
+            # 汇总营养素
+            for nutrient, value in d.nutrients.items():
+                nutrients[nutrient] += value
 
         name_map = {"breakfast": "早餐", "lunch": "午餐", "dinner": "晚餐"}
         return ComboMeal(
@@ -471,7 +477,8 @@ class MealGeneratorV2:
             dishes=dishes,
             total_cook_time=cook,
             portion_plan={},
-            shopping_list=dict(shopping)
+            shopping_list=dict(shopping),
+            nutrients=dict(nutrients)  # 新增：传入营养素汇总
         )
 
     from typing import Dict, List

@@ -1,5 +1,7 @@
 # dish_combo_data.py
 from typing import List, Dict, Tuple, Optional
+
+from ejiacanAI.MealStructureGenerator import MealStructure
 from ejiacanAI.dish_combo_models import Dish, MemberInfo
 from dbconnect.dbconn import db
 
@@ -321,3 +323,4 @@ class DishComboData:
 
         # 只返回与家庭过敏原匹配的部分
         return list(set(dish_allergens) & set(family_allergens))
+

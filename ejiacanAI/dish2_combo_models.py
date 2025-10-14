@@ -54,6 +54,7 @@ class ComboMeal:
     total_cook_time: int = 0  # 新增：总烹饪时间
     portion_plan: Dict[str, List[str]] = field(default_factory=dict)  # 新增：份量分配方案
     shopping_list: Dict[str, float] = field(default_factory=dict)
+    nutrients: Dict[str, float] = field(default_factory=dict)  # 新增：营养素汇总
 
 @dataclass
 class DishFoodNutrient1:
@@ -214,3 +215,11 @@ class Dish:
     meal_type_code: Optional[str] = None
     rating: Optional[float] = None
     description: Optional[str] = None
+
+@dataclass
+class MealStructure:
+    """简版餐次结构配置"""
+    main_dishes: int  # 主菜/荤菜数量
+    side_dishes: int  # 配菜/素菜数量
+    staple_foods: int  # 主食数量
+    soups: int  # 汤品数量

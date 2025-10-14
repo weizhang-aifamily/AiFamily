@@ -33,7 +33,7 @@ body {
 .container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 16px;
 }
 
 /* ============= HEADER ============= */
@@ -646,6 +646,7 @@ body {
 
 .budget-spent {
   font-weight: 700;
+  display: hidden;
 }
 
 .budget-separator {
@@ -1042,10 +1043,10 @@ body {
 /* ============= NUTRITION BASKET ============= */
 .nutrition-basket {
   position: fixed;
-  left: 16px;
+  left: 378px;
   right: 16px;
   bottom: 16px;
-  height: 56px;
+  height: 30px;
   background: linear-gradient(90deg, var(--primary), var(--success));
   border-radius: 28px;
   display: flex;
@@ -1383,7 +1384,7 @@ body {
 
   gap: 4px;
   padding: 12px 16px;
-  margin: 16px 0;
+  margin: 35px 0 16px 0;
 
 }
 /* 遮罩层：全屏半透明 + 虚化 */
@@ -1483,7 +1484,7 @@ body {
   cursor: pointer;
 }
 .my-header {
-    padding: 12px 12px;
+    /*padding: 12px 12px;*/
     position: fixed;
     top: 0;
     left: 0;
@@ -1613,4 +1614,211 @@ position:fixed; inset:0;
 .cuisine-dropdown li.selected {
     background: #1890ff;
     color: #fff;
+}
+/* 营养进度条样式 */
+.nutrition-bars {
+    margin: 20px 0;
+}
+
+.nutrient-bar {
+    margin-bottom: 15px;
+}
+
+.nutrient-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.nutrient-label {
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+    min-width: 80px;
+}
+
+.nutrient-values {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #666;
+}
+
+.nutrient-ratio {
+    background: #f8f9fa;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.bar-container {
+    background: #e9ecef;
+    border-radius: 10px;
+    height: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: all 0.5s ease;
+    position: relative;
+    min-width: 8px;
+}
+
+.bar-fill.calories { background: linear-gradient(90deg, #ff6b6b, #ff8e8e); }
+.bar-fill.protein { background: linear-gradient(90deg, #4ecdc4, #6ae2d9); }
+.bar-fill.fat { background: linear-gradient(90deg, #ffd93d, #ffed8a); }
+.bar-fill.carbs { background: linear-gradient(90deg, #6c5ce7, #8b7bec); }
+
+.bar-marker {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #333;
+    opacity: 0.7;
+}
+
+.bar-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 11px;
+    color: #666;
+}
+
+.difference-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.difference-positive { background: #d4edda; color: #155724; }
+.difference-negative { background: #f8d7da; color: #721c24; }
+.difference-neutral { background: #e2e3e5; color: #383d41; }
+/* 缩略版营养展示样式 */
+.nutrition-mini-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 0;
+    border: 1px solid #e9ecef;
+}
+
+.nutrient-mini-item {
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+}
+
+.nutrient-mini-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.nutrient-mini-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.nutrient-mini-value {
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.mini-bar-container {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.mini-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* 营养类型颜色 */
+.mini-bar-fill.calories { background: linear-gradient(90deg, #ff6b6b, #ff8e8e); }
+.mini-bar-fill.protein { background: linear-gradient(90deg, #4ecdc4, #6ee7e7); }
+.mini-bar-fill.fat { background: linear-gradient(90deg, #ffd93d, #ffed8a); }
+.mini-bar-fill.carbs { background: linear-gradient(90deg, #6a82fb, #8ba3ff); }
+/* 使用mini区域的相同颜色 */
+.dot.calories-dot { color: #ff6b6b; }
+.dot.protein-dot { color: #4ecdc4; }
+.dot.fat-dot { color: #ffd93d; }
+.dot.carbs-dot { color: #6a82fb; }
+
+.nutrient-mini-diff {
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.difference-positive { color: #28a745; }
+.difference-negative { color: #dc3545; }
+.difference-neutral { color: #6c757d; }
+
+.body-image-preview {
+    top: 81px;
+    right: 15px;
+    width: 100%;
+    height: auto;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: nowrap; /* 改为不换行 */
+    gap: 2px;
+    padding: 10px 2px;
+    overflow: visible;
+}
+
+/* 每个图片+信息的组合 */
+.image-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0; /* 防止压缩 */
+}
+
+.bodyImage {
+    width: 54px;
+    height: 54px;
+    object-fit: cover;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    display: block;
+}
+
+.bodyImage:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+.image-info {
+    font-size: 9px;
+    color: rgba(0, 0, 0, 0.8);
+    text-align: center;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 3px;
+    backdrop-filter: blur(3px);
+    display: block;
+    width: 60px;
+    margin-top: 5px;
+    border-radius: 3px;
 }

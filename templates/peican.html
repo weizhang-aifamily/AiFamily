@@ -13,34 +13,11 @@
     <!-- 顶部隐藏面板 -->
     <div id="hiddenPanel">
 <!-- ========== 今日营养仪表盘 ========== -->
-        <div id="nutritionDash" class="nutrition-dash">
-          <div class="dash-inner">
-            <h4 class="dash-title">
-              <span class="icon-lightning">⚡</span>今天还差多少？
-              <button id="miniRefresh" class="mini-refresh" title="重新计算">↻</button>
-            </h4>
-            <ul class="dash-bars">
-              <li data-nutrient="calories"><span class="bar-label">能量</span><span class="bar"><i></i></span><span class="val">0%</span></li>
-              <li data-nutrient="protein"><span class="bar-label">蛋白</span><span class="bar"><i></i></span><span class="val">0%</span></li>
-              <li data-nutrient="calcium"><span class="bar-label">钙</span><span class="bar"><i></i></span><span class="val">0%</span></li>
-              <li data-nutrient="iron"><span class="bar-label">铁</span><span class="bar"><i></i></span><span class="val">0%</span></li>
-              <li data-nutrient="sodium"><span class="bar-label">钠</span><span class="bar"><i></i></span><span class="val">0%</span></li>
-              <li data-nutrient="fat"><span class="bar-label">脂肪</span><span class="bar"><i></i></span><span class="val">0%</span></li>
-            </ul>
-          </div>
-        </div>
-        <button id="closePanelBtn" class="panel-close-btn">收起</button>
+        <div id="nutritionContent"></div>
     </div>
         <!-- 头部模块 -->
         <section class="my-header">
-            <div class="guard-content">
-                <div class="gap-line">
-                    <span class="gap-tag">钙<span class="gap-value"><progress value="3" max="8"></progress></span></span>
-                    <span class="gap-tag">铁<span class="gap-value"><progress value="3" max="8"></progress></span></span>
-                    <span class="gap-tag">蛋白<span class="gap-value"><progress value="3" max="8"></progress></span></span>
-                </div>
-            </div>
-            <button id="toggleArrow" class="arrow-btn">↓</button>
+            <div id="nutritionMiniContent" class="nutrition-mini-container"></div>
         </section>
 
     <div id="mainContent" class="container">
@@ -51,6 +28,16 @@
             <div class="member-line">
             </div>
         </div>
+        <div class="body-image-preview" id="bodyImagePreview" style="display: none;">
+        </div>
+            <div>
+                <label>
+                    <select id="predictionDays">
+                        <option value="90" selected>三个月</option>
+                        <option value="180">半年</option>
+                    </select>
+                </label>
+            </div>
         </section>
 
 <!-- ===== 今日组合（幻灯片版） ===== -->
@@ -82,6 +69,13 @@
     -->
     <div class="preference-section">
         <div class="filter-options" id="categorySelectBox">
+        </div>
+    </div>
+    <div class="preference-section">
+        <div class="filter-options">
+            <label>
+                <input type="number" id="max_dishes" name="max_dishes" value="3" min="1" max="100">
+            </label>
         </div>
     </div>
 
@@ -196,11 +190,10 @@
 
 <!-- ===== 营养提篮（悬浮） ===== -->
 <div id="nutritionBasket" class="nutrition-basket">
-  <div class="basket-info">
-    <span id="basketCount">已选 0 道菜</span>
-          <span id="budgetSpent" class="budget-spent">预估¥0</span>
+  <div class="basket-info" id="openBasket">
+    <span id="basketCount">0 道菜</span>
+<!--          <span id="budgetSpent" class="budget-spent">预估¥0</span>-->
   </div>
-  <button id="openBasket" class="basket-btn" disabled>查看食材</button>
 </div>
 <!-- ========== 食材与菜品 ========== -->
 <div id="cartOverlay" class="cart-overlay">

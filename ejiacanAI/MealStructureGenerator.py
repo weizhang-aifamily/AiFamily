@@ -2,16 +2,8 @@ from typing import List, Dict, Tuple
 import random
 from dataclasses import dataclass
 
-from ejiacanAI.dish2_combo_models import MealRequest
-
-
-@dataclass
-class MealStructure:
-    """简版餐次结构配置"""
-    main_dishes: int  # 主菜/荤菜数量
-    side_dishes: int  # 配菜/素菜数量
-    staple_foods: int  # 主食数量
-    soups: int  # 汤品数量
+from ejiacanAI.dish2_combo_data import DishComboData
+from ejiacanAI.dish2_combo_models import MealRequest, MealStructure
 
 
 class MealStructureGenerator:
@@ -27,13 +19,14 @@ class MealStructureGenerator:
         """生成餐次结构配置"""
         rng = random.Random(req.refresh_key)
 
+        return DishComboData.get_meal_structure(max_dishes,req)
         # 基础配置规则
-        if max_dishes <= 3:
-            return cls._generate_small_meal(max_dishes, member_count, rng)
-        elif max_dishes <= 6:
-            return cls._generate_medium_meal(max_dishes, member_count, rng)
-        else:
-            return cls._generate_large_meal(max_dishes, member_count, rng)
+        # if max_dishes <= 3:
+        #     return cls._generate_small_meal(max_dishes, member_count, rng)
+        # elif max_dishes <= 6:
+        #     return cls._generate_medium_meal(max_dishes, member_count, rng)
+        # else:
+        #     return cls._generate_large_meal(max_dishes, member_count, rng)
 
     @classmethod
     def _generate_small_meal(
