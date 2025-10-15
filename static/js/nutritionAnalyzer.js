@@ -339,6 +339,64 @@ predictWeightShiftAdvanced(differences, userProfile, days = 90) { // 默认改�
         const optimal = optimalRatios[gender][ageGroup];
         return Math.max(0, 1 - Math.abs(muscleRatio - optimal) / optimal);
     }
+    /* ========== 计算用户营养分配比例 ========== */
+    /* 计算用户营养分配比例 - 基于 TDEE + 年龄修正 */
+    calculateUserNutritionRatio(user, allUsers, analyzer) {
+      // 1. 基础信息
+      const weight = parseFloat(user.weight_kg) || 65;
+      const height = parseFloat(user.height_cm) || 170;
+      const age  = parseInt(user.age) || 30;
+      const gender = user.gender || 'male';
+      const ageGroup = user.ageGroup || 'middle';
+
+      // 2. 计算 BMR（复用 analyzer 里的专利公式，可替换为 Mifflin 简化版）
+      const bmr = analyzer.calculateAdvancedBMR(height, weight, age, gender, ageGroup);
+
+      // 3. PAL（活动系数）映射
+      const palMap = {
+        sedentary: 1.2,
+        light: 1.375,
+        moderate: 1.55,
+        active: 1.725,
+        athlete: 1.9
+      };
+      const pal = palMap[user.exerciseFrequency] || 1.55;
+
+      // 4. 运动额外消耗（简单折算）
+      const durationMap = { short: 15, medium: 30, long: 45, extended: 60 };
+      const intensityMap = { low: 3, medium: 5, high: 7, veryHigh: 9 }; // METs
+      const mins = durationMap[user.exerciseDuration] || 30;
+      const mets = intensityMap[user.exerciseIntensity] || 5;
+      const exerciseKcal = (mets * weight * (mins / 60)) || 0;
+
+      // 5. TDEE
+      let tdee = bmr * pal + exerciseKcal;
+
+      // 6. 年龄修正
+      if (age < 6) tdee *= 1.2;        // 生长高峰
+      if (age >= 65) tdee *= 0.9;      // 食欲下降
+
+      // 7. 全家总 TDEE
+      const totalTDEE = allUsers.reduce((sum, u) => {
+        const uWeight = parseFloat(u.weight_kg) || 65;
+        const uHeight = parseFloat(u.height_cm) || 170;
+        const uAge  = parseInt(u.age) || 30;
+        const uGender = u.gender || 'male';
+        const uAgeGroup = u.ageGroup || 'middle';
+        const uBMR = analyzer.calculateAdvancedBMR(uHeight, uWeight, uAge, uGender, uAgeGroup);
+        const uPAL = palMap[u.exerciseFrequency] || 1.55;
+        const uMins = durationMap[u.exerciseDuration] || 30;
+        const uMets = intensityMap[u.exerciseIntensity] || 5;
+        const uExercise = (uMets * uWeight * (uMins / 60)) || 0;
+        let uTDEE = uBMR * uPAL + uExercise;
+        if (uAge < 6) uTDEE *= 1.2;
+        if (uAge >= 65) uTDEE *= 0.9;
+        return sum + uTDEE;
+      }, 0);
+
+      // 8. 比例
+      return totalTDEE > 0 ? tdee / totalTDEE : 1 / allUsers.length;
+    }
 
     initializePatentedAlgorithms() {
         return {

@@ -20,16 +20,18 @@ class MealGeneratorV2:
     # -------------------------------------------------
     @classmethod
     def _calc_daily_range(cls, need_list: List, deficit: int) -> Dict[str, Dict[str, float]]:
-        ranges = defaultdict(lambda: {"min": 0.0, "max": 0.0})
+        ranges = defaultdict(lambda: {"min": 0.0, "max": 0.0, "need": 0.0})
         for n in need_list:
             ranges[n.nutrient_code]["min"] += float(n.min_need_qty or 0)
             ranges[n.nutrient_code]["max"] += float(n.max_need_qty or 0)
+            ranges[n.nutrient_code]["need"] += float(n.need_qty or 0)
 
         if deficit:
             factor = (2000 - deficit) / 2000
             for k in ranges:
                 ranges[k]["min"] *= factor
                 ranges[k]["max"] *= factor
+                ranges[k]["need"] *= factor
         return dict(ranges)
 
     @classmethod
@@ -67,7 +69,7 @@ class MealGeneratorV2:
     # 5. 份量微调（S/M/L + 精确克数）
     # -------------------------------------------------
     @classmethod
-    def _scale_portions(cls, dishes: List[Dish], daily_range: Dict[str, Dict[str, float]]):
+    def _scale_portions_bak(cls, dishes: List[Dish], daily_range: Dict[str, Dict[str, float]]):
         total = defaultdict(float)
         for d in dishes:
             for n, v in d.nutrients.items():
@@ -121,11 +123,12 @@ class MealGeneratorV2:
     # 7. 小工具
     # ---------------------------------------------
     @classmethod
-    def _update_remaining(cls, dish: Dish, remaining: Dict[str, Dict[str, float]]):
+    def _update_remaining_bak(cls, dish: Dish, remaining: Dict[str, Dict[str, float]]):
         for n, v in dish.nutrients.items():
             if n in remaining:
                 remaining[n]["min"] = max(0, remaining[n]["min"] - v)
                 remaining[n]["max"] = max(0, remaining[n]["max"] - v)
+                remaining[n]["need"] = max(0, remaining[n]["need"] - v)
 
     @classmethod
     def _build_dish(cls, row: DishFoodNutrient) -> Dish:
@@ -216,78 +219,11 @@ class MealGeneratorV2:
             cls, daily: Dict[str, Dict[str, float]], meal_code: str
     ) -> Dict[str, Dict[str, float]]:
         ratio = cls.MEAL_RATIO[meal_code]
-        return {k: {"min": v["min"] * ratio, "max": v["max"] * ratio}
+        return {k: {"min": v["min"] * ratio, "max": v["max"] * ratio, "need": v["need"] * ratio}
                 for k, v in daily.items()}
 
-    # -------------------------------------------------
-    # 为单餐选菜
-    # -------------------------------------------------
     @classmethod
     def _select_dishes_for_meal_bak(
-            cls,
-            dish_list: List[Dish],
-            meal_range: Dict[str, Dict[str, float]],
-            meal_code: str,
-            req: MealRequest
-    ) -> List[Dish]:
-        rng = random.Random(req.refresh_key)
-
-        # 1. 过敏原过滤
-        allergens = set(DishComboData.get_family_allergens(req.member_ids))
-
-        # 2. 先过滤：①餐次匹配 ②烹饪时间 ③不过敏
-        pool = [
-            d for d in dish_list
-            if ("all" == meal_code or meal_code in cls.tag_pick(d, 'meal_time', 'code'))
-               # and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
-               # and (not req.dish_series or any(series in cls.tag_pick(d, 'cuisine', 'code')
-               #                                 for series in req.dish_series.split(',')))
-               # and not allergens.intersection(set(d.allergens))
-        ]
-
-        # 3. 随机洗牌
-        rng.shuffle(pool)
-
-        # 4. 打分
-        def score(d: Dish) -> int:
-            base_score = len(d.explicit_tags)
-
-            # 计算 req.explicit_tags 和 dish.explicit_tags 的匹配度
-            if hasattr(req, 'explicit_tags') and req.explicit_tags:
-                # 确保 req.explicit_tags 是列表形式
-                req_tags = req.explicit_tags
-                if isinstance(req_tags, str):
-                    req_tags = req_tags.split(",")
-
-                # 计算匹配的标签数量
-                matched_tags = set(req_tags) & set(d.explicit_tags)
-                match_score = len(matched_tags) * 2  # 给匹配的标签更高权重
-
-                # 基础分 + 匹配分
-                return base_score + match_score
-            else:
-                return base_score
-
-        # 按分数排序（降序）
-        pool.sort(key=score, reverse=True)
-
-        # 5. 选够目标数
-        target = req.max_dishes_per_meal or max(2, len(req.member_ids) + 2)
-        dishes: List[Dish] = []
-        remaining = meal_range.copy()
-
-        for row in pool:
-            if len(dishes) >= target:
-                break
-            # dish = cls._build_dish(row)
-            dish = cls._dedup_increase_weight(row, dishes)
-            if dish:
-                cls._update_remaining(dish, remaining)
-                dishes.append(dish)
-        return dishes
-
-    @classmethod
-    def _select_dishes_for_meal(
             cls,
             dish_list: List[Dish],
             meal_range: Dict[str, Dict[str, float]],
@@ -384,6 +320,198 @@ class MealGeneratorV2:
                     dishes.append(selected_dish)
 
         return dishes
+
+    @classmethod
+    def _select_dishes_for_meal(
+            cls,
+            dish_list: List[Dish],
+            meal_range: Dict[str, Dict[str, float]],
+            meal_code: str,
+            req: MealRequest
+    ) -> List[Dish]:
+        rng = random.Random(req.refresh_key)
+
+        # 1. 过敏原过滤
+        allergens = set(DishComboData.get_family_allergens(req.member_ids))
+
+        # 2. 生成餐次结构配置
+        target = req.max_dishes_per_meal or max(2, len(req.member_ids) + 2)
+        meal_structure = MealStructureGenerator.generate_meal_structure(
+            target, len(req.member_ids), req
+        )
+
+        # 3. 先过滤：①餐次匹配 ②烹饪时间 ③不过敏
+        pool = [
+            d for d in dish_list
+            if ("all" == meal_code or meal_code in cls.tag_pick(d, 'meal_time', 'code'))
+               and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
+               and not allergens.intersection(set(d.allergens))
+        ]
+
+        # 4. 按餐次结构分类菜品
+        categorized_dishes = cls._categorize_dishes_by_structure(pool)
+
+        # 5. 随机洗牌每个分类
+        for category in categorized_dishes:
+            rng.shuffle(categorized_dishes[category])
+
+        # 6. 打分函数（考虑营养补充）
+        def score(d: Dish) -> int:
+            base_score = len(d.explicit_tags)
+
+            # 计算 req.explicit_tags 和 dish.explicit_tags 的匹配度
+            if hasattr(req, 'explicit_tags') and req.explicit_tags:
+                req_tags = req.explicit_tags
+                if isinstance(req_tags, str):
+                    req_tags = req_tags.split(",")
+
+                matched_tags = set(req_tags) & set(d.explicit_tags)
+                match_score = len(matched_tags) * 2
+                base_score += match_score
+
+            # 新增：营养补充加分（基于当前剩余营养需求）
+            nutrient_bonus = cls._calculate_nutrient_bonus(d, meal_range)
+            return base_score + nutrient_bonus
+
+        # 7. 按餐次结构选择菜品（不检查营养超标，因为后续会调整份量）
+        dishes: List[Dish] = []
+        remaining = {k: v.copy() for k, v in meal_range.items()}  # 深拷贝剩余营养需求
+
+        # 按优先级选择：主菜 -> 配菜 -> 主食 -> 汤品
+        selection_order = [
+            ('main_dishes', meal_structure.main_dishes),
+            ('side_dishes', meal_structure.side_dishes),
+            ('staple_foods', meal_structure.staple_foods),
+            ('soups', meal_structure.soups)
+        ]
+
+        for category, target_count in selection_order:
+            if target_count == 0:
+                continue
+
+            category_pool = categorized_dishes.get(category, [])
+
+            # 按分数排序（降序）
+            category_pool.sort(key=score, reverse=True)
+
+            selected_count = 0
+            for dish in category_pool:
+                if selected_count >= target_count:
+                    break
+
+                # 移除了营养超标检查，因为后续会通过份量调整来解决
+                selected_dish = cls._dedup_increase_weight(dish, dishes)
+                if selected_dish:
+                    cls._update_remaining(selected_dish, remaining)
+                    dishes.append(selected_dish)
+                    selected_count += 1
+
+        # 8. 如果按结构选择不够，补充菜品（优先补充能改善营养平衡的）
+        if len(dishes) < target:
+            remaining_pool = [d for d in pool if d not in dishes]
+
+            # 重新计算分数（考虑当前剩余营养需求）
+            remaining_pool.sort(key=lambda d: score(d), reverse=True)
+
+            for dish in remaining_pool:
+                if len(dishes) >= target:
+                    break
+
+                selected_dish = cls._dedup_increase_weight(dish, dishes)
+                if selected_dish:
+                    cls._update_remaining(selected_dish, remaining)
+                    dishes.append(selected_dish)
+
+        return dishes
+
+    @classmethod
+    def _calculate_nutrient_bonus(cls, dish: Dish, meal_range: Dict[str, Dict[str, float]]) -> int:
+        """
+        计算菜品对当前营养需求的补充加分
+        重点补充那些当前还比较缺乏的营养素
+        """
+        bonus = 0
+
+        for nutrient, values in meal_range.items():
+            if nutrient in dish.nutrients:
+                current_need = values.get("need", 0)  # 当前还需要的量
+                dish_provides = dish.nutrients[nutrient]  # 菜品提供的量
+
+                # 如果这个营养素还有较大需求，且菜品能提供，就加分
+                if current_need > 0 and dish_provides > 0:
+                    # 补充比例越高，加分越多
+                    supplement_ratio = min(dish_provides / current_need, 2.0)  # 限制最大加分
+                    bonus += int(supplement_ratio * 3)  # 乘以权重系数
+
+        return min(bonus, 10)  # 限制最大加分，避免过度影响
+
+    @classmethod
+    def _update_remaining(cls, dish: Dish, remaining: Dict[str, Dict[str, float]]):
+        """更新剩余营养需求（用于动态调整后续选菜）"""
+        for nutrient, value in dish.nutrients.items():
+            if nutrient in remaining:
+                # 更新需求值（用于动态评分）
+                if "need" in remaining[nutrient]:
+                    remaining[nutrient]["need"] = max(0, remaining[nutrient]["need"] - value)
+
+    # 修改  方法，使其更智能
+    @classmethod
+    def _scale_portions(cls, dishes: List[Dish], meal_range: Dict[str, Dict[str, float]]):
+        """
+        智能调整份量，确保营养在合理范围内
+        """
+        if not dishes:
+            return
+
+        # 计算当前总营养
+        total_nutrients = defaultdict(float)
+        for d in dishes:
+            for nutrient, value in d.nutrients.items():
+                total_nutrients[nutrient] += value
+
+        # 计算每个营养素的缩放比例
+        scale_factors = []
+        for nutrient, values in meal_range.items():
+            current_total = total_nutrients.get(nutrient, 0)
+            max_limit = values.get("max", 0)
+            min_limit = values.get("min", 0)
+
+            if current_total <= 0 or max_limit <= 0:
+                continue
+
+            # 如果超过最大值，需要缩小
+            if current_total > max_limit:
+                scale = max_limit / current_total
+                scale_factors.append(scale)
+            # 如果低于最小值，可以适当放大（但不要太激进）
+            elif current_total < min_limit * 0.8:
+                scale = min(1.2, (min_limit * 0.8) / current_total)  # 最多放大到80%的最小需求
+                scale_factors.append(scale)
+
+        # 取最限制的缩放比例（确保所有营养都在限制内）
+        if scale_factors:
+            final_scale = min(scale_factors)
+            # 限制缩放范围在合理区间
+            final_scale = max(0.5, min(1.5, final_scale))
+        else:
+            final_scale = 1.0  # 不需要调整
+
+        # 应用缩放
+        for d in dishes:
+            raw = int(d.exact_portion.grams * final_scale)
+            raw = max(1, raw)
+
+            # 重新映射外壳
+            if raw <= 100:
+                size = "S"
+            elif raw <= 200:
+                size = "M"
+            else:
+                size = "L"
+            d.exact_portion = ExactPortion(size=size, grams=raw)
+
+            # 同时调整营养成分数据（重要！）
+            d.nutrients = {k: v * final_scale for k, v in d.nutrients.items()}
 
     @classmethod
     def _categorize_dishes_by_structure(cls, dish_list: List[Dish]) -> Dict[str, List[Dish]]:
@@ -592,93 +720,6 @@ class MealGeneratorV2:
             if group:
                 bucket[group].append({'code': tag.get('code'), 'name': tag.get('name')})
         return dict(bucket)
-    @classmethod
-    def build_true_dishes_bak(cls, wide_rows: List[DishFoodNutrient], req: MealRequest) -> List[Dish]:
-        """
-        把 dish_food_complete_view 宽表聚合成真正的 Dish 对象列表
-        并进行初步过滤（level_la, qingzhen, sushi等）
-        """
-        # dish_id -> food_id -> List[DishFoodNutrient]
-        dish_map: Dict[int, Dict[int, List[DishFoodNutrient]]] = defaultdict(lambda: defaultdict(list))
-        for r in wide_rows:
-            dish_map[r.dish_id][r.food_id].append(r)
-
-        dishes: List[Dish] = []
-
-        # 营养成分字段映射到标准编码
-        nutrient_mapping = {
-            'protein': 'Protein',
-            'fat': 'Fat',
-            'Ca': 'Calcium',
-            'ash': 'Ash'
-        }
-
-        for dish_id, food_map in dish_map.items():
-            # 1. 取 dish 级元数据（所有行都一样，取第一行即可）
-            meta = next(iter(food_map.values()))[0]
-
-            # 3. 收集菜品基本信息
-            dish_name = meta.dish_name
-            dish_emoji = meta.dish_emoji
-            cook_time = meta.dish_cook_time
-            default_portion = meta.dish_default_portion_g
-            rating = meta.dish_rating
-            description = meta.dish_description
-
-            # 5. 按食材聚合
-            ingredients: Dict[str, float] = {}
-            nutrients: Dict[str, float] = defaultdict(float)
-            allergens: set[str] = set()
-            explicit_tags: set[str] = set()
-            implicit_tags: set[str] = set()
-            dish_series: Optional[str] = None  # 菜系ID
-            meal_type_code: Optional[str] = None
-
-            for food_id, rows in food_map.items():
-                # 5-1 食材 & 用量
-                first = rows[0]
-                ingredients[first.foodName] = float(first.food_amount_grams or 0)
-
-                # 5-2 营养成分（转换为纵表并累加）
-                for r in rows:
-                    for field, code in nutrient_mapping.items():
-                        value = getattr(r, field, None)
-                        if value is not None:
-                            # 计算该食材在菜品中的营养成分含量
-                            nutrient_amount = float(value * first.food_amount_grams) / 100
-                            nutrients[code] += nutrient_amount
-
-                # 5-3 过敏原
-                if first.allergen_code:
-                    allergens.add(first.allergen_code)
-
-                # 6. 收集标签信息
-                if first.tags_json:
-                    dish_series = cls.extract_group_items(first.tags_json,'cuisine')
-                    meal_type_code = cls.extract_group_items(first.tags_json,'meal_time')
-                    dish_series = dish_series[:dish_series.find(':')]
-                    meal_type_code = meal_type_code[:meal_type_code.find(':')]
-                    explicit_tags.add(cls.extract_group_items(first.tags_json,'cuisine'))
-                    implicit_tags.add(cls.extract_group_items(first.tags_json,'meal_time'))
-
-            # 7. 创建 Dish 对象
-            dishes.append(Dish(
-                dish_id=dish_id,
-                name=dish_name,
-                cook_time=cook_time,
-                ingredients=ingredients,
-                nutrients=dict(nutrients),
-                exact_portion=ExactPortion(size="M", grams=default_portion),
-                allergens=list(allergens),
-                explicit_tags=list(explicit_tags),
-                implicit_tags=list(implicit_tags),
-                dish_series=dish_series,
-                meal_type_code=meal_type_code,
-                rating=rating,
-                description=description
-            ))
-
-        return dishes
 
     @classmethod
     def extract_group_items(cls, json_str, target_group):

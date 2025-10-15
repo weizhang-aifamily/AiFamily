@@ -1,7 +1,7 @@
-import { AdvancedNutritionAnalyzer } from './nutritionAnalyzer.js';
 import { CONFIG } from './config.js';
+import { calculateUserNutritionRatios, analyzeNutrition } from './nutritionDataLoader.js';
 /* ========== 显示营养元素及身材图片 ========== */
-export function displayNutrients(comboData) {
+export async function displayNutrients(comboData) {
     if (!comboData || comboData.length === 0) return;
 
     // 汇总所有套餐的营养数据
@@ -52,19 +52,17 @@ export function displayNutrients(comboData) {
         }
         // 可以继续添加更多用户...
     ];
-    console.log(formData)
     const activeMembers = window.activeMembers || [];
     console.log('activeMembers:', window.activeMembers);
-    // 创建营养分析器实例
-    const analyzer = new AdvancedNutritionAnalyzer();
+
     const daysInput = document.getElementById('predictionDays');
     const days = daysInput ? parseInt(daysInput.value) : 90;
     try {
+        const ratios = await calculateUserNutritionRatios(activeMembers, activeMembers);
         // 为每个用户分配营养数据
         const usersAnalysisData = activeMembers.map(user => {
-            const userRatio = calculateUserNutritionRatio(user, activeMembers, analyzer);
-            console.log(`用户 ${user.member_id} 分配比例: ${userRatio}`);
-            console.log(`总营养数据:`, totalNutrients);
+//            const userRatio = analyzer.calculateUserNutritionRatio(user, activeMembers, analyzer);
+            const userRatio = ratios[user.member_id];
 
             const userData = {
                 id: user.member_id,
@@ -83,11 +81,11 @@ export function displayNutrients(comboData) {
                 exerciseIntensity: user.exerciseIntensity || 'medium'
             };
 
-            console.log(`用户 ${user.member_id} 分析数据:`, userData);
             return userData;
         });
         // 执行营养分析（自动适配n个人）
-        const results = analyzer.analyze(usersAnalysisData, days);
+//        const results = analyzer.analyze(usersAnalysisData, days);
+        const results = await analyzeNutrition(usersAnalysisData, days);
         console.log("results",results)
         updateUserCard(results);
         generateNutritionMini(results);
@@ -349,12 +347,4 @@ function updateUserCard(results) {
         bodyImagePreview.insertAdjacentHTML('beforeend', html);
     });
 
-}
-/* ========== 计算用户营养分配比例 ========== */
-function calculateUserNutritionRatio(user, allUsers, analyzer) {
-    // 方案1: 按体重比例分配（更合理）
-    const userWeight = parseFloat(user.weight_kg) || 65;
-    const totalWeight = allUsers.reduce((sum, u) => sum + (parseFloat(u.weight_kg) || 65), 0);
-
-    return totalWeight > 0 ? userWeight / totalWeight : 1 / allUsers.length;
 }

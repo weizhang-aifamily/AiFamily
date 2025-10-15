@@ -3,7 +3,6 @@ export async function getMembers(userId = 1) {
   const json = await res.json();
 
   if (json.status === 'success') {
-    console.log('解析后的成员列表：', json.data);
     return json.data;
   }
 

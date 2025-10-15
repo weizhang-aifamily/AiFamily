@@ -461,7 +461,7 @@ function initMembers() {
     const guardMemberLine = document.querySelector('.smart-guard-bar .member-line');
     if (guardMemberLine) {
         guardMemberLine.innerHTML = familyMembers.map(member =>
-            `<span class="member-tag active" data-id="${member.id}">${member.avatar}${member.name}</span>`
+            `<span class="member-tag active" data-id="${member.member_id}">${member.avatar}${member.name}</span>`
         ).join('');
     }
 guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
@@ -469,6 +469,8 @@ guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
             tag.classList.toggle('active');
             updateActiveMembers();
             updateSolutions();   // 让推荐实时刷新
+            renderCategoryTags();
+            generateRecommendations();
         });
     });
     activeMembers = [...familyMembers];
@@ -478,6 +480,7 @@ guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
     updateSolutions();
 //    renderCuisineTags();
     renderCategoryTags();
+    generateRecommendations();
     })();
 }
 
@@ -515,7 +518,7 @@ function updateFilterDetails() {
         activeMembers = [];
         document.querySelectorAll('.member-tag.active').forEach(tag => {
             const id = parseInt(tag.dataset.id);
-            const member = familyMembers.find(m => m.id === id);
+            const member = familyMembers.find(m => m.member_id === id);
             if (member) activeMembers.push(member);
         });
         window.activeMembers = activeMembers;
@@ -557,7 +560,7 @@ function updateFilterDetails() {
         });
     });
 
-    generateRecommendations();
+
     })();
 }
 
