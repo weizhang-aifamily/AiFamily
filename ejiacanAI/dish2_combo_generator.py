@@ -222,104 +222,6 @@ class MealGeneratorV2:
         return {k: {"min": v["min"] * ratio, "max": v["max"] * ratio, "need": v["need"] * ratio}
                 for k, v in daily.items()}
 
-    @classmethod
-    def _select_dishes_for_meal_bak(
-            cls,
-            dish_list: List[Dish],
-            meal_range: Dict[str, Dict[str, float]],
-            meal_code: str,
-            req: MealRequest
-    ) -> List[Dish]:
-        rng = random.Random(req.refresh_key)
-
-        # 1. 过敏原过滤
-        allergens = set(DishComboData.get_family_allergens(req.member_ids))
-
-        # 2. 生成餐次结构配置
-        target = req.max_dishes_per_meal or max(2, len(req.member_ids) + 2)
-        meal_structure = MealStructureGenerator.generate_meal_structure(
-            target, len(req.member_ids), req
-        )
-
-        # 3. 先过滤：①餐次匹配 ②烹饪时间 ③不过敏
-        pool = [
-            d for d in dish_list
-            if ("all" == meal_code or meal_code in cls.tag_pick(d, 'meal_time', 'code'))
-               # and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
-               # and (not req.dish_series or any(series in cls.tag_pick(d, 'cuisine', 'code')
-               #                                 for series in req.dish_series.split(',')))
-               # and not allergens.intersection(set(d.allergens))
-        ]
-
-        # 4. 按餐次结构分类菜品
-        categorized_dishes = cls._categorize_dishes_by_structure(pool)
-
-        # 5. 随机洗牌每个分类
-        for category in categorized_dishes:
-            rng.shuffle(categorized_dishes[category])
-
-        # 6. 打分函数（保持不变）
-        def score(d: Dish) -> int:
-            base_score = len(d.explicit_tags)
-
-            # 计算 req.explicit_tags 和 dish.explicit_tags 的匹配度
-            if hasattr(req, 'explicit_tags') and req.explicit_tags:
-                req_tags = req.explicit_tags
-                if isinstance(req_tags, str):
-                    req_tags = req_tags.split(",")
-
-                matched_tags = set(req_tags) & set(d.explicit_tags)
-                match_score = len(matched_tags) * 2
-                return base_score + match_score
-            else:
-                return base_score
-
-        # 7. 按餐次结构选择菜品
-        dishes: List[Dish] = []
-        remaining = meal_range.copy()
-
-        # 按优先级选择：主菜 -> 配菜 -> 主食 -> 汤品
-        selection_order = [
-            ('main_dishes', meal_structure.main_dishes),
-            ('side_dishes', meal_structure.side_dishes),
-            ('staple_foods', meal_structure.staple_foods),
-            ('soups', meal_structure.soups)
-        ]
-
-        for category, target_count in selection_order:
-            if target_count == 0:
-                continue
-
-            category_pool = categorized_dishes.get(category, [])
-
-            # 按分数排序（降序）
-            category_pool.sort(key=score, reverse=True)
-
-            selected_count = 0
-            for dish in category_pool:
-                if selected_count >= target_count:
-                    break
-
-                selected_dish = cls._dedup_increase_weight(dish, dishes)
-                if selected_dish:
-                    cls._update_remaining(selected_dish, remaining)
-                    dishes.append(selected_dish)
-                    selected_count += 1
-
-        # 8. 如果按结构选择不够，用原有逻辑补充
-        if len(dishes) < target:
-            remaining_pool = [d for d in pool if d not in dishes]
-            remaining_pool.sort(key=score, reverse=True)
-
-            for dish in remaining_pool:
-                if len(dishes) >= target:
-                    break
-                selected_dish = cls._dedup_increase_weight(dish, dishes)
-                if selected_dish:
-                    cls._update_remaining(selected_dish, remaining)
-                    dishes.append(selected_dish)
-
-        return dishes
 
     @classmethod
     def _select_dishes_for_meal(
@@ -335,17 +237,18 @@ class MealGeneratorV2:
         allergens = set(DishComboData.get_family_allergens(req.member_ids))
 
         # 2. 生成餐次结构配置
-        target = req.max_dishes_per_meal or max(2, len(req.member_ids) + 2)
-        meal_structure = MealStructureGenerator.generate_meal_structure(
-            target, len(req.member_ids), req
+        msg = MealStructureGenerator()
+        meal_structure = msg.calculate_meal_config(
+            req.members, meal_code, req.province_code
         )
+        target = sum(meal_structure.values())
 
         # 3. 先过滤：①餐次匹配 ②烹饪时间 ③不过敏
         pool = [
             d for d in dish_list
             if ("all" == meal_code or meal_code in cls.tag_pick(d, 'meal_time', 'code'))
-               and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
-               and not allergens.intersection(set(d.allergens))
+               # and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
+               # and not allergens.intersection(set(d.allergens))
         ]
 
         # 4. 按餐次结构分类菜品
@@ -379,10 +282,11 @@ class MealGeneratorV2:
 
         # 按优先级选择：主菜 -> 配菜 -> 主食 -> 汤品
         selection_order = [
-            ('main_dishes', meal_structure.main_dishes),
-            ('side_dishes', meal_structure.side_dishes),
-            ('staple_foods', meal_structure.staple_foods),
-            ('soups', meal_structure.soups)
+            ('main_dish', meal_structure.get('main_dish',1)),
+            ('baby_food', meal_structure.get('baby_food',0)),
+            ('side_dish', meal_structure.get('side_dish',0)),
+            ('staple', meal_structure.get('staple',1)),
+            ('soup', meal_structure.get('soup',0))
         ]
 
         for category, target_count in selection_order:
@@ -479,22 +383,37 @@ class MealGeneratorV2:
             if current_total <= 0 or max_limit <= 0:
                 continue
 
-            # 如果超过最大值，需要缩小
+            # 逻辑1：如果超过最大值，需要缩小
             if current_total > max_limit:
                 scale = max_limit / current_total
                 scale_factors.append(scale)
-            # 如果低于最小值，可以适当放大（但不要太激进）
-            elif current_total < min_limit * 0.8:
-                scale = min(1.2, (min_limit * 0.8) / current_total)  # 最多放大到80%的最小需求
-                scale_factors.append(scale)
+                print(f"营养超标: {nutrient} 当前{current_total:.1f} > 最大{max_limit:.1f}, 缩放比例: {scale:.2f}")
 
-        # 取最限制的缩放比例（确保所有营养都在限制内）
+            # 逻辑2：如果低于最小值，需要放大
+            elif current_total < min_limit:
+                # 计算需要放大到至少达到最小需求的比例
+                # 但不能无限放大，限制最大放大倍数
+                scale = min(2.0, min_limit / max(current_total, 1e-6))  # 最多放大2倍
+                scale_factors.append(scale)
+                print(f"营养不足: {nutrient} 当前{current_total:.1f} < 最小{min_limit:.1f}, 缩放比例: {scale:.2f}")
+
+        # 确定最终缩放比例
         if scale_factors:
-            final_scale = min(scale_factors)
+            # 如果有需要缩小的比例，优先使用最小的（最严格的限制）
+            # 这样可以确保不会超标
+            shrink_factors = [s for s in scale_factors if s < 1.0]
+            if shrink_factors:
+                final_scale = min(shrink_factors)  # 取最小的缩放比例（最严格）
+            else:
+                # 只有需要放大的情况，取最小的放大比例（最保守）
+                final_scale = min(scale_factors)
+
             # 限制缩放范围在合理区间
-            final_scale = max(0.5, min(1.5, final_scale))
+            final_scale = max(0.5, min(2.0, final_scale))
+            print(f"最终缩放比例: {final_scale:.2f}")
         else:
             final_scale = 1.0  # 不需要调整
+            print("营养在合理范围内，无需调整")
 
         # 应用缩放
         for d in dishes:
@@ -517,10 +436,11 @@ class MealGeneratorV2:
     def _categorize_dishes_by_structure(cls, dish_list: List[Dish]) -> Dict[str, List[Dish]]:
         """根据餐次结构对菜品进行分类"""
         categorized = {
-            'main_dishes': [],
-            'side_dishes': [],
-            'staple_foods': [],
-            'soups': []
+            'main_dish': [],
+            'side_dish': [],
+            'staple': [],
+            'soup': [],
+            'baby_food': []
         }
 
         for dish in dish_list:
@@ -541,7 +461,7 @@ class MealGeneratorV2:
         for tag in staple_tags:
             code = tag.get('code', '')
             if code == 'yes':  # 明确标记为主食
-                return 'staple_foods'
+                return 'staple'
 
         # 2. 使用 vege 标签进行荤素分类
         vege_tags = dish_tags.get('vege', [])
@@ -549,17 +469,23 @@ class MealGeneratorV2:
             code = tag.get('code', '')
             # 荤菜类别
             if code in ['meat','seafood']:
-                return 'main_dishes'
+                return 'main_dish'
             # 素菜类别
             elif code in ['vege', 'vegan', 'egg']:
-                return 'side_dishes'
+                return 'side_dish'
 
         # 3. 使用 category 判断汤品
         category_tags = dish_tags.get('category', [])
         for tag in category_tags:
             code = tag.get('code', '')
-            if code in ['soups']:  # 汤品烹饪方法
-                return 'soups'
+            if code in ['soup']:  # 汤品烹饪方法
+                return 'soup'
+        # 3. 使用 people 判断baby_food
+        category_tags = dish_tags.get('people', [])
+        for tag in category_tags:
+            code = tag.get('code', '')
+            if code in ['baby']:
+                return 'baby_food'
 
         # 4. 根据营养素含量进行智能判断
         nutrients = getattr(dish, 'nutrients', {}) or {}
@@ -568,17 +494,17 @@ class MealGeneratorV2:
 
         # 高碳水且低蛋白的可能是主食
         if carbs > 40 and protein < 10:
-            return 'staple_foods'
+            return 'staple'
 
         # 高蛋白的可能是主菜
         if protein > 20:
-            return 'main_dishes'
+            return 'main_dish'
         elif protein > 8:
-            return 'side_dishes'
+            return 'side_dish'
 
         # 5. 最终默认分类
         # 如果以上都无法判断，保守地分类为配菜
-        return 'side_dishes'
+        return 'side_dish'
     # -------------------------------------------------
     # 打包单餐
     # -------------------------------------------------

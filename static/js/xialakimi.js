@@ -1,6 +1,6 @@
 const pullOverlay = document.getElementById('pullOverlay');
 const panel   = document.getElementById('hiddenPanel');
-const arrow   = document.getElementById('bodyImage');
+const arrow   = document.getElementById('bodyImagePreview');
 const closePanelBtn= document.getElementById('closePanelBtn');
 let startY    = 0;
 /* ========== 1. 量高度 ========== */

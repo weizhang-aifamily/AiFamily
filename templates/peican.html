@@ -6,15 +6,19 @@
     <title>全家饮食规划 - 益家AiFamily</title>
     <link rel="stylesheet" href="/static/css/xialakimi.css">
     <link rel="stylesheet" href="/static/css/peican.css">
+    <link rel="stylesheet" href="/static/css/nutrition.css">
 </head>
 <body>
     <!-- 遮罩层 (初始在屏幕外) -->
     <div id="pullOverlay"></div>
     <!-- 顶部隐藏面板 -->
     <div id="hiddenPanel">
-<!-- ========== 今日营养仪表盘 ========== -->
-        <div id="nutritionContent"></div>
+        <div id="closePanelBtn" style="">X</div>
+        <div id="userInfoFormContainer"></div>
     </div>
+<!-- ========== 今日营养仪表盘 ========== -->
+
+
         <!-- 头部模块 -->
         <section class="my-header">
             <div id="nutritionMiniContent" class="nutrition-mini-container"></div>
@@ -23,13 +27,14 @@
     <div id="mainContent" class="container">
         <!-- 成就提示 -->
         <div class="achievement-toast" id="achievementToast"></div>
+        <!-- 成员 -->
         <section class="smart-guard-bar">
-        <div class="guard-content">
-            <div class="member-line">
+            <div class="guard-content">
+                <div class="member-line">
+                </div>
             </div>
-        </div>
-        <div class="body-image-preview" id="bodyImagePreview" style="display: none;">
-        </div>
+            <div class="body-image-preview" id="bodyImagePreview" style="display: none;">
+            </div>
             <div>
                 <label>
                     <select id="predictionDays">

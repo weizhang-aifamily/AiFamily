@@ -73,3 +73,34 @@ export async function analyzeNutrition(usersAnalysisData, days = 90) {
     return null;
   }
 }
+export async function updateMembers({
+  members = []
+} = {}) {
+  const url = `/family/updateMembers`;
+
+  const requestBody = {
+    members: members
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    const json = await res.json();
+
+    if (json.status === 'success') {
+      return json.data;
+    }
+
+    console.error('updateMembers：', json.message || json);
+    return [];
+  } catch (error) {
+    console.error('updateMembers：', error);
+    return [];
+  }
+}

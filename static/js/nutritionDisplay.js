@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { calculateUserNutritionRatios, analyzeNutrition } from './nutritionDataLoader.js';
+import { calculateUserNutritionRatios, analyzeNutrition, updateMembers } from './nutritionDataLoader.js';
 /* ========== 显示营养元素及身材图片 ========== */
 export async function displayNutrients(comboData) {
     if (!comboData || comboData.length === 0) return;
@@ -26,32 +26,6 @@ export async function displayNutrients(comboData) {
     totalNutrients.fat_g = parseFloat(totalNutrients.fat_g.toFixed(1));
     totalNutrients.carbs_g = parseFloat(totalNutrients.carbs_g.toFixed(1));
 
-    // 定义多用户数据（包含用户id）
-    const formData = [
-        {
-            id: 'user1',
-            gender: 'male',
-            age: 35,
-            ageGroup: 'middle',
-            height_cm: 175,
-            weight_kg: 70,
-            exerciseFrequency: 'moderate',
-            exerciseDuration: 'medium',
-            exerciseIntensity: 'medium'
-        },
-        {
-            id: 'user2',
-            gender: 'female',
-            age: 28,
-            ageGroup: 'young',
-            height_cm: 165,
-            weight_kg: 55,
-            exerciseFrequency: 'light',
-            exerciseDuration: 'medium',
-            exerciseIntensity: 'low'
-        }
-        // 可以继续添加更多用户...
-    ];
     const activeMembers = window.activeMembers || [];
     console.log('activeMembers:', window.activeMembers);
 
@@ -89,7 +63,7 @@ export async function displayNutrients(comboData) {
         console.log("results",results)
         updateUserCard(results);
         generateNutritionMini(results);
-
+        displayUserInfoForm(results);
     } catch (error) {
         console.error('营养分析失败:', error);
     }
@@ -233,99 +207,170 @@ function generateNutritionMini(results) {
 
     content.innerHTML = html;
 }
-/* ========== 生成缩略版营养展示（一行显示） ========== */
-function generateNutritionMiniOne(result) {
-    if (!result) return;
+/* ========== 显示可编辑的用户信息表单（移动端优化） ========== */
+function displayUserInfoForm(results) {
+    if (!results) return;
 
-    const { user_input, baseline, differences } = result;
-    const content = document.getElementById('nutritionMiniContent'); // 需要在前端添加这个容器
-    if (!content) return;
+    // 处理单用户和多用户情况
+    const resultsArray = Array.isArray(results) ? results : [results];
 
-    // 计算百分比（限制在0-150%）
-    const getPercentage = (actual, baseline) => {
-        return Math.min((actual / baseline) * 100, 150);
-    };
+    const container = document.getElementById('userInfoFormContainer');
 
-    // 获取差值样式
-    const getDifferenceClass = (diff) => {
-        if (diff > 0) return 'difference-positive';
-        if (diff < 0) return 'difference-negative';
-        return 'difference-neutral';
-    };
-
-    // 获取差值文本
-    const getDifferenceText = (diff, unit = '') => {
-        if (diff > 0) return `+${diff}${unit}`;
-        if (diff < 0) return `${diff}${unit}`;
-        return `±0${unit}`;
-    };
-
-    // 营养数据配置
-    const nutrients = [
-        {
-            label: '热量',
-            type: 'calories',
-            actual: user_input.calories_intake,
-            baseline: baseline.calories,
-            diff: differences.absolute.calories,
-            unit: 'kcal',
-            percentage: getPercentage(user_input.calories_intake, baseline.calories)
-        },
-        {
-            label: '蛋白质',
-            type: 'protein',
-            actual: user_input.protein_g,
-            baseline: baseline.protein_g,
-            diff: differences.absolute.protein_g,
-            unit: 'g',
-            percentage: getPercentage(user_input.protein_g, baseline.protein_g)
-        },
-        {
-            label: '脂肪',
-            type: 'fat',
-            actual: user_input.fat_g,
-            baseline: baseline.fat_g,
-            diff: differences.absolute.fat_g,
-            unit: 'g',
-            percentage: getPercentage(user_input.fat_g, baseline.fat_g)
-        },
-        {
-            label: '碳水',
-            type: 'carbs',
-            actual: user_input.carbs_g,
-            baseline: baseline.carbs_g,
-            diff: differences.absolute.carbs_g,
-            unit: 'g',
-            percentage: getPercentage(user_input.carbs_g, baseline.carbs_g)
+    const formsHTML = resultsArray.map((userResult, index) => {
+        const user = userResult.user_input;
+        let actionButtons = '';
+        if (index === 0) {
+            actionButtons = `
+                <button type="button" class="btn-save" onclick="saveUserInfo('${user.id}')">保存</button>
+                <button type="button" class="btn-cancel" onclick="resetUserInfo('${user.id}')">重置</button>
+            `;
         }
-    ];
-
-    // 生成HTML - 一行布局
-    const html = `
-        <div class="nutrition-mini-bar">
-            ${nutrients.map(nutrient => `
-                <div class="nutrient-mini-item">
-                    <div class="nutrient-mini-header">
-                        <span class="nutrient-mini-label">${nutrient.label}</span>
-                        <span class="nutrient-mini-value">${nutrient.actual}${nutrient.unit}</span>
-                    </div>
-                    <div class="mini-bar-container">
-                        <div class="mini-bar-fill ${nutrient.type}"
-                             style="width: ${nutrient.percentage}%"
-                             title="${nutrient.label}: ${nutrient.actual}${nutrient.unit} (${Math.round(nutrient.percentage)}%)">
-                        </div>
-                    </div>
-                    <div class="nutrient-mini-diff ${getDifferenceClass(nutrient.diff)}">
-                        ${getDifferenceText(nutrient.diff, nutrient.unit)}
+        return `
+            <div class="user-info-form" data-user-id="${user.id}">
+                <div class="form-header">
+                    <h3></h3>
+                    <div class="form-actions">
+                        ${actionButtons}
                     </div>
                 </div>
-            `).join('')}
-        </div>
-    `;
 
-    content.innerHTML = html;
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name-${user.id}">姓名</label>
+                        <input type="text" id="name-${user.id}" value="${user.name}" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gender-${user.id}">性别</label>
+                        <select id="gender-${user.id}" class="form-select">
+                            <option value="male" ${user.gender === 'male' ? 'selected' : ''}>男</option>
+                            <option value="female" ${user.gender === 'female' ? 'selected' : ''}>女</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="age-${user.id}">年龄</label>
+                        <input type="number" id="age-${user.id}" value="${user.age}" min="1" max="120" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ageGroup-${user.id}">年龄段</label>
+                        <select id="ageGroup-${user.id}" class="form-select">
+                            <option value="young" ${user.ageGroup === 'young' ? 'selected' : ''}>青年</option>
+                            <option value="middle" ${user.ageGroup === 'middle' ? 'selected' : ''}>中年</option>
+                            <option value="old" ${user.ageGroup === 'old' ? 'selected' : ''}>老年</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="height-${user.id}">身高 (cm)</label>
+                        <input type="number" id="height-${user.id}" value="${user.height_cm}" min="50" max="250" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weight-${user.id}">体重 (kg)</label>
+                        <input type="number" id="weight-${user.id}" value="${user.weight_kg}" min="20" max="200" step="0.1" class="form-input">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="section-label">运动习惯</label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exerciseFrequency-${user.id}">频率</label>
+                        <select id="exerciseFrequency-${user.id}" class="form-select">
+                            <option value="low" ${user.exerciseFrequency === 'low' ? 'selected' : ''}>低</option>
+                            <option value="moderate" ${user.exerciseFrequency === 'moderate' ? 'selected' : ''}>中</option>
+                            <option value="high" ${user.exerciseFrequency === 'high' ? 'selected' : ''}>高</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exerciseDuration-${user.id}">时长</label>
+                        <select id="exerciseDuration-${user.id}" class="form-select">
+                            <option value="short" ${user.exerciseDuration === 'short' ? 'selected' : ''}>短</option>
+                            <option value="medium" ${user.exerciseDuration === 'medium' ? 'selected' : ''}>中</option>
+                            <option value="long" ${user.exerciseDuration === 'long' ? 'selected' : ''}>长</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exerciseIntensity-${user.id}">强度</label>
+                        <select id="exerciseIntensity-${user.id}" class="form-select">
+                            <option value="low" ${user.exerciseIntensity === 'low' ? 'selected' : ''}>低</option>
+                            <option value="medium" ${user.exerciseIntensity === 'medium' ? 'selected' : ''}>中</option>
+                            <option value="high" ${user.exerciseIntensity === 'high' ? 'selected' : ''}>高</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = formsHTML;
+
 }
 
+/* ========== 保存用户信息 ========== */
+function saveUserInfo(userId) {
+    const form = document.querySelector(`.user-info-form[data-user-id="${userId}"]`);
+    if (!form) return;
+
+    const updatedUser = [{
+        member_id: userId,
+        name: document.getElementById(`name-${userId}`).value,
+        gender: document.getElementById(`gender-${userId}`).value,
+        age: parseFloat(document.getElementById(`age-${userId}`).value),
+        ageGroup: document.getElementById(`ageGroup-${userId}`).value,
+        height_cm: parseFloat(document.getElementById(`height-${userId}`).value),
+        weight_kg: parseFloat(document.getElementById(`weight-${userId}`).value),
+        exerciseFrequency: document.getElementById(`exerciseFrequency-${userId}`).value,
+        exerciseDuration: document.getElementById(`exerciseDuration-${userId}`).value,
+        exerciseIntensity: document.getElementById(`exerciseIntensity-${userId}`).value
+    }];
+    (async () => {
+        console.log('activeMembers：', activeMembers);
+        result = await updateMembers({
+            members: updatedUser
+        });
+
+    })();
+
+    // 显示保存成功提示
+    showNotification('信息已更新', 'success');
+}
+
+/* ========== 重置用户信息 ========== */
+function resetUserInfo(userId) {
+    if (window.activeMembers) {
+        const originalUser = window.activeMembers.find(user => user.member_id === userId);
+        if (originalUser) {
+            document.getElementById(`name-${userId}`).value = originalUser.name;
+            document.getElementById(`gender-${userId}`).value = originalUser.gender || 'male';
+            document.getElementById(`age-${userId}`).value = parseFloat(originalUser.age) || 30;
+            document.getElementById(`ageGroup-${userId}`).value = originalUser.ageGroup || 'middle';
+            document.getElementById(`height-${userId}`).value = parseFloat(originalUser.height_cm) || 170;
+            document.getElementById(`weight-${userId}`).value = parseFloat(originalUser.weight_kg) || 65;
+            document.getElementById(`exerciseFrequency-${userId}`).value = originalUser.exerciseFrequency || 'moderate';
+            document.getElementById(`exerciseDuration-${userId}`).value = originalUser.exerciseDuration || 'medium';
+            document.getElementById(`exerciseIntensity-${userId}`).value = originalUser.exerciseIntensity || 'medium';
+        }
+    }
+}
+window.saveUserInfo = saveUserInfo;
+window.resetUserInfo = resetUserInfo;
+/* ========== 显示通知 ========== */
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 2000);
+}
 function updateUserCard(results) {
     // 处理单用户和多用户情况
     const resultsArray = Array.isArray(results) ? results : [results];

@@ -4,7 +4,6 @@ from flask import Blueprint, jsonify, request
 from dbconnect.dbconn import db
 from ejiacanAI.dish2_combo_generator import MealGeneratorV2
 from ejiacanAI.dish2_combo_models import MealRequest
-from ejiacanAI.dish_combo_generator import DishComboGenerator
 from ejiacanAI.dish_combo_models import ComboMeal
 from ejiacanAI.engine import ILPRecommender
 from ejiacanAI.data_access import EnhancedDataAccess
@@ -12,6 +11,7 @@ from ejiacanAI.smart_recommender import SmartRecommender
 import logging
 
 from management.dish_data import DishData
+from family_data import FamilyData
 
 logger = logging.getLogger(__name__)
 family_bp = Blueprint('family', __name__, url_prefix='/family')
@@ -60,19 +60,44 @@ def get_members(user_id):
         return jsonify({"status": "success", "data": rows})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+@family_bp.route("/updateMember", methods=["POST"])
+def update_member():
+    """营养分析接口"""
+    try:
+        data = request.get_json()
+        members = data.get('members', [])
 
+        result = FamilyData.update_family_members_batch(members )
+
+        # 转换为字典返回
+        return jsonify({
+            'success': True,
+            'result': result
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 # 初始化推荐引擎
 dao = EnhancedDataAccess(db)
 engine = ILPRecommender()
 
-@family_bp.route('/getCombos/', methods=['GET'])
-@family_bp.route('/getCombos/<member_ids>', methods=['GET'])
+@family_bp.route('/getCombos/', methods=['POST'])
+@family_bp.route('/getCombos/<member_ids>', methods=['POST'])
 def get_combos(member_ids=None):
     try:
-        meal_type = request.args.get('meal_type', 'lunch')
-        cuisine = request.args.get('cuisine', None)
-        category = request.args.get('category', None)
-        activeSolutions = request.args.get('activeSolutions', None)
+        # 从JSON请求体中获取参数
+        data = request.get_json()
+        if not data:
+            return jsonify({'status': 'error', 'message': 'Invalid JSON data'})
+
+        meal_type = data.get('meal_type', 'all')
+        cuisine = data.get('cuisine', None)
+        category = data.get('category', None)
+        activeSolutions = data.get('activeSolutions', None)
+        members = data.get('members', [])  # 新增的members参数
+        province_code = data.get('province_code', 'default')
 
         # 1. 获取智能推荐结果
         # recommendations = recommender.recommend(member_ids_list, meal_type, max_results)
@@ -85,6 +110,8 @@ def get_combos(member_ids=None):
         if member_ids is None:
             req = MealRequest(
                 member_ids=[0],
+                members=members,
+                province_code=province_code,
                 meal_type=meal_type,  # 生成三餐
                 refresh_key=3,  # 每次换种子即可洗牌
                 cook_time_limit=30,  # 30 分钟以内
@@ -98,6 +125,8 @@ def get_combos(member_ids=None):
             member_ids_list = list(map(int, member_ids.split(',')))
             req = MealRequest(
                 member_ids=member_ids_list,
+                members=members,
+                province_code=province_code,
                 meal_type=meal_type,  # 生成三餐
                 refresh_key=3,  # 每次换种子即可洗牌
                 cook_time_limit=30,  # 30 分钟以内

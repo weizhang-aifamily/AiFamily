@@ -417,6 +417,8 @@ let tasteDishesPool = [
   { emoji: '🍳', name: '太阳蛋', desc: '溏心嫩滑', category: '蛋类' },
   { emoji: '🍠', name: '蜜汁红薯', desc: '香甜软糯', category: '主食' }
 ];
+let province_code = 'default';
+let activeMembers = [];
 
 /* ============= 2. 主应用逻辑 ============= */
 document.addEventListener('DOMContentLoaded', function() {
@@ -432,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mealTimeSubtitle = document.getElementById('mealTimeSubtitle');
 
     // 状态管理
-    let activeMembers = [...familyMembers];
+    activeMembers = [...familyMembers];
     let activeSolutions = new Set();
     let usageCount = 0;
 
@@ -449,11 +451,6 @@ function initMembers() {
         familyMembers = await getMembers(1);
 //        familyMembers = await getMembers(0);
         memberIds = familyMembers.map(m => m.member_id).join(',');
-//        dietSolutions = await getDietSolutions(memberIds);
-        const mealType = new Date().getHours() < 10 ? 'breakfast' :
-                 new Date().getHours() < 16 ? 'lunch' : 'dinner';
-//        comboData = await getCombos(memberIds, mealType, 1);
-//        dishRecoData = await getDishReco(memberIds, mealType, 1);
         cuisineTags = await getTagTbl('cuisine');
         categoryTags = await getTagTbl('category');
 
@@ -644,9 +641,15 @@ function generateCombos() {
     const categoryStr = [...activeCategories].join(',');
     const activeSolutions = getActiveSolutions();
     (async () => {
-//    const pamemberIds = memberIds || 0;
-        comboData = await getCombos(memberIds, activeSolutions, cuisineStr, categoryStr);
-//        dishRecoData = await getDishReco(memberIds, mealType, 1);
+        console.log('activeMembers：', activeMembers);
+        comboData = await getCombos({
+            member_ids: memberIds,
+            activeSolutions: activeSolutions,
+            cuisine: cuisineStr,
+            category: categoryStr,  // 新增的category参数
+            members: activeMembers,
+            province_code: province_code
+        });//        dishRecoData = await getDishReco(memberIds, mealType, 1);
         //显示营养元素及身材图片
         console.log('comboData：', comboData);
         displayNutrients(comboData);

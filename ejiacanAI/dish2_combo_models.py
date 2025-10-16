@@ -9,8 +9,22 @@ class MealRequest:
     """
     唯一入口参数，所有外部信息由此传入。
     字段保持最小化，后续可扩展。
+    # 北方省份：面食为主，汤较少
+    'BJ': {'staple': 1.2, 'soup': 0.8},  # 北京
+    'SD': {'staple': 1.3, 'soup': 0.7},  # 山东
+    'HE': {'staple': 1.2, 'soup': 0.8},  # 河北
+    # 南方省份：米饭为主，汤较多
+    'GD': {'staple': 1.0, 'soup': 1.5},  # 广东
+    'FJ': {'staple': 1.0, 'soup': 1.4},  # 福建
+    'ZJ': {'staple': 1.0, 'soup': 1.3},  # 浙江
+    # 西南省份：辣味主菜较多
+    'SC': {'main_dish': 1.3, 'side_dish': 1.2},  # 四川
+    'CQ': {'main_dish': 1.4, 'side_dish': 1.1},  # 重庆
+    'HN': {'main_dish': 1.2, 'side_dish': 1.1},  # 湖南
     """
     member_ids: List[int]
+    members: List[Dict] = None
+    province_code: str = 'default'  # 省份代码
     meal_type: str = "all"          # breakfast / lunch / dinner / all
     refresh_key: int = 0            # 用于随机洗牌
     max_dishes_per_meal: int = 0    # 0 表示自动计算

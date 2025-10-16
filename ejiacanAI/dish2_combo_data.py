@@ -1,8 +1,7 @@
 # dish_combo_data.py  追加内容
 from typing import List, Optional
 
-from ejiacanAI.dish2_combo_models import DishFoodNutrient, MemberNeedNutrient, MealRequest, \
-    MealStructure  # 保证与现有 import 风格一致
+from ejiacanAI.dish2_combo_models import DishFoodNutrient, MemberNeedNutrient, MealRequest
 from dbconnect.dbconn import db
 
 class DishComboData:
@@ -74,28 +73,3 @@ class DishComboData:
             f"SELECT DISTINCT allergen_code FROM ejia_member_allergen WHERE member_id IN ({ids_str})"
         )]
 
-    @staticmethod
-    def get_meal_structure(max_dishs: int, req: MealRequest) -> Optional[MealStructure]:
-        """根据菜品ID获取完整菜品信息"""
-        sql = """
-              SELECT d.main_dishes, 
-                     d.side_dishes, 
-                     d.staple_foods, 
-                     d.soups
-              FROM ejia_meal_structure d
-              WHERE d.max_dishes = %s 
-              and d.meal_type = %s
-              """
-        rows = db.query(sql, (max_dishs,req.meal_type))
-
-        if not rows:
-            return None
-
-        # 取第一条记录获取基本信息
-        first_row = rows[0]
-        return MealStructure(
-            main_dishes=first_row["main_dishes"],
-            side_dishes=first_row["side_dishes"],
-            staple_foods=first_row["staple_foods"],
-            soups=first_row["soups"]
-        )

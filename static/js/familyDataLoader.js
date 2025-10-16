@@ -20,19 +20,47 @@ export async function getDietSolutions(member_ids = "1,2") {
   console.error('getDietSolutions：', json.message || json);
   return [];
 }
-export async function getCombos(member_ids = "1,2", activeSolutions = 'highCalcium,lowFat', cuisine = 'sichuan') {
-const mealType = new Date().getHours() < 10 ? 'breakfast' :
-                 new Date().getHours() < 16 ? 'lunch' : 'dinner';
-  const url = `/family/getCombos/${member_ids}?meal_type=${mealType}&cuisine=${cuisine}&activeSolutions=${activeSolutions}`;
-  const res  = await fetch(url);
-  const json = await res.json();
+export async function getCombos({
+  member_ids = "1,2",
+  activeSolutions = 'highCalcium,lowFat',
+  cuisine = 'sichuan',
+  category = '',
+  members = [],
+  province_code = 'default'
+} = {}) {
+  const mealType = 'all';
+  const url = `/family/getCombos/${member_ids}`;
 
-  if (json.status === 'success') {
-    return json.data;
+  const requestBody = {
+    meal_type: mealType,
+    activeSolutions: activeSolutions,
+    cuisine: cuisine,
+    category: category,
+    members: members,
+    province_code: province_code
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    const json = await res.json();
+
+    if (json.status === 'success') {
+      return json.data;
+    }
+
+    console.error('getCombos：', json.message || json);
+    return [];
+  } catch (error) {
+    console.error('getCombos请求失败：', error);
+    return [];
   }
-
-  console.error('getCombos：', json.message || json);
-  return [];
 }
 export async function getTagTbl(group_code = "cuisine") {
   const url = `/family/getTagTbl/${group_code}`;

@@ -1,7 +1,6 @@
 # dish_combo_data.py
 from typing import List, Dict, Tuple, Optional
 
-from ejiacanAI.MealStructureGenerator import MealStructure
 from ejiacanAI.dish_combo_models import Dish, MemberInfo
 from dbconnect.dbconn import db
 
