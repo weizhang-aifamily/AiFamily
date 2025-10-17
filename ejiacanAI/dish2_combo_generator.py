@@ -52,16 +52,30 @@ class MealGeneratorV2:
         if not new.ingredients:
             return new  # 无食材信息，直接保留
 
-        # 提取主料（用量最大的食材）
-        main_ingredient_new = max(new.ingredients.items(), key=lambda x: x[1])[0]
+        # 修改：提取主料（用量最大的食材）- 现在需要从列表结构中提取
+        try:
+            # 找到用量最大的食材
+            main_ingredient_new = max(new.ingredients,
+                                      key=lambda x: float(x['grams']))
+            main_ingredient_name = main_ingredient_new['name']
+        except (ValueError, KeyError):
+            # 如果无法确定主料，直接保留
+            return new
 
         # 检查是否与已选菜品主料重复
         for old in existing:
             if not old.ingredients:
                 continue
-            main_ingredient_old = max(old.ingredients.items(), key=lambda x: x[1])[0]
-            if main_ingredient_new == main_ingredient_old:
-                return None  # 主料重复，丢弃新菜
+            try:
+                # 同样找到已选菜品的主料
+                main_ingredient_old = max(old.ingredients,
+                                          key=lambda x: float(x['grams']))
+                main_ingredient_old_name = main_ingredient_old['name']
+
+                if main_ingredient_name == main_ingredient_old_name:
+                    return None  # 主料重复，丢弃新菜
+            except (ValueError, KeyError):
+                continue
 
         return new  # 主料不重复，保留新菜
 
@@ -516,8 +530,15 @@ class MealGeneratorV2:
 
         for d in dishes:
             # 汇总购物清单
-            for ing, g in d.ingredients.items():
-                shopping[ing] += g
+            # for ingredient in d.ingredients:
+            #     food_name = ingredient['name']
+            #     grams_str = ingredient['grams']
+            #     try:
+            #         grams = float(grams_str)
+            #         shopping[food_name] += grams
+            #     except ValueError:
+            #         # 如果转换失败，跳过这个食材
+            #         continue
             # 汇总营养素
             for nutrient, value in d.nutrients.items():
                 nutrients[nutrient] += value
@@ -582,7 +603,7 @@ class MealGeneratorV2:
 
     @classmethod
     def _aggregate_foods(cls, food_map):
-        ingredients: Dict[str, float] = {}
+        ingredients: List[Dict[str, str]] = []
         nutrients: Dict[str, float] = defaultdict(float)
         allergens: set[str] = set()
         NUTRIENT_MAPPING = {
@@ -619,7 +640,10 @@ class MealGeneratorV2:
         }
         for food_id, rows in food_map.items():
             first = rows[0]
-            ingredients[first.foodName] = float(first.food_amount_grams or 0)
+            ingredients.append({
+                'name': first.foodName,
+                'grams': f"{float(first.food_amount_grams or 0):.1f}"
+            })
 
             for field, key in NUTRIENT_MAPPING.items():
                 val = getattr(first, field, None)

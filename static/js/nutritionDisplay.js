@@ -27,7 +27,6 @@ export async function displayNutrients(comboData) {
     totalNutrients.carbs_g = parseFloat(totalNutrients.carbs_g.toFixed(1));
 
     const activeMembers = window.activeMembers || [];
-    console.log('activeMembers:', window.activeMembers);
 
     const daysInput = document.getElementById('predictionDays');
     const days = daysInput ? parseInt(daysInput.value) : 90;
@@ -221,8 +220,7 @@ function displayUserInfoForm(results) {
         let actionButtons = '';
         if (index === 0) {
             actionButtons = `
-                <button type="button" class="btn-save" onclick="saveUserInfo('${user.id}')">保存</button>
-                <button type="button" class="btn-cancel" onclick="resetUserInfo('${user.id}')">重置</button>
+                <button type="button" class="btn-save" onclick="saveUserInfo()">保存</button>
             `;
         }
         return `
@@ -312,53 +310,46 @@ function displayUserInfoForm(results) {
 }
 
 /* ========== 保存用户信息 ========== */
-function saveUserInfo(userId) {
-    const form = document.querySelector(`.user-info-form[data-user-id="${userId}"]`);
-    if (!form) return;
+function saveUserInfo() {
+    const forms = document.querySelectorAll('.user-info-form');
+    if (!forms || forms.length === 0) return;
 
-    const updatedUser = [{
-        member_id: userId,
-        name: document.getElementById(`name-${userId}`).value,
-        gender: document.getElementById(`gender-${userId}`).value,
-        age: parseFloat(document.getElementById(`age-${userId}`).value),
-        ageGroup: document.getElementById(`ageGroup-${userId}`).value,
-        height_cm: parseFloat(document.getElementById(`height-${userId}`).value),
-        weight_kg: parseFloat(document.getElementById(`weight-${userId}`).value),
-        exerciseFrequency: document.getElementById(`exerciseFrequency-${userId}`).value,
-        exerciseDuration: document.getElementById(`exerciseDuration-${userId}`).value,
-        exerciseIntensity: document.getElementById(`exerciseIntensity-${userId}`).value
-    }];
+    const updatedUsers = [];
+
+    // 遍历所有用户表单
+    forms.forEach(form => {
+        const userId = form.dataset.userId;
+        if (!userId) return;
+
+        const userData = {
+            member_id: userId,
+            name: document.getElementById(`name-${userId}`).value,
+            gender: document.getElementById(`gender-${userId}`).value,
+            age: parseFloat(document.getElementById(`age-${userId}`).value),
+            ageGroup: document.getElementById(`ageGroup-${userId}`).value,
+            height_cm: parseFloat(document.getElementById(`height-${userId}`).value),
+            weight_kg: parseFloat(document.getElementById(`weight-${userId}`).value),
+            exerciseFrequency: document.getElementById(`exerciseFrequency-${userId}`).value,
+            exerciseDuration: document.getElementById(`exerciseDuration-${userId}`).value,
+            exerciseIntensity: document.getElementById(`exerciseIntensity-${userId}`).value
+        };
+
+        updatedUsers.push(userData);
+    });
+
+    // 异步更新所有用户数据
     (async () => {
-        console.log('activeMembers：', activeMembers);
-        result = await updateMembers({
-            members: updatedUser
+        console.log('updatedUsers：', updatedUsers);
+        const result = await updateMembers({
+            members: updatedUsers
         });
-
     })();
 
     // 显示保存成功提示
-    showNotification('信息已更新', 'success');
+    showNotification(result.message, 'success');
 }
 
-/* ========== 重置用户信息 ========== */
-function resetUserInfo(userId) {
-    if (window.activeMembers) {
-        const originalUser = window.activeMembers.find(user => user.member_id === userId);
-        if (originalUser) {
-            document.getElementById(`name-${userId}`).value = originalUser.name;
-            document.getElementById(`gender-${userId}`).value = originalUser.gender || 'male';
-            document.getElementById(`age-${userId}`).value = parseFloat(originalUser.age) || 30;
-            document.getElementById(`ageGroup-${userId}`).value = originalUser.ageGroup || 'middle';
-            document.getElementById(`height-${userId}`).value = parseFloat(originalUser.height_cm) || 170;
-            document.getElementById(`weight-${userId}`).value = parseFloat(originalUser.weight_kg) || 65;
-            document.getElementById(`exerciseFrequency-${userId}`).value = originalUser.exerciseFrequency || 'moderate';
-            document.getElementById(`exerciseDuration-${userId}`).value = originalUser.exerciseDuration || 'medium';
-            document.getElementById(`exerciseIntensity-${userId}`).value = originalUser.exerciseIntensity || 'medium';
-        }
-    }
-}
 window.saveUserInfo = saveUserInfo;
-window.resetUserInfo = resetUserInfo;
 /* ========== 显示通知 ========== */
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');

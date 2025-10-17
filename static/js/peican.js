@@ -358,38 +358,25 @@ let ingredientTips = {
     '橄榄油': '橄榄油富含不饱和脂肪酸',
     '西兰花': '西兰花营养全面'
 };
-/* ========== 1. 套餐数据结构 ========== */
+/* ========== 1. 推荐菜数据结构 ========== */
 let comboData = [
   {
-    comboId: 'morning',
-    comboName: '晨曦钙能宴',
+    combo_id: '2234',
+    combo_name: '早餐',
+    meal_type: "breakfast",
     comboDesc: '10 分钟补足全天钙 80 %',
     dishes: [
       {
-        id: 1,
+        dish_id: 1,
         name: '奶酪焗南瓜',
         picSeed: 'pumpkin',
-        tags: ['高钙 +72 %'],
-        checked: true,
-        rating: 4.7
-      }
-    ]
-  }
-];
-/* ========== 1. 推荐菜数据结构 ========== */
-let dishRecoData = [
-  {
-    comboId: 'morning',
-    comboName: '晨曦钙能宴',
-    comboDesc: '10 分钟补足全天钙 80 %',
-    dishes: [
-      {
-        id: 1,
-        name: '奶酪焗南瓜',
-        picSeed: 'pumpkin',
-        nutri_tags: ['高钙 +72 %'],
+        dish_tags: ['高钙 +72 %'],
         checked: false,
-        rating: 4.7
+        rating: 4.7,
+        food_list: [
+            {name:'番茄',grams:'20g',tag:'',desc:''},
+            {name:'鸡蛋',grams:'10g',tag:'',desc:''}
+        ]
       }
     ]
   }
@@ -427,25 +414,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const solutionTags = document.getElementById('solutionTags');
     //食材清单
     const ingredientList = document.getElementById('ingredientList');
-    const dishList = document.getElementById('dishList');
-    const achievementToast = document.getElementById('achievementToast');
     const progressFill = document.getElementById('progressFill');
     const achievementText = document.getElementById('achievementText');
-    const mealTimeSubtitle = document.getElementById('mealTimeSubtitle');
 
     // 状态管理
     activeMembers = [...familyMembers];
     let activeSolutions = new Set();
     let usageCount = 0;
 
-    /* ============= 3. 核心功能函数 ============= */
-    function setMealTime() {
-        const hour = new Date().getHours();
-        let mealType = '午餐';
-        if (hour < 10) mealType = '早餐';
-        else if (hour >= 16) mealType = '晚餐';
-        mealTimeSubtitle.textContent = `精选${mealType}`;
-    }
 function initMembers() {
     (async () => {
         familyMembers = await getMembers(1);
@@ -461,7 +437,7 @@ function initMembers() {
             `<span class="member-tag active" data-id="${member.member_id}">${member.avatar}${member.name}</span>`
         ).join('');
     }
-guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
+    guardMemberLine.querySelectorAll('.member-tag').forEach(tag => {
         tag.addEventListener('click', () => {
             tag.classList.toggle('active');
             updateActiveMembers();
@@ -627,10 +603,7 @@ function getActiveSolutions() {
         .join(',');
 }
     function generateRecommendations() {
-        //generateIngredients();
         generateCombos();
-//        generateDishreco();
-        generateDishes();
         usageCount++;
         updateAchievementProgress();
     }
@@ -649,7 +622,7 @@ function generateCombos() {
             category: categoryStr,  // 新增的category参数
             members: activeMembers,
             province_code: province_code
-        });//        dishRecoData = await getDishReco(memberIds, mealType, 1);
+        });
         //显示营养元素及身材图片
         console.log('comboData：', comboData);
         displayNutrients(comboData);
@@ -662,8 +635,8 @@ function generateCombos() {
     if (maxInput) maxInput.value = totalDishes;
   track.innerHTML = comboData.map((combo, idx) => `
     <article class="combo-row">
-<!--      <h3 class="combo-name">${combo.comboName}</h3>-->
-<!--      <p class="combo-desc">${combo.comboDesc}</p>-->
+          <h3 class="combo-name">${combo.combo_name}</h3>
+<!--          <p class="combo-desc">${combo.meal_type}</p>-->
       <div class="dish-list">
         ${combo.dishes.map(dish => `
           <label class="dish-item">
@@ -683,130 +656,64 @@ function generateCombos() {
       </div>
     </article>
   `).join('');
-})();
-}
 
-/* ========== 2. 加载推荐菜 ========== */
-function generateDishreco() {
-    (async () => {
-        const mealType = new Date().getHours() < 10 ? 'breakfast' :
-                 new Date().getHours() < 16 ? 'lunch' : 'dinner';
-//        comboData = await getCombos(memberIds, mealType, 1);
-        dishRecoData = await getDishReco(memberIds, mealType, 1);
-  const track = document.getElementById('dishrecoRowList');
-  if (!track) return;
-  track.innerHTML = dishRecoData.map((dish, idx) => `
-    <article class="combo-row">
-      <div class="dish-list">
-          <label class="dish-item">
-            <input type="checkbox" value="${dish.name}" ${dish.checked ? 'checked' : ''}>
-            <img src="https://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
-            <span class="dish-name">${dish.name}</span><span>⏱️${dish.cookTime}分钟</span>
-            ${(dish.nutri_tags || []).map(tag => `<span class="nutri-tag">${tag}</span>⚖️${dish.portion_size}份`).join('')}
-            ${dish.rating ? `<span class="dish-per">⭐⭐⭐⭐☆ ${dish.rating}</span>` : ''}
-          </label>
-      </div>
-    </article>
-  `).join('');
-  })();
+  bindCheckboxSelectDishes();
+  generateIngredients();
+})();
 }
 
 // 生成食材清单
 function generateIngredients() {
-    const ingredients = new Set();
-    activeSolutions.forEach(solution => {
-        const randomIngredient = ingredientPool[solution][
-            Math.floor(Math.random() * ingredientPool[solution].length)
-        ];
-        ingredients.add(randomIngredient);
-    });
+    const ingredientList = document.getElementById('ingredientList');
+    if (!ingredientList) return;
 
-ingredientList.innerHTML = Array.from(ingredients).map(ing => {
-    const servingMembers = ing.servings.map(id =>
-        familyMembers.find(m => m.id === id).name
-    ).join('、');
+    // 清空现有内容
+    ingredientList.innerHTML = '';
 
-    return `
-        <div class="food-card" data-ingredient='${JSON.stringify(ing).replace(/'/g, "&apos;")}'>
-            <div class="food-icon">${ing.emoji}</div>
-            <div class="food-main">
-                <div class="food-title">
-                    <h4>${ing.name}</h4>
-                    <span class="food-grams">${ing.grams}</span>
-                </div>
-                <div class="food-info">
-                    <span class="food-tag">${ing.tag}</span>
-                    <span class="food-desc">${ing.desc}</span>
-                </div>
-            </div>
-            <div class="food-servings" title="适合: ${servingMembers}">${ing.servings.length}人份</div>
-        </div>
-    `;
-}).join('');
+    // 遍历所有套餐和菜品
+    comboData.forEach(combo => {
+        combo.dishes.forEach(dish => {
+            if (dish.ingredients) {
 
-  // ✨ 计算并显示预计花费
-  let totalCost = 0;
-  ingredients.forEach(ing => {
-    // 根据 grams 字段提取数字，单位统一按 100g 折算
-    const grams = parseFloat(ing.grams) || 100;
-    const pricePer100g = ingredientPrice[ing.name] || 5; // 缺省 5 元
-    totalCost += (grams / 100) * pricePer100g;
-  });
-//  document.getElementById('budgetSpent').textContent = `预估¥${totalCost.toFixed(1)}`;
-
-    document.querySelectorAll('.food-card').forEach(card =>
-        card.addEventListener('click', () => showReplaceModal(JSON.parse(card.dataset.ingredient), card))
-    );
-
-    showIngredientTips(Array.from(ingredients));
-}
-    function generateDishes() {
-        const dishes = [];
-        activeSolutions.forEach(solution => {
-            if (!solution || !dishPool[solution]) return;
-            const availableDishes = dishPool[solution].filter(
-                dish => !dishes.some(d => d.name === dish.name)
-            );
-            if (availableDishes.length > 0) {
-                dishes.push(
-                    availableDishes[Math.floor(Math.random() * availableDishes.length)]
-                );
+                // 为每个菜品创建一个食材分组
+                const dishSection = document.createElement('div');
+                dishSection.className = 'dish-ingredient-section';
+                dishSection.innerHTML = `
+                    <div class="dish-header">
+                        <h4>${dish.name}</h4>
+                        <span class="dish-tags"></span>
+                    </div>
+                    <div class="dish-ingredients">
+                        ${dish.ingredients.map(food => `
+                            <div class="food-card">
+                                <div class="food-icon"></div>
+                                <div class="food-main">
+                                    <div class="food-title">
+                                        <h4>${food.name}</h4>
+                                        <span class="food-grams">${food.grams}</span>
+                                    </div>
+                                    <div class="food-info">
+                                        <span class="food-tag"></span>
+                                        <span class="food-desc"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                ingredientList.appendChild(dishSection);
             }
         });
-
-        dishList.innerHTML = dishes.map(dish => `
-            <div class="dish-card">
-                <div class="dish-image">${dish.emoji}</div>
-                <div class="dish-label">${dish.name}</div>
+    });
+    // 如果没有食材数据，显示提示
+    if (ingredientList.children.length === 0) {
+        ingredientList.innerHTML = `
+            <div class="no-ingredients">
+                <p>暂无食材数据</p>
             </div>
-        `).join('');
-
+        `;
     }
-
-    function showIngredientTips(ingredients) {
-        const tipElement = document.getElementById('ingredientTip');
-        if (ingredients.length === 0) {
-            tipElement.textContent = '暂无提示信息';
-            return;
-        }
-
-        let currentIndex = 0;
-        function showNextTip() {
-            const currentIngredient = ingredients[currentIndex];
-            tipElement.textContent = ingredientTips[currentIngredient.name] || '暂无提示信息';
-            currentIndex = (currentIndex + 1) % ingredients.length;
-        }
-        showNextTip();
-        setInterval(showNextTip, 5000);
-    }
-
-    function showAchievement(reason, name) {
-        achievementToast.textContent = `${reason}: 解锁${name}`;
-        achievementToast.style.display = 'block';
-        setTimeout(() => {
-            achievementToast.style.display = 'none';
-        }, 3000);
-    }
+}
 
     function updateAchievementProgress() {
         const progress = Math.min(usageCount / 5 * 100, 100);
@@ -816,25 +723,11 @@ ingredientList.innerHTML = Array.from(ingredients).map(ing => {
 
 
     function init() {
-        setMealTime();
         initBudgetRange();
         initMembers();
-        //updateFilterDetails();
-        showAchievement('首次使用', '营养规划师✨');
-
-
-renderTasteRow();                 // 生成尝鲜菜
-  document.getElementById('refreshTasteInline')
+        renderTasteRow();                 // 生成尝鲜菜
+        document.getElementById('refreshTasteInline')
           .addEventListener('click', renderTasteRow); // 换一批
-            //过敏源忌口等
-    document.getElementById('excludeAllergens').addEventListener('change', generateRecommendations);
-    document.getElementById('excludeTaboo').addEventListener('change', generateRecommendations);
-    document.getElementById('seasonalOnly').addEventListener('change', generateRecommendations);
-
-    // 预算选择事件监听
-    document.querySelectorAll('input[name="budgetLevel"]').forEach(radio => {
-        radio.addEventListener('change', generateRecommendations);
-    });
     }
 
     // 启动应用
@@ -987,30 +880,27 @@ document.querySelectorAll('.food-card').forEach(card=>{
   });
 });
 /* ===== 套餐勾选逻辑 ===== */
-const basketCountEl  = document.getElementById('basketCount');
+//const basketCountEl  = document.getElementById('basketCount');
 //const openBasketBtn  = document.getElementById('openBasket');
 let selectedDishes = [];
 
-document.addEventListener('change', e=>{
-  if(!e.target.matches('.dish-item input')) return;
-  const dish = e.target.value;
-  if(e.target.checked){
-    selectedDishes.push(dish);
-  }else{
-    selectedDishes = selectedDishes.filter(d=>d!==dish);
-  }
-  updateBasket();
-});
-
-function updateBasket(){
-  const count = selectedDishes.length;
-  basketCountEl.textContent = `${count} 道菜`;
-//  openBasketBtn.disabled = count === 0;
+function bindCheckboxSelectDishes() {
+  // 绑定新的事件
+  document.querySelectorAll('.dish-item input').forEach(checkbox => {
+    if(checkbox.checked && !selectedDishes.includes(checkbox.value)) {
+      selectedDishes.push(checkbox.value);
+    }
+    checkbox.addEventListener('change', function() {
+      if(this.checked){
+        if(!selectedDishes.includes(dish)) {
+          selectedDishes.push(dish);
+        }
+      }else{
+        selectedDishes = selectedDishes.filter(d => d !== dish);
+      }
+    });
+  });
 }
-
-/* 初始化 */
-updateBasket();
-
 
 function renderTasteRow() {
   const container = document.getElementById('tasteRowList');
@@ -1075,6 +965,7 @@ const closeBtn  = document.getElementById('closeCart');
 // 打开
 openBtn.addEventListener('click', () => {
     overlay.classList.add('show');
+    document.querySelector('.card').style.display = '';
 });
 
 // 关闭

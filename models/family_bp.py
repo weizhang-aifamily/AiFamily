@@ -11,7 +11,7 @@ from ejiacanAI.smart_recommender import SmartRecommender
 import logging
 
 from management.dish_data import DishData
-from family_data import FamilyData
+from models.family_data import FamilyData
 
 logger = logging.getLogger(__name__)
 family_bp = Blueprint('family', __name__, url_prefix='/family')
@@ -60,8 +60,9 @@ def get_members(user_id):
         return jsonify({"status": "success", "data": rows})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-@family_bp.route("/updateMember", methods=["POST"])
-def update_member():
+
+@family_bp.route("/updateMembers", methods=["POST"])
+def update_members():
     """营养分析接口"""
     try:
         data = request.get_json()

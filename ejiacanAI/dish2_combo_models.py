@@ -216,7 +216,7 @@ class Dish:
     dish_emoji: str
     name: str
     cook_time: int
-    ingredients: Dict[str, float]  # 食材名称 -> 克数
+    ingredients: List[Dict[str, str]]   # 食材名称 -> 克数
     nutrients: Dict[str, float]  # 营养素编码 -> 含量
     default_portion: int
     exact_portion: ExactPortion
@@ -226,7 +226,6 @@ class Dish:
     explicit_tags: List[str] = field(default_factory=list)
     implicit_tags: List[str] = field(default_factory=list)
     dish_series: Optional[str] = None
-    meal_type_code: Optional[str] = None
     rating: Optional[float] = None
     description: Optional[str] = None
 
