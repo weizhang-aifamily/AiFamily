@@ -5,6 +5,7 @@ from models.nutrition_models import (
     NutritionAnalysisInput, NutritionBaseline, NutritionDifferences,
     WeightPrediction, BodyImagePrediction, NutritionAnalysisResult
 )
+from models.common_nutrient_calculator import CommonNutrientCalculator
 
 nutrition_bp = Blueprint('nutrition', __name__, url_prefix='/nutrition')
 
@@ -15,28 +16,41 @@ class NutritionAnalyzer:
     def __init__(self):
         self.nutrition_data = NutritionData()
 
-    def calculate_baseline(self, user_input: NutritionAnalysisInput) -> NutritionBaseline:
-        """计算营养基准"""
-        advanced_bmr = self.nutrition_data.calculate_advanced_bmr(
-            user_input.height_cm, user_input.weight_kg, user_input.age,
-            user_input.gender, user_input.ageGroup
-        )
+    """营养分析器 - 可以使用共用方法确保一致性"""
 
-        # 使用RDI表计算基准值
+    def calculate_baseline(self, user_input: NutritionAnalysisInput, meal_type: str = 'all') -> NutritionBaseline:
+        """计算营养基准 - 可以使用共用方法"""
         try:
-            rdi_data = NutritionData.get_user_rdi(user_input.age, user_input.gender)
+            # 转换为成员字典格式
+            member_data = {
+                'age': user_input.age,
+                'gender': user_input.gender,
+                'height_cm': user_input.height_cm,
+                'weight_kg': user_input.weight_kg,
+                'ageGroup': user_input.ageGroup
+            }
 
+            # 使用共用计算器获取每日目标
+            daily_targets = CommonNutrientCalculator.calculate_daily_nutrient_targets(member_data)
+
+            # 如果需要单餐目标，进一步计算
+            if meal_type != 'all':
+                meal_targets = CommonNutrientCalculator.calculate_meal_nutrient_targets(daily_targets, meal_type)
+            else:
+                meal_targets = daily_targets
+
+            # 转换为NutritionBaseline对象
             return NutritionBaseline(
-                calories=round(advanced_bmr),
-                protein_g=self._calculate_nutrient_from_rdi(rdi_data, 'protein', user_input.weight_kg),
-                fat_g=self._calculate_fat_from_rdi(rdi_data, advanced_bmr),
-                carbs_g=self._calculate_carbs_from_rdi(rdi_data, advanced_bmr),
-                bmr=round(advanced_bmr),
-                tdee=round(advanced_bmr)
+                calories=meal_targets.get('calories', 0),
+                protein_g=meal_targets.get('protein', 0),
+                fat_g=meal_targets.get('fat', 0),
+                carbs_g=meal_targets.get('carbohydrate', 0),
+                bmr=daily_targets.get('calories', 0),  # 每日热量就是BMR
+                tdee=daily_targets.get('calories', 0)  # 基础情况下TDEE=BMR
             )
+
         except Exception as e:
-            # 降级到默认计算
-            return self._calculate_baseline_fallback(user_input, advanced_bmr)
+            print(f"使用共用计算器失败，使用原有逻辑: {str(e)}")
 
     def _calculate_nutrient_from_rdi(self, rdi_data: Dict, nutrient: str, weight_kg: float) -> float:
         """根据RDI计算营养素基准"""
@@ -59,18 +73,6 @@ class NutritionAnalyzer:
         carbs_rdi = rdi_data.get('carbohydrate', {'amount': 0.55})
         carbs_calories = bmr * carbs_rdi['amount']
         return round((carbs_calories / 4) * 10) / 10
-
-    def _calculate_baseline_fallback(self, user_input: NutritionAnalysisInput,
-                                     advanced_bmr: float) -> NutritionBaseline:
-        """降级计算方法"""
-        return NutritionBaseline(
-            calories=round(advanced_bmr),
-            protein_g=round(user_input.weight_kg * 1.2 * 10) / 10,
-            fat_g=round((advanced_bmr * 0.25) / 9 * 10) / 10,
-            carbs_g=round((advanced_bmr * 0.55) / 4 * 10) / 10,
-            bmr=round(advanced_bmr),
-            tdee=round(advanced_bmr)
-        )
 
     def calculate_differences(self, intake: NutritionAnalysisInput,
                               baseline: NutritionBaseline) -> NutritionDifferences:
@@ -196,19 +198,18 @@ class NutritionAnalyzer:
             weight_change=predicted_weight_shift
         )
 
-    def analyze(self, users_input: List[Dict], days: int = None) -> List[NutritionAnalysisResult]:
-        """主分析方法"""
+    def analyze(self, users_input: List[Dict], days: int = None, meal_type: str = 'all') -> List[NutritionAnalysisResult]:
+        """主营养分析方法"""
         if not days:
             days = 90  # 默认90天
 
         results = []
-        analyzer = NutritionAnalyzer()
 
         for user_data in users_input:
             # 转换为输入模型
             user_input = NutritionAnalysisInput(**user_data)
 
-            baseline = self.calculate_baseline(user_input)
+            baseline = self.calculate_baseline(user_input, meal_type)
             differences = self.calculate_differences(user_input, baseline)
             prediction = self.predict_weight_shift_advanced(differences, user_input, days)
             body_image = self.predict_future_body_image(user_input, prediction.weight_shift_kg)
@@ -233,9 +234,10 @@ def analyze_nutrition():
         data = request.get_json()
         users_input = data.get('users', [])
         days = data.get('days', 90)
+        meal_type = data.get('mealType','all')
 
         analyzer = NutritionAnalyzer()
-        results = analyzer.analyze(users_input, days)
+        results = analyzer.analyze(users_input, days, meal_type)
 
         # 转换为字典返回
         return jsonify({
@@ -274,29 +276,6 @@ def calculate_nutrition_ratios():
             'success': False,
             'error': str(e)
         }), 500
-
-def calculate_user_nutrition_ratio():
-    """计算用户营养分配比例"""
-    try:
-        data = request.get_json()
-        user = data.get('user')
-        all_users = data.get('all_users', [])
-
-        if not user:
-            return jsonify({'success': False, 'error': '用户数据缺失'}), 400
-
-        ratio = _calculate_user_nutrition_ratio(user, all_users)
-
-        return jsonify({
-            'success': True,
-            'ratio': ratio
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
 
 def _calculate_user_nutrition_ratio(user: Dict, all_users: List[Dict]) -> float:
     """计算用户营养分配比例 - 基于 TDEE + 年龄修正"""

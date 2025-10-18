@@ -62,3 +62,4 @@ NUTRIENT_UNITS = {
     'biotin': 'μg',
     'pantothenic_acid': 'mg'
 }
+MEAL_RATIO = {"breakfast": 0.30, "lunch": 0.40, "dinner": 0.30}

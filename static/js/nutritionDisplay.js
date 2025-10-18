@@ -4,7 +4,6 @@ import { calculateUserNutritionRatios, analyzeNutrition, updateMembers } from '.
 export async function displayNutrients(comboData) {
     if (!comboData || comboData.length === 0) return;
 
-    // 汇总所有套餐的营养数据
     const totalNutrients = {
         calories_intake: 0,
         protein_g: 0,
@@ -12,7 +11,7 @@ export async function displayNutrients(comboData) {
         carbs_g: 0
     };
 
-    // 遍历所有套餐，累加营养数据
+    // 1、遍历所有套餐，累加营养数据
     comboData.forEach(combo => {
         if (combo.nutrients) {
             totalNutrients.calories_intake += combo.nutrients.EnergyKCal || 0;
@@ -31,10 +30,10 @@ export async function displayNutrients(comboData) {
     const daysInput = document.getElementById('predictionDays');
     const days = daysInput ? parseInt(daysInput.value) : 90;
     try {
+        // 2、计算用户营养分配比例 - 基于 TDEE + 年龄修正
         const ratios = await calculateUserNutritionRatios(activeMembers, activeMembers);
-        // 为每个用户分配营养数据
+        // 3、根据比例，为每个用户分配汇总营养数据
         const usersAnalysisData = activeMembers.map(user => {
-//            const userRatio = analyzer.calculateUserNutritionRatio(user, activeMembers, analyzer);
             const userRatio = ratios[user.member_id];
 
             const userData = {
@@ -56,9 +55,8 @@ export async function displayNutrients(comboData) {
 
             return userData;
         });
-        // 执行营养分析（自动适配n个人）
-//        const results = analyzer.analyze(usersAnalysisData, days);
-        const results = await analyzeNutrition(usersAnalysisData, days);
+        // 4、执行营养分析
+        const results = await analyzeNutrition(usersAnalysisData, days, comboData.meal_type);
         console.log("results",results)
         updateUserCard(results);
         generateNutritionMini(results);

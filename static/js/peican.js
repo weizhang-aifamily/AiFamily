@@ -597,22 +597,44 @@ function renderCategoryTags() {
         });
     });
 }
-function getActiveSolutions() {
-    return Array.from(document.querySelectorAll('#solutionTags .solution-tag.active'))
-        .map(tag => tag.getAttribute('data-solution'))
-        .join(',');
-}
+    function getActiveSolutions() {
+        return Array.from(document.querySelectorAll('#solutionTags .solution-tag.active'))
+            .map(tag => tag.getAttribute('data-solution'))
+            .join(',');
+    }
     function generateRecommendations() {
         generateCombos();
         usageCount++;
         updateAchievementProgress();
     }
+function getSelectedMeals() {
+    const checkboxes = document.querySelectorAll('input[name="mealType"]:checked');
+    const selected = Array.from(checkboxes).map(cb => `${cb.value}`);
+    return selected.join(',');
+}
 
+function initMealType() {
+    const hour = new Date().getHours();
+    let mealTypes = [];
+    if (hour >= 6 && hour < 11) {
+        mealTypes = ["breakfast"];
+    } else if (hour >= 11 && hour < 17) {
+        mealTypes = ["lunch"];
+    } else {
+        mealTypes = ["dinner"];
+    }
+    const checkboxes = document.querySelectorAll('input[name="mealType"]');
+    checkboxes.forEach(cb => {
+        cb.checked = mealTypes.includes(cb.value);
+    });
+}
 /* ========== 2. 加载套餐 ========== */
 function generateCombos() {
     const cuisineStr = [...activeCuisines].join(',');
     const categoryStr = [...activeCategories].join(',');
     const activeSolutions = getActiveSolutions();
+    const mealType = getSelectedMeals();
+    console.log(mealType);
     (async () => {
         console.log('activeMembers：', activeMembers);
         comboData = await getCombos({
@@ -621,14 +643,15 @@ function generateCombos() {
             cuisine: cuisineStr,
             category: categoryStr,  // 新增的category参数
             members: activeMembers,
-            province_code: province_code
+            province_code: province_code,
+            mealType: mealType
         });
         //显示营养元素及身材图片
         console.log('comboData：', comboData);
         displayNutrients(comboData);
-  const track = document.getElementById('combos');
-  if (!track) return;
-    const totalDishes = comboData.reduce((sum, combo) => sum + combo.dishes.length, 0);
+      const track = document.getElementById('combos');
+      if (!track) return;
+        const totalDishes = comboData.reduce((sum, combo) => sum + combo.dishes.length, 0);
 
     // 2. 写到页面
     const maxInput = document.getElementById('max_dishes');
@@ -724,6 +747,7 @@ function generateIngredients() {
 
     function init() {
         initBudgetRange();
+        initMealType();
         initMembers();
         renderTasteRow();                 // 生成尝鲜菜
         document.getElementById('refreshTasteInline')

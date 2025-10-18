@@ -8,6 +8,7 @@ from collections import defaultdict
 from ejiacanAI.MealStructureGenerator import MealStructureGenerator
 from ejiacanAI.dish2_combo_models import MealRequest, ComboMeal, Dish, ExactPortion, DishFoodNutrient
 from ejiacanAI.dish2_combo_data import DishComboData   # 统一数据入口
+from models.nutrient_config import MEAL_RATIO
 
 class MealGeneratorV2:
     """
@@ -161,7 +162,7 @@ class MealGeneratorV2:
     """
         按餐次独立选菜、独立微调、独立去重
         """
-    MEAL_RATIO = {"breakfast": 0.30, "lunch": 0.40, "dinner": 0.30}
+    # MEAL_RATIO = {"breakfast": 0.30, "lunch": 0.40, "dinner": 0.30}
 
     @classmethod
     def generate_per_meal_default(cls, req: MealRequest) -> List[ComboMeal]:
@@ -226,13 +227,13 @@ class MealGeneratorV2:
         return combo_meals
 
     # -------------------------------------------------
-    # 为单餐构建需求区间
+    # 为单餐构建需求区间 MEAL_RATIO {"breakfast": 0.30, "lunch": 0.40, "dinner": 0.30}
     # -------------------------------------------------
     @classmethod
     def _build_single_meal_range(
             cls, daily: Dict[str, Dict[str, float]], meal_code: str
     ) -> Dict[str, Dict[str, float]]:
-        ratio = cls.MEAL_RATIO[meal_code]
+        ratio = MEAL_RATIO[meal_code]
         return {k: {"min": v["min"] * ratio, "max": v["max"] * ratio, "need": v["need"] * ratio}
                 for k, v in daily.items()}
 
@@ -445,6 +446,14 @@ class MealGeneratorV2:
 
             # 同时调整营养成分数据（重要！）
             d.nutrients = {k: v * final_scale for k, v in d.nutrients.items()}
+            # ✅ 同步调整食材克数
+            for ingredient in d.ingredients:
+                try:
+                    original_grams = float(ingredient['grams'])
+                    adjusted_grams = original_grams * final_scale
+                    ingredient['grams'] = f"{adjusted_grams:.1f}"
+                except (ValueError, KeyError):
+                    continue
 
     @classmethod
     def _categorize_dishes_by_structure(cls, dish_list: List[Dish]) -> Dict[str, List[Dish]]:

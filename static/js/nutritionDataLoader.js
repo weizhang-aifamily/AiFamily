@@ -47,7 +47,7 @@ export async function calculateUserNutritionRatios(activeMembers, allUsers) {
 /**
  * 执行营养分析
  */
-export async function analyzeNutrition(usersAnalysisData, days = 90) {
+export async function analyzeNutrition(usersAnalysisData, days = 90, mealType) {
   try {
     const res = await fetch('/nutrition/analyze', {
       method: 'POST',
@@ -56,7 +56,8 @@ export async function analyzeNutrition(usersAnalysisData, days = 90) {
       },
       body: JSON.stringify({
         users: usersAnalysisData,
-        days: days
+        days: days,
+        mealType: mealType
       })
     });
 

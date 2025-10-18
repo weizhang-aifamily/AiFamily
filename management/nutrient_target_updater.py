@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 
 from dbconnect.dbconn import db
 from models.nutrition_data import NutritionData
-
+from models.common_nutrient_calculator import CommonNutrientCalculator
 
 class NutrientTargetUpdater:
     """营养目标更新器"""
@@ -35,44 +35,60 @@ class NutrientTargetUpdater:
         """
         return db.query(sql)
 
+    """营养目标更新器 - 使用共用计算逻辑"""
+
     def calculate_member_nutrient_targets(self, member: Dict[str, Any]) -> Dict[str, float]:
-        """计算成员营养目标 - 直接从RDI获取"""
+        """计算成员营养目标 - 使用共用逻辑"""
         try:
-            # 获取RDI数据
+            # 使用共用计算器
+            return CommonNutrientCalculator.calculate_daily_nutrient_targets(member)
+
+        except Exception as e:
+            print(f"使用共用计算器失败，使用降级方案: {str(e)}")
+            # 降级到原来的简单计算
+            return self._fallback_calculate_targets(member)
+
+    def _fallback_calculate_targets(self, member: Dict[str, Any]) -> Dict[str, float]:
+        """降级计算方法（保持原有逻辑）"""
+        try:
             rdi_data = NutritionData.get_user_rdi(
                 int(float(member['age'])),
                 member['gender']
             )
-
             targets = {}
-
-            # 直接从RDI获取所有营养素目标
             for nutrient_name, nutrient_info in rdi_data.items():
                 targets[nutrient_name] = nutrient_info['amount']
-
             return targets
-
         except Exception as e:
-            print(f"计算成员 {member['name']} 营养目标时出错: {str(e)}")
+            print(f"降级计算也失败: {str(e)}")
             return {}
 
     def calculate_max_quantity(self, nutrient_name: str, target_value: float) -> float:
-        """计算营养素的最大安全摄入量"""
-        # 不同营养素的安全上限系数
+        """计算营养素的最大安全摄入量（使用更精确的计算）"""
+        # 安全上限系数（基于营养学标准）
         safety_factors = {
-            'calories': 1.3,
-            'protein': 2.0,
-            'fat': 1.5,
-            'carbohydrate': 1.5,
-            'calcium': 2.5,
-            'iron': 3.0,
-            'vitamin_c': 5.0,
-            'vitamin_d': 4.0,
-            'sodium': 2.0,
+            'calories': 1.3,  # 热量最多超30%
+            'protein': 2.0,  # 蛋白质最多2倍
+            'fat': 1.5,  # 脂肪最多1.5倍
+            'carbohydrate': 1.5,  # 碳水最多1.5倍
+            'calcium': 2.5,  # 钙最多2.5倍
+            'iron': 3.0,  # 铁最多3倍
+            'vitamin_c': 5.0,  # 维生素C最多5倍
+            'vitamin_a': 3.0,  # 维生素A最多3倍
+            'sodium': 2.0,  # 钠最多2倍
+            'dietary_fiber': 2.0,  # 膳食纤维最多2倍
         }
 
         factor = safety_factors.get(nutrient_name, 2.0)
-        return round(target_value * factor, 3)
+        max_qty = target_value * factor
+
+        # 根据营养素类型进行精度处理
+        if nutrient_name in ['calories']:
+            return round(max_qty)
+        elif nutrient_name in ['protein', 'fat', 'carbohydrate']:
+            return round(max_qty * 10) / 10
+        else:
+            return round(max_qty * 1000) / 1000  # 保留3位小数
 
     def update_member_nutrient_targets(self, member_id: int, targets: Dict[str, float]) -> bool:
         """更新成员营养目标到数据库"""
@@ -121,7 +137,7 @@ class NutrientTargetUpdater:
     def cleanup_old_records(self, days_to_keep: int = 30):
         """清理旧的营养目标记录"""
         try:
-            cutoff_date = date.today() - timedelta(days=days_to_keep)
+            cutoff_date = date.today()
             cleanup_sql = """
                 DELETE FROM ejia_member_daily_nutrient 
                 WHERE updated_at < %s

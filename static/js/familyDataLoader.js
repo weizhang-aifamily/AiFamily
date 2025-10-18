@@ -26,9 +26,9 @@ export async function getCombos({
   cuisine = 'sichuan',
   category = '',
   members = [],
-  province_code = 'default'
+  province_code = 'default',
+  mealType = 'all'
 } = {}) {
-  const mealType = 'all';
   const url = `/family/getCombos/${member_ids}`;
 
   const requestBody = {
