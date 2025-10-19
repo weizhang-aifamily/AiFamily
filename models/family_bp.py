@@ -80,6 +80,27 @@ def update_members():
             'success': False,
             'error': str(e)
         }), 500
+
+@family_bp.route("/saveMemberDishLog", methods=["POST"])
+def save_member_dish_log():
+    """保存成员菜品日志接口"""
+    try:
+        data = request.get_json()
+        combo = data.get('combo', {})
+        members = data.get('members', [])
+
+        result = FamilyData.save_combo_member_dish_log(combo, members)
+
+        return jsonify({
+            'success': True,
+            'result': result
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 # 初始化推荐引擎
 dao = EnhancedDataAccess(db)
 engine = ILPRecommender()

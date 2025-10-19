@@ -63,3 +63,12 @@ NUTRIENT_UNITS = {
     'pantothenic_acid': 'mg'
 }
 MEAL_RATIO = {"breakfast": 0.30, "lunch": 0.40, "dinner": 0.30}
+# 2. 定义营养优先级
+nutrient_priority = {
+    'protein': 10,  # 最高优先级
+    'calories': 9,  # 高优先级
+    'fat': 8,  # 高优先级
+    'carbohydrate': 7,  # 中优先级
+    'dietary_fiber': 6,  # 中优先级
+    # 其他营养素默认优先级为1
+}

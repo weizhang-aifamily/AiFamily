@@ -18,40 +18,6 @@ class NutritionAnalyzer:
 
     """营养分析器 - 可以使用共用方法确保一致性"""
 
-    def calculate_baseline(self, user_input: NutritionAnalysisInput, meal_type: str = 'all') -> NutritionBaseline:
-        """计算营养基准 - 可以使用共用方法"""
-        try:
-            # 转换为成员字典格式
-            member_data = {
-                'age': user_input.age,
-                'gender': user_input.gender,
-                'height_cm': user_input.height_cm,
-                'weight_kg': user_input.weight_kg,
-                'ageGroup': user_input.ageGroup
-            }
-
-            # 使用共用计算器获取每日目标
-            daily_targets = CommonNutrientCalculator.calculate_daily_nutrient_targets(member_data)
-
-            # 如果需要单餐目标，进一步计算
-            if meal_type != 'all':
-                meal_targets = CommonNutrientCalculator.calculate_meal_nutrient_targets(daily_targets, meal_type)
-            else:
-                meal_targets = daily_targets
-
-            # 转换为NutritionBaseline对象
-            return NutritionBaseline(
-                calories=meal_targets.get('calories', 0),
-                protein_g=meal_targets.get('protein', 0),
-                fat_g=meal_targets.get('fat', 0),
-                carbs_g=meal_targets.get('carbohydrate', 0),
-                bmr=daily_targets.get('calories', 0),  # 每日热量就是BMR
-                tdee=daily_targets.get('calories', 0)  # 基础情况下TDEE=BMR
-            )
-
-        except Exception as e:
-            print(f"使用共用计算器失败，使用原有逻辑: {str(e)}")
-
     def _calculate_nutrient_from_rdi(self, rdi_data: Dict, nutrient: str, weight_kg: float) -> float:
         """根据RDI计算营养素基准"""
         rdi = rdi_data.get(nutrient)
@@ -209,7 +175,15 @@ class NutritionAnalyzer:
             # 转换为输入模型
             user_input = NutritionAnalysisInput(**user_data)
 
-            baseline = self.calculate_baseline(user_input, meal_type)
+            meal_targets = CommonNutrientCalculator.get_meal_nutrient_targets_actual(user_input, meal_type)
+            baseline = NutritionBaseline(
+                calories=meal_targets.get('Calories', 0),
+                protein_g=meal_targets.get('Protein', 0),
+                fat_g=meal_targets.get('Fat', 0),
+                carbs_g=meal_targets.get('Carbohydrate', 0),
+                bmr=meal_targets.get('Calories', 0),  # 使用相同的热量值
+                tdee=meal_targets.get('Calories', 0)  # 基础情况下TDEE=BMR
+            )
             differences = self.calculate_differences(user_input, baseline)
             prediction = self.predict_weight_shift_advanced(differences, user_input, days)
             body_image = self.predict_future_body_image(user_input, prediction.weight_shift_kg)

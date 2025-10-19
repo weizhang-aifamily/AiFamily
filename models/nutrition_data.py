@@ -110,6 +110,42 @@ class NutritionData:
         return rdi_map
 
     @staticmethod
+    def get_daily_nutrient_targets_actual(member: Dict[str, Any]) -> Dict[str, float]:
+        """从 ejia_member_daily_nutrient_actual 表获取成员实际营养素需求"""
+        try:
+            member_id = member.get('member_id')
+            if not member_id:
+                raise ValueError("member_id 不能为空")
+
+            sql = """
+                SELECT nutrient_code, need_qty 
+                FROM ejia_member_daily_nutrient_actual 
+                WHERE member_id = %s 
+                ORDER BY nutrient_code
+            """
+
+            results = db.query(sql, [member_id])
+
+            # 转换为与 calculate_daily_nutrient_targets 一致的格式
+            nutrient_targets = {}
+            for row in results:
+                nutrient_code = row['nutrient_code']
+                need_qty = float(row['need_qty']) if row['need_qty'] is not None else 0.0
+                nutrient_targets[nutrient_code] = need_qty
+
+            # 如果数据库中没有数据，返回空字典，让调用方使用计算值
+            if not nutrient_targets:
+                print(f"成员 {member_id} 今日无实际营养素需求数据，将使用计算值")
+                return {}
+
+            return nutrient_targets
+
+        except Exception as e:
+            print(f"获取成员实际营养素需求时出错: {str(e)}")
+            # 出错时返回空字典，让调用方使用计算值
+            return {}
+
+    @staticmethod
     def calculate_bmi(height: float, weight: float) -> float:
         """计算BMI"""
         height_m = height / 100

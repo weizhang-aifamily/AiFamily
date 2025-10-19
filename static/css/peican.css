@@ -60,7 +60,6 @@ body {
 .card {
     background: var(--card-bg);
     border-radius: 12px;
-    padding: 20px;
     margin-bottom: 20px;
     box-shadow: var(--card-shadow);
 }

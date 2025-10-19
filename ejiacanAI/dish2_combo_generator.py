@@ -8,32 +8,14 @@ from collections import defaultdict
 from ejiacanAI.MealStructureGenerator import MealStructureGenerator
 from ejiacanAI.dish2_combo_models import MealRequest, ComboMeal, Dish, ExactPortion, DishFoodNutrient
 from ejiacanAI.dish2_combo_data import DishComboData   # 统一数据入口
-from models.nutrient_config import MEAL_RATIO
+from models.nutrient_config import MEAL_RATIO, nutrient_priority
+from models.common_nutrient_calculator import CommonNutrientCalculator
 
 class MealGeneratorV2:
     """
     一次性读取两张视图 → 内存对象列表 → 选菜 → 份量微调 → 打包三餐
     全程无 pandas、无硬编码常量。
     """
-
-    # -------------------------------------------------
-    # 2. 计算每日需求（基于 MemberNeedNutrient）
-    # -------------------------------------------------
-    @classmethod
-    def _calc_daily_range(cls, need_list: List, deficit: int) -> Dict[str, Dict[str, float]]:
-        ranges = defaultdict(lambda: {"min": 0.0, "max": 0.0, "need": 0.0})
-        for n in need_list:
-            ranges[n.nutrient_code]["min"] += float(n.min_need_qty or 0)
-            ranges[n.nutrient_code]["max"] += float(n.max_need_qty or 0)
-            ranges[n.nutrient_code]["need"] += float(n.need_qty or 0)
-
-        if deficit:
-            factor = (2000 - deficit) / 2000
-            for k in ranges:
-                ranges[k]["min"] *= factor
-                ranges[k]["max"] *= factor
-                ranges[k]["need"] *= factor
-        return dict(ranges)
 
     @classmethod
     def _split_ranges(cls, daily: Dict[str, Dict[str, float]], meal_type: str) -> Dict[str, Dict[str, float]]:
@@ -173,8 +155,8 @@ class MealGeneratorV2:
         filtered_dishes = cls.filter_dishes(dish_list, req)
         rng = random.Random(req.refresh_key)
         rng.shuffle(filtered_dishes)
-        need_list = DishComboData.list_member_need_nutrient(req.member_ids)
-        daily_range = cls._calc_daily_range(need_list, req.deficit_kcal)
+        # need_list = DishComboData.list_member_need_nutrient(req.member_ids)
+        daily_range = CommonNutrientCalculator.calc_daily_range(req.members)
 
         # 根据请求决定要生成几餐
         if req.meal_type == "all":
@@ -190,8 +172,9 @@ class MealGeneratorV2:
                 filtered_dishes, meal_range, meal_code, req
             )
             # cls._scale_portions(dishes, meal_range)  # 按餐次独立缩放
+            need_nutrients = cls._build_need_nutrients(meal_range)
             combo_meals.append(
-                cls._build_combo_meal(meal_code, dishes)
+                cls._build_combo_meal(meal_code, dishes, need_nutrients)  # 传入 actual_nutrients
             )
         return combo_meals
     @classmethod
@@ -203,9 +186,9 @@ class MealGeneratorV2:
         filtered_dishes = cls.filter_dishes(dish_list, req)
         rng = random.Random(req.refresh_key)
         rng.shuffle(filtered_dishes)
-        need_list = DishComboData.list_member_need_nutrient(req.member_ids)
+        # need_list = DishComboData.list_member_need_nutrient(req.member_ids)
 
-        daily_range = cls._calc_daily_range(need_list, req.deficit_kcal)
+        daily_range = CommonNutrientCalculator.calc_daily_range(req.members)
 
         # 根据请求决定要生成几餐
         if req.meal_type == "all":
@@ -221,10 +204,27 @@ class MealGeneratorV2:
                 filtered_dishes, meal_range, meal_code, req
             )
             cls._scale_portions(dishes, meal_range)  # 按餐次独立缩放
+            need_nutrients = cls._build_need_nutrients(meal_range)
             combo_meals.append(
-                cls._build_combo_meal(meal_code, dishes)
+                cls._build_combo_meal(meal_code, dishes, need_nutrients)  # 传入 actual_nutrients
             )
         return combo_meals
+
+    @classmethod
+    def _build_need_nutrients(cls, meal_range: Dict[str, Dict[str, float]]) -> Dict[str, float]:
+        """
+        从 meal_range 构建 actual_nutrients 格式
+        格式与 nutrients 一致：{营养素代码: 目标值}
+        """
+        actual_nutrients = {}
+        for nutrient_code, values in meal_range.items():
+            # 使用 need 值作为目标值，如果没有 need 则使用 min 和 max 的平均值
+            target_value = values.get("need", 0)
+            if target_value == 0:
+                target_value = (values.get("min", 0) + values.get("max", 0)) / 2
+            actual_nutrients[nutrient_code] = round(target_value, 2)
+
+        return actual_nutrients
 
     # -------------------------------------------------
     # 为单餐构建需求区间 MEAL_RATIO {"breakfast": 0.30, "lunch": 0.40, "dinner": 0.30}
@@ -297,10 +297,10 @@ class MealGeneratorV2:
 
         # 按优先级选择：主菜 -> 配菜 -> 主食 -> 汤品
         selection_order = [
+            ('staple', meal_structure.get('staple',1)),
             ('main_dish', meal_structure.get('main_dish',1)),
             ('baby_food', meal_structure.get('baby_food',0)),
             ('side_dish', meal_structure.get('side_dish',0)),
-            ('staple', meal_structure.get('staple',1)),
             ('soup', meal_structure.get('soup',0))
         ]
 
@@ -376,63 +376,119 @@ class MealGeneratorV2:
     # 修改  方法，使其更智能
     @classmethod
     def _scale_portions(cls, dishes: List[Dish], meal_range: Dict[str, Dict[str, float]]):
-        """
-        智能调整份量，确保营养在合理范围内
-        """
+        """智能调整份量 - 考虑营养优先级"""
         if not dishes:
             return
 
-        # 计算当前总营养
+        # 1. 计算当前总营养
         total_nutrients = defaultdict(float)
         for d in dishes:
             for nutrient, value in d.nutrients.items():
                 total_nutrients[nutrient] += value
 
-        # 计算每个营养素的缩放比例
-        scale_factors = []
+        # 3. 分析营养状况
+        nutrition_status = {}
         for nutrient, values in meal_range.items():
-            current_total = total_nutrients.get(nutrient, 0)
-            max_limit = values.get("max", 0)
-            min_limit = values.get("min", 0)
+            current = total_nutrients.get(nutrient, 0)
+            min_need = values.get("min", 0)
+            max_need = values.get("max", 0)
+            need = values.get("need", 0)
 
-            if current_total <= 0 or max_limit <= 0:
-                continue
+            priority = nutrient_priority.get(nutrient, 1)
 
-            # 逻辑1：如果超过最大值，需要缩小
-            if current_total > max_limit:
-                scale = max_limit / current_total
-                scale_factors.append(scale)
-                print(f"营养超标: {nutrient} 当前{current_total:.1f} > 最大{max_limit:.1f}, 缩放比例: {scale:.2f}")
+            nutrition_status[nutrient] = {
+                'current': current,
+                'min_need': min_need,
+                'max_need': max_need,
+                'need': need,
+                'priority': priority,
+                'deficit_ratio': (min_need - current) / min_need if min_need > 0 else 0,
+                'excess_ratio': (current - max_need) / max_need if max_need > 0 else 0
+            }
 
-            # 逻辑2：如果低于最小值，需要放大
-            elif current_total < min_limit:
-                # 计算需要放大到至少达到最小需求的比例
-                # 但不能无限放大，限制最大放大倍数
-                scale = min(2.0, min_limit / max(current_total, 1e-6))  # 最多放大2倍
-                scale_factors.append(scale)
-                print(f"营养不足: {nutrient} 当前{current_total:.1f} < 最小{min_limit:.1f}, 缩放比例: {scale:.2f}")
+        # 4. 分层调整策略
+        final_scale = cls._calculate_optimal_scale(nutrition_status, dishes)
 
-        # 确定最终缩放比例
-        if scale_factors:
-            # 如果有需要缩小的比例，优先使用最小的（最严格的限制）
-            # 这样可以确保不会超标
-            shrink_factors = [s for s in scale_factors if s < 1.0]
-            if shrink_factors:
-                final_scale = min(shrink_factors)  # 取最小的缩放比例（最严格）
-            else:
-                # 只有需要放大的情况，取最小的放大比例（最保守）
-                final_scale = min(scale_factors)
+        # 5. 应用调整
+        if final_scale != 1.0:
+            cls._apply_portion_scale(dishes, final_scale)
 
-            # 限制缩放范围在合理区间
-            final_scale = max(0.5, min(2.0, final_scale))
-            print(f"最终缩放比例: {final_scale:.2f}")
+    @classmethod
+    def _calculate_optimal_scale(cls, nutrition_status: Dict, dishes: List[Dish]) -> float:
+        """计算最优缩放比例 - 考虑营养优先级"""
+
+        # 策略1：检查关键营养素严重不足
+        critical_nutrients = ['protein', 'calories']
+        for nutrient in critical_nutrients:
+            if nutrient in nutrition_status:
+                status = nutrition_status[nutrient]
+                if status['current'] < status['min_need'] * 0.8:  # 严重不足
+                    # 需要放大，但限制最大倍数
+                    required_scale = min(1.5, status['min_need'] / max(status['current'], 1e-6))
+                    print(f"⚠️ {nutrient}严重不足，需要放大: {required_scale:.2f}倍")
+                    return required_scale
+
+        # 策略2：处理超标营养素（考虑优先级）
+        shrink_factors = []
+        for nutrient, status in nutrition_status.items():
+            if status['current'] > status['max_need']:
+                # 高优先级营养素超标 - 轻微缩小
+                if status['priority'] >= 8:
+                    shrink_factor = 0.9  # 轻微调整
+                # 低优先级营养素超标 - 正常缩小
+                else:
+                    shrink_factor = status['max_need'] / status['current']
+                shrink_factors.append(shrink_factor)
+                print(f"📉 {nutrient}超标，建议缩小: {shrink_factor:.2f}倍")
+
+        # 策略3：处理不足营养素（考虑优先级）
+        expand_factors = []
+        for nutrient, status in nutrition_status.items():
+            if status['current'] < status['min_need']:
+                # 高优先级营养素不足 - 优先满足
+                if status['priority'] >= 8:
+                    expand_factor = min(1.3, status['min_need'] / max(status['current'], 1e-6))
+                    expand_factors.append(expand_factor)
+                    print(f"📈 {nutrient}不足，建议放大: {expand_factor:.2f}倍")
+
+        # 策略4：平衡决策
+        if shrink_factors:
+            # 有超标情况，优先处理（取最严重的）
+            final_scale = min(shrink_factors)
+
+            # 但如果有关键营养素严重不足，需要权衡
+            critical_deficit = any(
+                status['priority'] >= 8 and status['current'] < status['min_need'] * 0.9
+                for nutrient, status in nutrition_status.items()
+            )
+
+            if critical_deficit and final_scale < 0.8:
+                # 不能缩太小，否则关键营养素更不足
+                final_scale = max(0.8, final_scale)
+                print(f"⚖️ 权衡：关键营养素不足，限制最小缩放为: {final_scale:.2f}")
+
+        elif expand_factors:
+            # 只有不足情况，适度放大
+            final_scale = min(expand_factors)  # 取最保守的放大
         else:
-            final_scale = 1.0  # 不需要调整
-            print("营养在合理范围内，无需调整")
+            # 营养均衡，不需要调整
+            final_scale = 1.0
 
-        # 应用缩放
+        # 限制调整范围
+        final_scale = max(0.5, min(2.0, final_scale))
+
+        if final_scale != 1.0:
+            print(f"🎯 最终调整比例: {final_scale:.2f}倍")
+        else:
+            print("✅ 营养均衡，无需调整")
+
+        return final_scale
+
+    @classmethod
+    def _apply_portion_scale(cls, dishes: List[Dish], scale: float):
+        """应用份量调整"""
         for d in dishes:
-            raw = int(d.exact_portion.grams * final_scale)
+            raw = int(d.exact_portion.grams * scale)
             raw = max(1, raw)
 
             # 重新映射外壳
@@ -444,13 +500,14 @@ class MealGeneratorV2:
                 size = "L"
             d.exact_portion = ExactPortion(size=size, grams=raw)
 
-            # 同时调整营养成分数据（重要！）
-            d.nutrients = {k: v * final_scale for k, v in d.nutrients.items()}
-            # ✅ 同步调整食材克数
+            # 调整营养成分数据
+            d.nutrients = {k: v * scale for k, v in d.nutrients.items()}
+
+            # 调整食材克数
             for ingredient in d.ingredients:
                 try:
                     original_grams = float(ingredient['grams'])
-                    adjusted_grams = original_grams * final_scale
+                    adjusted_grams = original_grams * scale
                     ingredient['grams'] = f"{adjusted_grams:.1f}"
                 except (ValueError, KeyError):
                     continue
@@ -532,7 +589,7 @@ class MealGeneratorV2:
     # 打包单餐
     # -------------------------------------------------
     @classmethod
-    def _build_combo_meal(cls, meal_code: str, dishes: List[Dish]) -> ComboMeal:
+    def _build_combo_meal(cls, meal_code: str, dishes: List[Dish], need_nutrients: Dict[str, float]) -> ComboMeal:
         cook = sum(d.cook_time for d in dishes)
         shopping = defaultdict(float)
         nutrients = defaultdict(float)  # 新增：营养素汇总
@@ -562,7 +619,8 @@ class MealGeneratorV2:
             total_cook_time=cook,
             portion_plan={},
             shopping_list=dict(shopping),
-            nutrients=dict(nutrients)  # 新增：传入营养素汇总
+            nutrients=dict(nutrients),  # 新增：传入营养素汇总
+            need_nutrients = need_nutrients  # 目标营养素需求
         )
 
     from typing import Dict, List

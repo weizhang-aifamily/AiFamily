@@ -86,3 +86,23 @@ export async function getDishReco(member_ids = "1,2", mealType = 'lunch', maxRes
   console.error('getDishReco：', json.message || json);
   return [];
 }
+export async function saveMemberDishLog(combo, members) {
+  try {
+    const response = await fetch('/family/saveMemberDishLog', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        combo: combo,
+        members: members
+      })
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('saveMemberDishLog请求失败：', error);
+    return { success: false, error: error.message };
+  }
+}

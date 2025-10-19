@@ -26,6 +26,18 @@ class Database:
                 cur.execute(sql, params or ())
                 conn.commit()
                 return cur.rowcount
+    def execute_return_id(self, sql, params=None):
+        """
+        执行插入操作并返回自增ID
+        :param sql:     带占位符的 SQL 模板
+        :param params:  参数元组/列表/字典
+        :return:        插入的自增ID
+        """
+        with self.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params or ())
+                conn.commit()
+                return cur.lastrowid
 
     def executemany(self, sql, seq_of_params):
         """

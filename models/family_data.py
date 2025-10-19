@@ -5,6 +5,110 @@ from dbconnect.dbconn import db
 class FamilyData:
 
     @staticmethod
+    def save_combo_member_dish_log(combo: Dict[str, Any], members: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        保存套餐成员菜品日志到三个关联表
+        """
+        try:
+            if not combo or not members:
+                return {
+                    'success': True,
+                    'message': '没有需要保存的套餐或成员数据',
+                    'total_affected': 0,
+                    'details': []
+                }
+
+            # 获取当前日期
+            from datetime import datetime, date
+            current_date = date.today()
+            current_time = datetime.now()
+
+            total_affected = 0
+            details = []
+
+            owner_id = combo.get('owner_id')
+
+            # 1. 插入主日志表 (ejia_combo_log)
+            combo_log_sql = """
+                INSERT INTO ejia_combo_log (
+                    owner_id, combo_id, eat_date, meal_type, 
+                    actual_portion, need_nutrients, actual_nutrients, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """
+
+            combo_log_params = (
+                owner_id,
+                combo.get('combo_id'),
+                current_date,
+                combo.get('meal_type'),
+                combo.get('actual_portion'),
+                str(combo.get('need_nutrients', '')),
+                str(combo.get('actual_nutrients', '')),
+                current_time
+            )
+
+            combo_log_id = db.execute_return_id(combo_log_sql, combo_log_params)
+
+            # 2. 插入成员日志表 (ejia_combo_member_log)
+            member_affected = 0
+            member_log_sql = """
+                INSERT INTO ejia_combo_member_log (
+                    owner_id, combo_log_id, member_id, created_at
+                ) VALUES (%s, %s, %s, %s)
+            """
+            for member in members:
+                member_log_params = (
+                    owner_id,
+                    combo_log_id,
+                    str(member.get('member_id')),
+                    current_time
+                )
+                member_affected += db.execute(member_log_sql, member_log_params)
+
+            # 3. 插入菜品日志表 (ejia_combo_dish_log)
+            dishes = combo.get('dishes', [])
+            dish_affected = 0
+
+            dish_log_sql = """
+                INSERT INTO ejia_combo_dish_log (
+                    owner_id, combo_log_id, dish_id, created_at
+                ) VALUES (%s, %s, %s, %s)
+            """
+
+            for dish in dishes:
+                dish_log_params = (
+                    owner_id,
+                    combo_log_id,
+                    str(dish.get('dish_id')),
+                    current_time
+                )
+                dish_affected += db.execute(dish_log_sql, dish_log_params)
+
+            total_affected += (1 + member_affected + dish_affected)
+
+            details.append({
+                'owner_id': owner_id,
+                'combo_log_id': combo_log_id,
+                'dishes_count': len(dishes),
+                'status': 'saved'
+            })
+
+            return {
+                'success': True,
+                'message': f'成功保存 {len(details)} 个成员的菜品日志，共 {total_affected} 条记录',
+                'total_affected': total_affected,
+                'details': details
+            }
+
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'保存菜品日志失败: {str(e)}',
+                'total_affected': 0,
+                'details': []
+            }
+
+    @staticmethod
     def insert_family_member(member_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         插入新的家庭成员

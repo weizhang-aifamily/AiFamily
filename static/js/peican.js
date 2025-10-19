@@ -1,4 +1,4 @@
-import { getMembers,getDietSolutions,getCombos,getDishReco,getTagTbl  } from './familyDataLoader.js';
+import { getMembers,getDietSolutions,getCombos,getDishReco,getTagTbl,saveMemberDishLog  } from './familyDataLoader.js';
 import { displayNutrients } from './nutritionDisplay.js';
 
 /* ============= 1. 常量数据定义 ============= */
@@ -648,7 +648,7 @@ function generateCombos() {
         });
         //显示营养元素及身材图片
         console.log('comboData：', comboData);
-        displayNutrients(comboData);
+
       const track = document.getElementById('combos');
       if (!track) return;
         const totalDishes = comboData.reduce((sum, combo) => sum + combo.dishes.length, 0);
@@ -658,7 +658,7 @@ function generateCombos() {
     if (maxInput) maxInput.value = totalDishes;
   track.innerHTML = comboData.map((combo, idx) => `
     <article class="combo-row">
-          <h3 class="combo-name">${combo.combo_name}</h3>
+<!--          <h3 class="combo-name">${combo.combo_name}</h3>-->
 <!--          <p class="combo-desc">${combo.meal_type}</p>-->
       <div class="dish-list">
         ${combo.dishes.map(dish => `
@@ -682,8 +682,32 @@ function generateCombos() {
 
   bindCheckboxSelectDishes();
   generateIngredients();
+  generateMergedIngredients();
+  displayNutrients(comboData);
 })();
 }
+
+    function updateAchievementProgress() {
+        const progress = Math.min(usageCount / 5 * 100, 100);
+        progressFill.style.width = `${progress}%`;
+        achievementText.textContent = `再完成${5 - usageCount}次规划解锁「智能厨神」成就`;
+    }
+
+
+    function init() {
+        initBudgetRange();
+        initMealType();
+        initMembers();
+        renderTasteRow();                 // 生成尝鲜菜
+        document.getElementById('refreshTasteInline')
+          .addEventListener('click', renderTasteRow); // 换一批
+    }
+
+    // 启动应用
+    init();
+});
+
+/* ================= 外面 ===================*/
 
 // 生成食材清单
 function generateIngredients() {
@@ -713,7 +737,7 @@ function generateIngredients() {
                                 <div class="food-main">
                                     <div class="food-title">
                                         <h4>${food.name}</h4>
-                                        <span class="food-grams">${food.grams}</span>
+                                        <span class="food-grams">${food.grams}g</span>
                                     </div>
                                     <div class="food-info">
                                         <span class="food-tag"></span>
@@ -737,27 +761,104 @@ function generateIngredients() {
         `;
     }
 }
+function generateMergedIngredients() {
+    const ingredientList = document.getElementById('ingredientListMerge');
+    if (!ingredientList) return;
 
-    function updateAchievementProgress() {
-        const progress = Math.min(usageCount / 5 * 100, 100);
-        progressFill.style.width = `${progress}%`;
-        achievementText.textContent = `再完成${5 - usageCount}次规划解锁「智能厨神」成就`;
+    // 清空现有内容
+    ingredientList.innerHTML = '';
+
+    // 创建对象来合并相同名称的食材
+    const mergedIngredients = {};
+
+    // 遍历所有套餐和菜品，合并相同名称的食材
+    comboData.forEach(combo => {
+        combo.dishes.forEach(dish => {
+            if (dish.ingredients) {
+                dish.ingredients.forEach(food => {
+                    const grams = Number(food.grams) || 0;
+                    if (mergedIngredients[food.name]) {
+                        // 如果食材已存在，累加重置
+                        mergedIngredients[food.name].grams += grams;
+                    } else {
+                        // 如果食材不存在，创建新条目
+                        mergedIngredients[food.name] = {
+                            name: food.name,
+                            grams: grams,
+                            tag: food.tag || '',
+                            desc: food.desc || ''
+                        };
+                    }
+                });
+            }
+        });
+    });
+
+    // 将合并后的食材转换为数组并按重量排序（从大到小）
+    const sortedIngredients = Object.values(mergedIngredients).sort((a, b) => b.grams - a.grams);
+
+    // 生成食材列表HTML
+    if (sortedIngredients.length > 0) {
+        sortedIngredients.forEach(food => {
+            const foodCard = document.createElement('div');
+            foodCard.className = 'food-card';
+            foodCard.innerHTML = `
+                <div class="food-icon"></div>
+                <div class="food-main">
+                    <div class="food-title">
+                        <h4>${food.name}</h4>
+                        <span class="food-grams">${food.grams}g</span>
+                    </div>
+                    <div class="food-info">
+                        ${food.tag ? `<span class="food-tag">${food.tag}</span>` : ''}
+                        ${food.desc ? `<span class="food-desc">${food.desc}</span>` : ''}
+                    </div>
+                </div>
+            `;
+            ingredientList.appendChild(foodCard);
+        });
+    } else {
+        // 如果没有食材数据，显示提示
+        ingredientList.innerHTML = `
+            <div class="no-ingredients">
+                <p>暂无食材数据</p>
+            </div>
+        `;
     }
+}
+/* ============= 保存套餐日志 ============= */
+async function saveComboLog() {
+    try {
+        const combo = {
+            combo_id: comboData[0]?.combo_id || 'default',
+            owner_id: 1,
+            meal_type: comboData[0]?.meal_type,
+            need_nutrients: comboData[0]?.need_nutrients,
+            actual_nutrients: comboData[0]?.nutrients,
+            dishes: comboData.flatMap(combo =>
+                combo.dishes.map(dish => ({
+                    dish_id: dish.dish_id,
+                    name: dish.name
+                }))
+            )
+        };
 
+        const members = activeMembers.map(member => ({
+            member_id: member.member_id
+        }));
 
-    function init() {
-        initBudgetRange();
-        initMealType();
-        initMembers();
-        renderTasteRow();                 // 生成尝鲜菜
-        document.getElementById('refreshTasteInline')
-          .addEventListener('click', renderTasteRow); // 换一批
+        const result = await saveMemberDishLog(combo, members);
+
+        if (result.success) {
+            alert('保存成功！');
+        } else {
+            alert('保存失败：' + result.error);
+        }
+    } catch (error) {
+        console.error('保存错误：', error);
+        alert('保存失败');
     }
-
-    // 启动应用
-    init();
-});
-
+}
 
 /* ============= 替换食材功能 ============= */
 let currentReplacementTarget = null;
@@ -990,6 +1091,8 @@ const closeBtn  = document.getElementById('closeCart');
 openBtn.addEventListener('click', () => {
     overlay.classList.add('show');
     document.querySelector('.card').style.display = '';
+    generateIngredients();
+    generateMergedIngredients();
 });
 
 // 关闭
@@ -1011,3 +1114,4 @@ function closeCart() {
   // 绑定关闭事件
   document.getElementById('closeBtnmore').addEventListener('click', closePopup);
   document.getElementById('openmore').addEventListener('click', openPopup);
+document.getElementById('saveComboButton')?.addEventListener('click', saveComboLog);

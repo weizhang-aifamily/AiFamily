@@ -71,6 +71,10 @@
     </div>
     -->
     <div class="preference-section">
+        <div class="filter-options" id="categorySelectBox">
+        </div>
+    </div>
+    <div class="preference-section">
         <div class="filter-options">
             <label>
                 <input type="checkbox" name="mealType" value="breakfast" checked> 早餐
@@ -80,10 +84,6 @@
             <label>
                 <input type="number" id="max_dishes" name="max_dishes" value="3" min="1" max="100">道菜
             </label>
-        </div>
-    </div>
-    <div class="preference-section">
-        <div class="filter-options" id="categorySelectBox">
         </div>
     </div>
 
@@ -200,6 +200,7 @@
 <div id="nutritionBasket" class="nutrition-basket">
   <div class="basket-info" id="openBasket">
     <span id="basketCount">购物清单</span>
+      <button id="saveComboButton" class="save-btn">保存套餐</button>
 <!--          <span id="budgetSpent" class="budget-spent">预估¥0</span>-->
   </div>
 </div>
@@ -214,9 +215,7 @@
 
     <!-- 食材清单 - 完全复制index.html的结构 -->
     <div class="ai-dishes-showcase">
-        <div class="selection-title">
-            <div class="recommendation-title">食材清单</div>
-        </div>
+        <div class="food-list" id="ingredientListMerge"></div>
         <div class="food-list" id="ingredientList"></div>
         <div class="nutrition-tip" id="ingredientTip"></div>
     </div>

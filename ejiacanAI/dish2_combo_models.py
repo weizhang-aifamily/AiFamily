@@ -69,6 +69,7 @@ class ComboMeal:
     portion_plan: Dict[str, List[str]] = field(default_factory=dict)  # 新增：份量分配方案
     shopping_list: Dict[str, float] = field(default_factory=dict)
     nutrients: Dict[str, float] = field(default_factory=dict)  # 新增：营养素汇总
+    need_nutrients: Dict[str, float] = field(default_factory=dict)  # 新增：目标营养素需求
 
 @dataclass
 class DishFoodNutrient1:
