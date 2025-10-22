@@ -110,6 +110,35 @@ class NutritionData:
         return rdi_map
 
     @staticmethod
+    def get_user_rdi_ul(age: int, gender: str) -> Dict[str, float]:
+        """获取用户UL数据 - 与get_user_rdi完全一样的逻辑"""
+        try:
+            # 转换性别格式
+            db_gender = 'M' if gender == 'male' else 'F'
+
+            sql = """
+                SELECT nutrient, amount 
+                FROM nutrient_rdi_ul 
+                WHERE age_min <= %s AND age_max >= %s 
+                AND gender IN (%s, 'B')
+            """
+
+            # 执行查询
+            results = db.query(sql, [age, age, db_gender])
+
+            # 构建结果字典
+            ul_values = {}
+            for row in results:
+                nutrient = row['nutrient']
+                ul_values[nutrient] = float(row['amount'])
+
+            return ul_values
+
+        except Exception as e:
+            print(f"获取营养素UL值时出错: {str(e)}")
+            return {}
+
+    @staticmethod
     def get_daily_nutrient_targets_actual(member: Dict[str, Any]) -> Dict[str, float]:
         """从 ejia_member_daily_nutrient_actual 表获取成员实际营养素需求"""
         try:

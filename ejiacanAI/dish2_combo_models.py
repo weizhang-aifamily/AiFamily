@@ -62,12 +62,11 @@ class Dish1:
 class ComboMeal:
     combo_id: int
     combo_name: str
-    need_codes: List[str]
     meal_type: str
     dishes: List[Dish]
     total_cook_time: int = 0  # 新增：总烹饪时间
     portion_plan: Dict[str, List[str]] = field(default_factory=dict)  # 新增：份量分配方案
-    shopping_list: Dict[str, float] = field(default_factory=dict)
+    meal_structure : Dict[str, Dict[str, int]] = field(default_factory=dict)
     nutrients: Dict[str, float] = field(default_factory=dict)  # 新增：营养素汇总
     need_nutrients: Dict[str, float] = field(default_factory=dict)  # 新增：目标营养素需求
 
@@ -226,14 +225,8 @@ class Dish:
     # 以下全部给默认值
     explicit_tags: List[str] = field(default_factory=list)
     implicit_tags: List[str] = field(default_factory=list)
-    dish_series: Optional[str] = None
+    meal_structure: Dict[str, str] = None  # main_dish, selected #main_dish, alternative
+    is_selected: int = None  # 1 0
     rating: Optional[float] = None
     description: Optional[str] = None
 
-@dataclass
-class MealStructure:
-    """简版餐次结构配置"""
-    main_dishes: int  # 主菜/荤菜数量
-    side_dishes: int  # 配菜/素菜数量
-    staple_foods: int  # 主食数量
-    soups: int  # 汤品数量

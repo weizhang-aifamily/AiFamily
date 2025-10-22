@@ -943,8 +943,26 @@ body {
   color: var(--text-light);
   margin-bottom: 12px;
 }
-
 .dish-list {
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 8px !important;
+      white-space: nowrap;      /* 禁止换行 */
+  overflow-x: auto;         /* 水平方向超出时显示滚动条 */
+  overflow-y: hidden;       /* 垂直方向隐藏滚动条 */
+
+  scroll-snap-type: x mandatory; /* 可选：滚动时吸附到子项 */
+  padding: 10px 0;          /* 可选：增加内边距 */
+  width: 100%;       /* 限制宽度（关键！） */
+  max-width: 100%;   /* 防止溢出父容器 */
+
+}
+
+@media (max-width: 768px) {
+  .dish-list {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+.dish-list2 {
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 8px !important;
       white-space: nowrap;      /* 禁止换行 */
@@ -960,11 +978,41 @@ body {
 }
 
 @media (max-width: 768px) {
-  .dish-list {
+  .dish-list2 {
     grid-template-columns: repeat(3, 1fr) !important;
   }
 }
+.dish-row {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 8px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+}
 
+.dish-row::-webkit-scrollbar {
+    height: 6px;
+}
+
+.dish-row::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dish-row::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 3px;
+}
+
+.dish-row::-webkit-scrollbar-thumb:hover {
+    background-color: #aaa;
+}
+
+.dish-item {
+    flex: 0 0 auto;
+    width: 150px; /* 或者你想要的固定宽度 */
+}
 .dish-item {
   position: relative;
   display: block;
@@ -1125,6 +1173,7 @@ body {
   scroll-snap-align: start;
   text-align: center;
   font-size: 12px;
+  outline: 1px solid;
 }
 /* ============= 尝尝鲜样式 ============= */
 .taste-section {

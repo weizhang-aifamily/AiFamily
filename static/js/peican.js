@@ -656,29 +656,43 @@ function generateCombos() {
     // 2. 写到页面
     const maxInput = document.getElementById('max_dishes');
     if (maxInput) maxInput.value = totalDishes;
-  track.innerHTML = comboData.map((combo, idx) => `
+
+    track.innerHTML = comboData.map((combo, idx) => {
+        // 按 meal_structure 分组
+        const groupedDishes = {};
+        combo.dishes.forEach(dish => {
+            const structureType = dish.meal_structure ? Object.keys(dish.meal_structure)[0] : 'other';
+            if (!groupedDishes[structureType]) {
+                groupedDishes[structureType] = [];
+            }
+            groupedDishes[structureType].push(dish);
+        });
+        return `
     <article class="combo-row">
-<!--          <h3 class="combo-name">${combo.combo_name}</h3>-->
-<!--          <p class="combo-desc">${combo.meal_type}</p>-->
       <div class="dish-list">
-        ${combo.dishes.map(dish => `
-          <label class="dish-item">
-            <input type="checkbox" value="${dish.dish_id}" checked>
-            <img src="://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
-            <span class="dish-name">${dish.name}</span>
-            ${dish.exact_portion.size}份
-            ${(dish.explicit_tags || []).map(tag => `<span class="nutri-tag">${tag}</span>`).join('')}
-            <span class="dish-per">
-                <span class="dot calories-dot">•${Math.round(dish.nutrients.EnergyKCal)}</span>
-                <span class="dot protein-dot">•${Math.round(dish.nutrients.Protein)}</span>
-                <span class="dot fat-dot">•${Math.round(dish.nutrients.Fat)}</span>
-                <span class="dot carbs-dot">•${Math.round(dish.nutrients.Carbohydrate)}</span>
-            </span>
-          </label>
+        ${Object.entries(groupedDishes).map(([structureType, dishes]) => `
+          <div class="dish-row">
+            ${dishes.map(dish => `
+              <label class="dish-item">
+                <input type="checkbox" value="${dish.dish_id}"
+                ${dish.meal_structure && dish.meal_structure[Object.keys(dish.meal_structure)[0]] === 'selected' ? 'checked' : ''}>
+                <img src="://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
+                <span class="dish-name">${dish.name}</span>
+                ${dish.exact_portion.size}份
+                ${(dish.explicit_tags || []).map(tag => `<span class="nutri-tag">${tag}</span>`).join('')}
+                <span class="dish-per">
+                    <span class="dot calories-dot">•${Math.round(dish.nutrients.EnergyKCal)}</span>
+                    <span class="dot protein-dot">•${Math.round(dish.nutrients.Protein)}</span>
+                    <span class="dot fat-dot">•${Math.round(dish.nutrients.Fat)}</span>
+                    <span class="dot carbs-dot">•${Math.round(dish.nutrients.Carbohydrate)}</span>
+                </span>
+              </label>
+            `).join('')}
+          </div>
         `).join('')}
       </div>
     </article>
-  `).join('');
+  `}).join('');
 
   bindCheckboxSelectDishes();
   generateIngredients();
