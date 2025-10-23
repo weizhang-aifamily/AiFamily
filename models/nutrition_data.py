@@ -110,36 +110,32 @@ class NutritionData:
         return rdi_map
 
     @staticmethod
-    def get_user_rdi_ul(age: int, gender: str) -> Dict[str, float]:
-        """获取用户UL数据 - 与get_user_rdi完全一样的逻辑"""
-        try:
-            # 转换性别格式
-            db_gender = 'M' if gender == 'male' else 'F'
+    def get_user_rdi_ul(age: int, gender: str) -> Dict[str, Dict[str, Any]]:
+        """获取用户RDI数据"""
+        sql = """
+               SELECT nutrient, amount, unit 
+               FROM nutrient_rdi_ul 
+               WHERE age_min <= %s AND age_max >= %s 
+               AND gender IN (%s, 'B')
+               ORDER BY nutrient
+           """
 
-            sql = """
-                SELECT nutrient, amount 
-                FROM nutrient_rdi_ul 
-                WHERE age_min <= %s AND age_max >= %s 
-                AND gender IN (%s, 'B')
-            """
+        # 转换性别格式
+        db_gender = 'M' if gender == 'male' else 'F'
+        results = db.query(sql, [age, age, db_gender])
 
-            # 执行查询
-            results = db.query(sql, [age, age, db_gender])
+        # 转换为对象格式便于使用
+        rdi_ul_map = {}
+        for row in results:
+            rdi_ul_map[row['nutrient']] = {
+                'amount_ul': float(row['amount']),
+                'unit_ul': row['unit']
+            }
 
-            # 构建结果字典
-            ul_values = {}
-            for row in results:
-                nutrient = row['nutrient']
-                ul_values[nutrient] = float(row['amount'])
-
-            return ul_values
-
-        except Exception as e:
-            print(f"获取营养素UL值时出错: {str(e)}")
-            return {}
+        return rdi_ul_map
 
     @staticmethod
-    def get_daily_nutrient_targets_actual(member: Dict[str, Any]) -> Dict[str, float]:
+    def get_daily_nutrient_targets_actual(member: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         """从 ejia_member_daily_nutrient_actual 表获取成员实际营养素需求"""
         try:
             member_id = member.get('member_id')
@@ -147,7 +143,7 @@ class NutritionData:
                 raise ValueError("member_id 不能为空")
 
             sql = """
-                SELECT nutrient_code, need_qty 
+                SELECT nutrient_code, need_qty, unit, max_qty, unit_ul
                 FROM ejia_member_daily_nutrient_actual 
                 WHERE member_id = %s 
                 ORDER BY nutrient_code
@@ -159,9 +155,12 @@ class NutritionData:
             nutrient_targets = {}
             for row in results:
                 nutrient_code = row['nutrient_code']
-                need_qty = float(row['need_qty']) if row['need_qty'] is not None else 0.0
-                nutrient_targets[nutrient_code] = need_qty
-
+                nutrient_targets[nutrient_code] = {
+                    'amount': float(row['need_qty']) if row['need_qty'] is not None else 0.0,
+                    'unit': row['unit'],
+                    'amount_ul': float(row['max_qty']) if row['max_qty'] is not None else None,
+                    'unit_ul': row['unit_ul']
+                }
             # 如果数据库中没有数据，返回空字典，让调用方使用计算值
             if not nutrient_targets:
                 print(f"成员 {member_id} 今日无实际营养素需求数据，将使用计算值")

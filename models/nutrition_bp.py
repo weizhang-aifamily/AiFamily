@@ -177,12 +177,12 @@ class NutritionAnalyzer:
 
             meal_targets = CommonNutrientCalculator.get_meal_nutrient_targets_actual(user_input, meal_type)
             baseline = NutritionBaseline(
-                calories=meal_targets.get('Calories', 0),
+                calories=meal_targets.get('EnergyKCal', 0),
                 protein_g=meal_targets.get('Protein', 0),
                 fat_g=meal_targets.get('Fat', 0),
                 carbs_g=meal_targets.get('Carbohydrate', 0),
-                bmr=meal_targets.get('Calories', 0),  # 使用相同的热量值
-                tdee=meal_targets.get('Calories', 0)  # 基础情况下TDEE=BMR
+                bmr=meal_targets.get('EnergyKCal', 0),  # 使用相同的热量值
+                tdee=meal_targets.get('EnergyKCal', 0)  # 基础情况下TDEE=BMR
             )
             differences = self.calculate_differences(user_input, baseline)
             prediction = self.predict_weight_shift_advanced(differences, user_input, days)

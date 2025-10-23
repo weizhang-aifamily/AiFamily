@@ -72,3 +72,10 @@ nutrient_priority = {
     'dietary_fiber': 6,  # 中优先级
     # 其他营养素默认优先级为1
 }
+structure_def = {
+    'main_dish': [],
+    'side_dish': [],
+    'staple': [],
+    'soup': [],
+    'baby_food': []
+}

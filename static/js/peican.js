@@ -1,4 +1,5 @@
-import { getMembers,getDietSolutions,getCombos,getDishReco,getTagTbl,saveMemberDishLog  } from './familyDataLoader.js';
+import { getMembers,getDietSolutions,getCombos,getDishReco,getTagTbl,saveMemberDishLog,searchDishReq }
+ from './peicanDataLoader.js';
 import { displayNutrients } from './nutritionDisplay.js';
 
 /* ============= 1. 常量数据定义 ============= */
@@ -675,7 +676,7 @@ function generateCombos() {
             ${dishes.map(dish => `
               <label class="dish-item">
                 <input type="checkbox" value="${dish.dish_id}"
-                ${dish.meal_structure && dish.meal_structure[Object.keys(dish.meal_structure)[0]] === 'selected' ? 'checked' : ''}>
+                ${dish.is_selected === 1 ? 'checked' : ''}>
                 <img src="://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
                 <span class="dish-name">${dish.name}</span>
                 ${dish.exact_portion.size}份
@@ -713,8 +714,12 @@ function generateCombos() {
         initMealType();
         initMembers();
         renderTasteRow();                 // 生成尝鲜菜
-        document.getElementById('refreshTasteInline')
-          .addEventListener('click', renderTasteRow); // 换一批
+        document.getElementById('refreshTasteInline').addEventListener('click', renderTasteRow); // 换一批
+        document.getElementById('searchDish').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && !event.repeat) {
+                searchDish();
+            }
+        });
     }
 
     // 启动应用
@@ -863,6 +868,27 @@ async function saveComboLog() {
 
         const result = await saveMemberDishLog(combo, members);
 
+        if (result.success) {
+            alert('保存成功！');
+        } else {
+            alert('保存失败：' + result.error);
+        }
+    } catch (error) {
+        console.error('保存错误：', error);
+        alert('保存失败');
+    }
+}
+async function searchDish() {
+    try {
+        const keywordInput = document.getElementById('searchDish');
+        const keyword = keywordInput.value.trim();  // 获取值并去除首尾空格
+        console.log("搜索关键词:", keyword);
+        if (!keyword) {
+            alert('请输入搜索关键词');
+            return;
+        }
+        const result = await searchDishReq(keyword);
+        console.log("result:", result);
         if (result.success) {
             alert('保存成功！');
         } else {

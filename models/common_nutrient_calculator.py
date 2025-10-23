@@ -22,11 +22,13 @@ class CommonNutrientCalculator:
             daily_targets = NutritionData.get_daily_nutrient_targets_actual(member)
 
             # 累加到总需求中
-            for nutrient_code, target_value in daily_targets.items():
+            for nutrient_code, target_content in daily_targets.items():
                 # 设置 min 和 max 范围（±20%）
-                nutrient_min = target_value * 0.8
-                nutrient_max = target_value * 1.2
-                nutrient_need = target_value
+                target_need = target_content['amount']
+                nutrient_min = target_need * 0.8
+                amount_ul = target_content.get('amount_ul')
+                nutrient_max = amount_ul if amount_ul is not None else target_need * 1.2
+                nutrient_need = target_need
 
                 ranges[nutrient_code]["min"] += nutrient_min
                 ranges[nutrient_code]["max"] += nutrient_max
@@ -59,14 +61,17 @@ class CommonNutrientCalculator:
 
             # 获取每日营养目标（优先使用实际数据）
             daily_targets = NutritionData.get_daily_nutrient_targets_actual(member_data)
-
+            daily_targets_amount_only = {
+                nutrient_code: target_info.get('amount', 0.0)
+                for nutrient_code, target_info in daily_targets.items()
+            }
             if meal_type == 'all':
-                return daily_targets.copy()
+                return daily_targets_amount_only.copy()
 
             ratio = MEAL_RATIO.get(meal_type, 1.0)
             meal_targets = {}
 
-            for nutrient, daily_value in daily_targets.items():
+            for nutrient, daily_value in daily_targets_amount_only.items():
                 # 特殊处理：热量使用round，其他营养素保留小数位
                 if nutrient == 'calories':
                     meal_targets[nutrient] = round(daily_value * ratio)

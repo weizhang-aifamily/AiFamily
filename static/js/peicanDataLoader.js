@@ -106,3 +106,22 @@ export async function saveMemberDishLog(combo, members) {
     return { success: false, error: error.message };
   }
 }
+export async function searchDishReq(keyword) {
+  try {
+    const response = await fetch('/search/keyword', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        keyword: keyword
+      })
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('searchDish请求失败：', error);
+    return { success: false, error: error.message };
+  }
+}

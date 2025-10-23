@@ -22,7 +22,8 @@ class MealRequest:
     'CQ': {'main_dish': 1.4, 'side_dish': 1.1},  # 重庆
     'HN': {'main_dish': 1.2, 'side_dish': 1.1},  # 湖南
     """
-    member_ids: List[int]
+    member_ids: List[int] = None
+    keyword: str = None
     members: List[Dict] = None
     province_code: str = 'default'  # 省份代码
     meal_type: str = "all"          # breakfast / lunch / dinner / all

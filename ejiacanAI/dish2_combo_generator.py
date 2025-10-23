@@ -8,7 +8,7 @@ from collections import defaultdict
 from ejiacanAI.MealStructureGenerator import MealStructureGenerator
 from ejiacanAI.dish2_combo_models import MealRequest, ComboMeal, Dish, ExactPortion, DishFoodNutrient
 from ejiacanAI.dish2_combo_data import DishComboData   # 统一数据入口
-from models.nutrient_config import MEAL_RATIO, nutrient_priority
+from models.nutrient_config import MEAL_RATIO, nutrient_priority, structure_def
 from models.common_nutrient_calculator import CommonNutrientCalculator
 
 class MealGeneratorV2:
@@ -611,13 +611,6 @@ class MealGeneratorV2:
     @classmethod
     def _group_dishes_by_structure(cls, dish_list: List[Dish]) -> Dict[str, List[Dish]]:
         """根据餐次结构对菜品进行分类"""
-        structure_def = {
-            'main_dish': [],
-            'side_dish': [],
-            'staple': [],
-            'soup': [],
-            'baby_food': []
-        }
 
         for dish in dish_list:
             structure_type = cls._classify_dish_structure_type(dish)
