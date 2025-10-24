@@ -6,9 +6,9 @@ from typing import List, Dict, Optional
 from collections import defaultdict
 
 from ejiacanAI.MealStructureGenerator import MealStructureGenerator
-from ejiacanAI.dish2_combo_models import MealRequest, ComboMeal, Dish, ExactPortion, DishFoodNutrient
+from ejiacanAI.dish2_combo_models import MealRequest, ComboMeal, Dish, ExactPortion, DishFoodNutrient, Food
 from ejiacanAI.dish2_combo_data import DishComboData   # 统一数据入口
-from models.nutrient_config import MEAL_RATIO, nutrient_priority, structure_def
+from models.nutrient_config import MEAL_RATIO, nutrient_priority, structure_def, NUTRIENT_MAPPING,FOOD_CATEGORY_MAPPING,MEAL_FOOD_CATEGORY_TARGETS,all_categories
 from models.common_nutrient_calculator import CommonNutrientCalculator
 
 class MealGeneratorV2:
@@ -194,13 +194,167 @@ class MealGeneratorV2:
             meal_structure_dished, selected_dishes, meal_structure, config
         )
 
-        # 4. 补充不足的菜品
-        final_dishes = cls._supplement_dishes(
+        # 4. 补充不足的菜品（使用增强版的补充方法）
+        final_dishes = cls._supplement_with_category_balance(
             selected_dishes, alternative_dishes, filtered_pool,
-            meal_structure, req, meal_range
+            meal_structure, req, meal_code
         )
 
         return final_dishes + alternative_dishes
+
+    @classmethod
+    def _supplement_with_category_balance(cls, selected_dishes: List[Dish],
+                                          alternative_dishes: List[Dish],
+                                          dish_pool: List[Dish], meal_structure: Dict[str, int],
+                                          req: MealRequest, meal_code: str) -> List[Dish]:
+        """考虑类别平衡的菜品补充"""
+        total_target = sum(meal_structure.values())
+        if len(selected_dishes) >= total_target:
+            return selected_dishes
+
+        # 分析当前类别分布
+        current_distribution = cls._analyze_food_category_distribution(selected_dishes)
+        config = cls._get_food_category_config()
+        meal_targets = config['meal_targets'].get(meal_code, {})
+
+        # 找出最缺乏的类别
+        deficient_categories = []
+        for category, target in meal_targets.items():
+            current_count = current_distribution.get(category, 0)
+            if current_count < target['min']:
+                deficiency = target['min'] - current_count
+                deficient_categories.append((category, deficiency))
+
+        # 按缺乏程度排序
+        deficient_categories.sort(key=lambda x: x[1], reverse=True)
+
+        # 准备补充池
+        used_dish_ids = set(d.dish_id for d in selected_dishes + alternative_dishes)
+        supplement_pool = [d for d in dish_pool if d.dish_id not in used_dish_ids]
+
+        # 优先补充缺乏的类别
+        supplemented_dishes = selected_dishes.copy()
+
+        for category, deficiency in deficient_categories:
+            if len(supplemented_dishes) >= total_target:
+                break
+
+            # 筛选该类别的菜品
+            category_dishes = [d for d in supplement_pool
+                               if cls._map_food_to_category(d) == category]
+
+            # 按分数排序
+            category_dishes.sort(
+                key=lambda d: cls._calculate_dish_score(d, req, {}),
+                reverse=True
+            )
+
+            for dish in category_dishes:
+                if len(supplemented_dishes) >= total_target:
+                    break
+
+                selected_dish = cls._dedup_increase_weight(dish, supplemented_dishes)
+                if selected_dish:
+                    supplemented_dishes.append(selected_dish)
+                    break
+
+        # 如果还有空位，按常规方式补充
+        if len(supplemented_dishes) < total_target:
+            remaining_slots = total_target - len(supplemented_dishes)
+            remaining_dishes = [d for d in supplement_pool
+                                if d.dish_id not in set(d.dish_id for d in supplemented_dishes)]
+
+            remaining_dishes.sort(
+                key=lambda d: cls._calculate_dish_score(d, req, {}),
+                reverse=True
+            )
+
+            for dish in remaining_dishes[:remaining_slots]:
+                selected_dish = cls._dedup_increase_weight(dish, supplemented_dishes)
+                if selected_dish:
+                    supplemented_dishes.append(selected_dish)
+
+        return supplemented_dishes
+
+    @classmethod
+    def _get_food_category_config(cls) -> Dict:
+        """获取食物类别配置"""
+        return {
+            'category_mapping': FOOD_CATEGORY_MAPPING,
+            'meal_targets': MEAL_FOOD_CATEGORY_TARGETS,
+            'category_bonus_score': 5,
+            'diversity_bonus': 3,
+        }
+
+    @classmethod
+    def _map_food_to_category(cls, dish: Dish) -> str:
+        """将菜品的食材映射到食物类别（只分析is_main_food=1的食材）"""
+        if not hasattr(dish, 'foods') or not dish.foods:
+            return 'other'
+
+        # 统计菜品中主要食材（is_main_food=1）的类别分布
+        category_count = defaultdict(int)
+        for food in dish.foods:
+            # 只处理主要食材
+            if getattr(food, 'is_main_food', '0') != '1':
+                continue
+
+            category1 = getattr(food, 'category1', '')
+            mapped_category = FOOD_CATEGORY_MAPPING.get(category1, 'other')
+            category_count[mapped_category] += 1
+
+        # 返回数量最多的类别
+        if category_count:
+            return max(category_count.items(), key=lambda x: x[1])[0]
+        return 'other'
+
+    @classmethod
+    def _analyze_food_category_distribution(cls, dishes: List[Dish]) -> Dict[str, int]:
+        """分析当前已选菜品的食物类别分布（返回完整分布）"""
+        distribution = defaultdict(int)
+
+        for category in all_categories:
+            distribution[category] = 0
+
+        for dish in dishes:
+            category = cls._map_food_to_category(dish)
+            distribution[category] += 1
+
+        return dict(distribution)
+
+    @classmethod
+    def get_food_category_mapping(cls) -> Dict[str, List[str]]:
+        """获取食物类别映射关系（用于前端显示）"""
+        mapping = {}
+        for original_category, mapped_category in FOOD_CATEGORY_MAPPING.items():
+            if mapped_category not in mapping:
+                mapping[mapped_category] = []
+            mapping[mapped_category].append(original_category)
+        return mapping
+
+    @classmethod
+    def _calculate_category_balance_score(cls, dish: Dish, current_distribution: Dict[str, int],
+                                          meal_targets: Dict) -> float:
+        """计算菜品对类别平衡的贡献分数"""
+        dish_category = cls._map_food_to_category(dish)
+
+        # 多样性加分：如果当前缺少这个类别
+        current_count = current_distribution.get(dish_category, 0)
+        target_min = meal_targets.get(dish_category, {}).get('min', 0)
+
+        if current_count < target_min:
+            # 严重不足时给予较高加分
+            deficiency_ratio = (target_min - current_count) / max(target_min, 1)
+            diversity_bonus = deficiency_ratio * 10
+        else:
+            # 已经足够时，如果超过最大值则减分
+            target_max = meal_targets.get(dish_category, {}).get('max', 999)
+            if current_count >= target_max:
+                diversity_bonus = -5
+            else:
+                diversity_bonus = 0
+
+        return diversity_bonus
 
     @classmethod
     def _get_selection_config(cls) -> Dict:
@@ -218,12 +372,27 @@ class MealGeneratorV2:
         # 过敏原过滤
         allergens = set(DishComboData.get_family_allergens(req.member_ids))
 
-        return [
+        filtered_dishes = [
             d for d in dish_list
             if ("all" == meal_code or meal_code in cls.tag_pick(d, 'meal_time', 'code'))
             # and (not req.cook_time_limit or d.cook_time <= req.cook_time_limit)
             # and not allergens.intersection(set(d.allergens))
         ]
+
+        # 新增：输出want_eat匹配信息（用于调试）
+        if hasattr(req, 'want_eat') and req.want_eat:
+            matched_dishes = []
+            for dish in filtered_dishes:
+                score = cls._calculate_want_eat_score(dish, req.want_eat)
+                if score > 0:
+                    matched_dishes.append((dish.name, score))
+
+            if matched_dishes:
+                print(f"🎯 want_eat匹配结果: {req.want_eat}")
+                for dish_name, score in matched_dishes[:5]:  # 只显示前5个
+                    print(f"   - {dish_name}: +{score}分")
+
+        return filtered_dishes
 
     @classmethod
     def _structure_and_rank_dishes(cls, dish_pool: List[Dish], req: MealRequest,
@@ -283,9 +452,9 @@ class MealGeneratorV2:
 
     @classmethod
     def _select_recommend_dishes(cls, meal_structure_dished: Dict[str, List[Dish]],
-                            meal_structure: Dict[str, int], req: MealRequest,
-                            config: Dict) -> List[Dish]:
-        """选择主要菜品"""
+                                 meal_structure: Dict[str, int], req: MealRequest,
+                                 config: Dict) -> List[Dish]:
+        """选择主要菜品（增加meal_code参数传递）"""
         selected_dishes = []
         total_target = sum(meal_structure.values())
 
@@ -303,7 +472,7 @@ class MealGeneratorV2:
 
             structure_type_dishes = meal_structure_dished.get(structure_type, [])
             selected_from_structure = cls._select_from_structure(
-                structure_type_dishes, selected_dishes, target_count, structure_type
+                structure_type_dishes, selected_dishes, target_count, structure_type, req.meal_type, req
             )
             selected_dishes.extend(selected_from_structure)
 
@@ -315,23 +484,55 @@ class MealGeneratorV2:
 
     @classmethod
     def _select_from_structure(cls, structure_type_dishes: List[Dish], existing_dishes: List[Dish],
-                              target_count: int, structure_type: str) -> List[Dish]:
-        """从指定类别中选择菜品"""
+                               target_count: int, structure_type: str, meal_code: str = None,
+                               req: MealRequest = None) -> List[Dish]:
+        """从指定类别中选择菜品（增加want_eat计数）"""
         selected = []
         existing_dish_ids = set(d.dish_id for d in existing_dishes)
 
+        # 分析当前类别分布
+        current_distribution = cls._analyze_food_category_distribution(existing_dishes)
+        config = cls._get_food_category_config()
+        meal_targets = config['meal_targets'].get(meal_code or 'lunch', {})
+
+        # 🎯 新增：统计当前已选的want_eat菜品数量
+        current_want_eat_count = 0
+        if hasattr(req, 'want_eat') and req.want_eat:
+            for dish in existing_dishes:
+                want_score = cls._calculate_want_eat_score(dish, req.want_eat, 0)  # 用0避免递归
+                if want_score > 0:
+                    current_want_eat_count += 1
+
+        # 为每个菜品计算综合分数
+        scored_dishes = []
         for dish in structure_type_dishes:
             if len(selected) >= target_count:
                 break
 
-            # 检查是否已存在（通过 dish_id）
             if dish.dish_id in existing_dish_ids:
                 continue
 
-            # 只进行去重检查，不检查营养范围
+            # 计算基础分数（传入当前want_eat计数）
+            base_score = 0
+            if req:
+                base_score = cls._calculate_dish_score(dish, req, {}, current_want_eat_count + len(selected))
+
+            # 计算类别平衡分数
+            category_score = cls._calculate_category_balance_score(dish, current_distribution, meal_targets)
+
+            total_score = base_score + category_score
+            scored_dishes.append((dish, total_score))
+
+        # 按总分排序
+        scored_dishes.sort(key=lambda x: x[1], reverse=True)
+
+        for dish, score in scored_dishes:
+            if len(selected) >= target_count:
+                break
+
             selected_dish = cls._dedup_increase_weight(dish, existing_dishes + selected)
             if selected_dish:
-                selected_dish.meal_structure = {structure_type: "selected"}
+                selected_dish.meal_structure_type = {structure_type: "selected"}
                 selected_dish.is_selected = 1
                 selected.append(selected_dish)
 
@@ -363,7 +564,7 @@ class MealGeneratorV2:
                 # 选择前 alt_count 个菜品作为备选
                 for i in range(min(alt_count, len(available_dishes))):
                     alt_dish = available_dishes[i]
-                    alt_dish.meal_structure = {structure_type: "alternative"}
+                    alt_dish.meal_structure_type = {structure_type: "alternative"}
                     alt_dish.is_selected = 0
                     alternative_dishes.append(alt_dish)
 
@@ -421,11 +622,12 @@ class MealGeneratorV2:
         return supplemented_dishes
 
     @classmethod
-    def _calculate_dish_score(cls, dish: Dish, req: MealRequest, nutrient_range: Dict) -> int:
-        """计算菜品分数（考虑标签匹配和营养补充）"""
+    def _calculate_dish_score(cls, dish: Dish, req: MealRequest, nutrient_range: Dict,
+                              current_want_eat_count: int = 0) -> int:
+        """计算菜品分数（增加want_eat数量控制）"""
         base_score = len(dish.explicit_tags)
 
-        # 计算标签匹配度
+        # 1. 标签匹配度
         if hasattr(req, 'explicit_tags') and req.explicit_tags:
             req_tags = req.explicit_tags
             if isinstance(req_tags, str):
@@ -435,9 +637,75 @@ class MealGeneratorV2:
             match_score = len(matched_tags) * 2
             base_score += match_score
 
-        # 营养补充加分
+        # 2. want_eat匹配加分（新增数量控制）
+        if hasattr(req, 'want_eat') and req.want_eat:
+            want_eat_score = cls._calculate_want_eat_score(dish, req.want_eat, current_want_eat_count)
+            base_score += want_eat_score
+
+        # 3. 营养补充加分
         nutrient_bonus = cls._calculate_nutrient_bonus(dish, nutrient_range)
         return base_score + nutrient_bonus
+
+    @classmethod
+    def _calculate_want_eat_score(cls, dish: Dish, want_eat: str, current_want_eat_count: int) -> int:
+        """
+        计算want_eat匹配分数（增加数量控制）
+        规则：
+        - 如果当前已选的want_eat菜品少于2个：正常加分
+        - 如果已选超过2个：大幅降低加分，避免过度集中
+        """
+        if not want_eat:
+            return 0
+
+        # 解析want_eat
+        want_items = []
+        for item in want_eat.replace('，', ',').split(','):
+            item = item.strip()
+            if item:
+                want_items.append(item)
+
+        if not want_items:
+            return 0
+
+        # 🎯 关键修改：控制want_eat菜品数量
+        if current_want_eat_count >= 1:
+            # 已经选了2个want_eat菜品，大幅降低后续加分
+            base_multiplier = 0.2
+        else:
+            # 还可以继续选want_eat菜品，正常加分
+            base_multiplier = 1.0
+
+        total_score = 0
+        dish_name = dish.name.lower() if dish.name else ""
+
+        for want_item in want_items:
+            want_lower = want_item.lower()
+
+            # 菜品名称完全匹配
+            if dish_name == want_lower:
+                total_score += int(20 * base_multiplier)
+            # 菜品名称包含
+            elif want_lower in dish_name:
+                total_score += int(10 * base_multiplier)
+
+        # 食材匹配（权重低于菜品名称匹配）
+        if hasattr(dish, 'foods') and dish.foods:
+            for food in dish.foods:
+                food_name = getattr(food, 'foodName', '').lower() if getattr(food, 'foodName') else ""
+                if not food_name:
+                    continue
+
+                for want_item in want_items:
+                    want_lower = want_item.lower()
+
+                    # 食材名称完全匹配
+                    if food_name == want_lower:
+                        total_score += int(8 * base_multiplier)  # 降低食材匹配分数
+                    # 食材名称包含
+                    elif want_lower in food_name:
+                        total_score += int(4 * base_multiplier)  # 降低食材匹配分数
+
+        return total_score
 
     @classmethod
     def _calculate_nutrient_bonus(cls, dish: Dish, meal_range: Dict[str, Dict[str, float]]) -> int:
@@ -680,12 +948,21 @@ class MealGeneratorV2:
     @classmethod
     def _build_combo_meal(cls, meal_code: str, dishes: List[Dish]) -> ComboMeal:
         cook = sum(d.cook_time for d in dishes)
-        nutrients = defaultdict(float)  # 新增：营养素汇总
+        nutrients = defaultdict(float)
 
-        for d in dishes:
-            # 汇总营养素
-            for nutrient, value in d.nutrients.items():
+        # 🎯 分离主要菜品和备选菜品
+        selected_dishes = [d for d in dishes if getattr(d, 'is_selected', 0) == 1]
+        alternative_dishes = [d for d in dishes if getattr(d, 'is_selected', 0) == 0]
+
+        # 只统计主要菜品的类别分布
+        food_category_distribution = defaultdict(int)
+        for dish in selected_dishes:
+            # 汇总营养素（只统计主要菜品）
+            for nutrient, value in dish.nutrients.items():
                 nutrients[nutrient] += value
+
+            category = cls._map_food_to_category(dish)
+            food_category_distribution[category] += 1
 
         name_map = {"breakfast": "早餐", "lunch": "午餐", "dinner": "晚餐"}
         return ComboMeal(
@@ -695,7 +972,8 @@ class MealGeneratorV2:
             dishes=dishes,
             total_cook_time=cook,
             portion_plan={},
-            nutrients=dict(nutrients),  # 新增：传入营养素汇总
+            nutrients=dict(nutrients),
+            food_category_distribution=dict(food_category_distribution)
         )
 
     from typing import Dict, List
@@ -708,14 +986,16 @@ class MealGeneratorV2:
 
         for dish_id, food_map in dish_map.items():
             meta = cls._get_meta(food_map)
-            ingredients, nutrients, allergens = cls._aggregate_foods(food_map)
-            dish_tags = cls._build_dish_tags(meta.tags_json)  # 2. 新 tag 结构
+            ingredients, nutrients, allergens, foods = cls._aggregate_foods(food_map)
+            dish_tags = cls._build_dish_tags(meta.tags_json)
 
-            # 3. 一次性把 CSV 里“多余”字段也带上
+            # 🎯 新增：计算菜品包含的所有食物类别
+            food_categories = cls._get_dish_food_categories(foods)
+
             dishes.append(Dish(
                 dish_id=dish_id,
                 name=meta.dish_name,
-                dish_emoji=meta.dish_emoji,  # 🔥
+                dish_emoji=meta.dish_emoji,
                 cook_time=meta.dish_cook_time,
                 default_portion=meta.dish_default_portion_g,
                 rating=meta.dish_rating,
@@ -726,12 +1006,36 @@ class MealGeneratorV2:
                 nutrients=nutrients,
                 exact_portion=ExactPortion(size="M", grams=meta.dish_default_portion_g),
                 allergens=list(allergens),
+                foods=foods,
+                food_categories=food_categories,  # 🎯 设置所有类别
 
-                dish_tags=dish_tags,  # 新版 map
+                dish_tags=dish_tags,
             ))
         return dishes
 
     # ------------------ 下面全是小工具 ------------------
+    @classmethod
+    def _get_dish_food_categories(cls, foods: List[Food]) -> List[str]:
+        """
+        获取菜品包含的所有食物类别（用于前端显示）
+        返回去重后的类别列表，如 ['protein', 'vege_fruit']
+        """
+        if not foods:
+            return []
+
+        categories = set()
+
+        for food in foods:
+            # 只处理主要食材
+            if getattr(food, 'is_main_food', '0') != '1':
+                continue
+
+            category1 = getattr(food, 'category1', '')
+            mapped_category = FOOD_CATEGORY_MAPPING.get(category1, 'other')
+            categories.add(mapped_category)
+
+        return list(categories)
+
     @staticmethod
     def _group_by_dish_and_food(wide_rows):
         d = defaultdict(lambda: defaultdict(list))
@@ -748,40 +1052,56 @@ class MealGeneratorV2:
         ingredients: List[Dict[str, str]] = []
         nutrients: Dict[str, float] = defaultdict(float)
         allergens: set[str] = set()
-        NUTRIENT_MAPPING = {
-            # 宏量
-            'protein': 'Protein',
-            'fat': 'Fat',
-            'CHO': 'Carbohydrate',
-            'dietaryFiber': 'DietaryFiber',
-            'ash': 'Ash',
-            # 能量
-            'energyKCal': 'EnergyKCal',
-            'energyKJ': 'EnergyKJ',
-            # 矿物质
-            'Ca': 'Calcium', 'P': 'Phosphorus', 'K': 'Potassium',
-            'Na': 'Sodium', 'Mg': 'Magnesium', 'Fe': 'Iron',
-            'Zn': 'Zinc', 'Se': 'Selenium', 'Cu': 'Copper',
-            'Mn': 'Manganese',
-            # 维生素
-            'vitaminA': 'VitaminA',
-            'carotene': 'Carotene',
-            'retinol': 'Retinol',
-            'thiamin': 'Thiamin',
-            'riboflavin': 'Riboflavin',
-            'niacin': 'Niacin',
-            'vitaminC': 'VitaminC',
-            'vitaminETotal': 'VitaminETotal',
-            'vitaminE1': 'VitaminE1',
-            'vitaminE2': 'VitaminE2',
-            'vitaminE3': 'VitaminE3',
-            # 其他
-            'cholesterol': 'Cholesterol',
-            'water': 'Water',
-            'edible': 'EdibleRatio'
-        }
+        foods: List[Food] = []  # 新增：存储Food对象列表
+
         for food_id, rows in food_map.items():
             first = rows[0]
+
+            # 创建Food对象
+            food = Food(
+                food_id=first.food_id,
+                food_amount_grams=first.food_amount_grams,
+                foodCode=first.foodCode,
+                foodName=first.foodName,
+                category1=first.category1,
+                category2=first.category2,
+                is_main_food=first.is_main_food,
+                edible=first.edible,
+                water=first.water,
+                energyKCal=first.energyKCal,
+                energyKJ=first.energyKJ,
+                protein=first.protein,
+                fat=first.fat,
+                CHO=first.CHO,
+                dietaryFiber=first.dietaryFiber,
+                cholesterol=first.cholesterol,
+                ash=first.ash,
+                vitaminA=first.vitaminA,
+                carotene=first.carotene,
+                retinol=first.retinol,
+                thiamin=first.thiamin,
+                riboflavin=first.riboflavin,
+                niacin=first.niacin,
+                vitaminC=first.vitaminC,
+                vitaminETotal=first.vitaminETotal,
+                vitaminE1=first.vitaminE1,
+                vitaminE2=first.vitaminE2,
+                vitaminE3=first.vitaminE3,
+                Ca=first.Ca,
+                P=first.P,
+                K=first.K,
+                Na=first.Na,
+                Mg=first.Mg,
+                Fe=first.Fe,
+                Zn=first.Zn,
+                Se=first.Se,
+                Cu=first.Cu,
+                Mn=first.Mn,
+                remark=first.remark
+            )
+            foods.append(food)
+
+            # 原有的食材信息处理
             ingredients.append({
                 'name': first.foodName,
                 'grams': f"{float(first.food_amount_grams or 0):.1f}"
@@ -794,7 +1114,8 @@ class MealGeneratorV2:
 
             if first.allergen_code:
                 allergens.add(first.allergen_code)
-        return ingredients, dict(nutrients), allergens
+
+        return ingredients, dict(nutrients), allergens, foods  # 修改：增加foods返回值
 
     @staticmethod
     def _build_dish_tags(tags_json: Optional[str]) -> Dict[str, List[Dict[str, str]]]:
@@ -813,40 +1134,6 @@ class MealGeneratorV2:
                 bucket[group].append({'code': tag.get('code'), 'name': tag.get('name')})
         return dict(bucket)
 
-    @classmethod
-    def extract_group_items(cls, json_str, target_group):
-        """
-        从数据列表中提取指定分组的信息
-
-        Args:
-            data_list: 包含多个字典的列表
-            target_group: 要提取的分组名称，如'meal_time', 'cuisine'等
-
-        Returns:
-            str: 指定分组的信息，格式如"code：name"或多个用逗号相隔
-        """
-        if not json_str or not target_group:
-            return ""
-
-        try:
-            # 将JSON字符串解析为Python列表
-            data_list = json.loads(json_str)
-
-            group_items = []
-
-            for item in data_list:
-                if isinstance(item, dict) and item.get('group') == target_group:
-                    code = item.get('code', '')
-                    name = item.get('name', '')
-                    if code and name:
-                        group_items.append(f"{code}:{name}")
-
-            return '，'.join(group_items)
-
-        except json.JSONDecodeError:
-            return "无效的JSON格式"
-        except Exception as e:
-            return f"处理出错: {str(e)}"
     @staticmethod
     def tag_pick(dish: Dish, group: str, pick='code'):
         """通用取标签工具：group=分组名，pick='code'|'name'"""

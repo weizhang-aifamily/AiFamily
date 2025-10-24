@@ -120,6 +120,7 @@ def get_combos(member_ids=None):
         activeSolutions = data.get('activeSolutions', None)
         members = data.get('members', [])  # 新增的members参数
         province_code = data.get('province_code', 'default')
+        want_eat = data.get('want_eat', None)
 
         # 1. 获取智能推荐结果
         # recommendations = recommender.recommend(member_ids_list, meal_type, max_results)
@@ -140,6 +141,7 @@ def get_combos(member_ids=None):
                 deficit_kcal=0,  # 无热量缺口
                 dish_series=cuisine,  # 菜系ID
                 dish_category=category,
+                want_eat=want_eat,
                 explicit_tags=activeSolutions.split(","),
             )
             all_day_meals = MealGeneratorV2.generate_per_meal_default(req)
@@ -155,6 +157,7 @@ def get_combos(member_ids=None):
                 deficit_kcal=0,  # 无热量缺口
                 dish_series=cuisine,  # 菜系ID
                 dish_category=category,
+                want_eat=want_eat,
                 explicit_tags=activeSolutions.split(","),
             )
             all_day_meals = MealGeneratorV2.generate_per_meal(req)

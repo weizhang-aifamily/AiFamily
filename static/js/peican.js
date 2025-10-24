@@ -635,6 +635,7 @@ function generateCombos() {
     const categoryStr = [...activeCategories].join(',');
     const activeSolutions = getActiveSolutions();
     const mealType = getSelectedMeals();
+    let want_eat = document.getElementById("want_eat").value;
     console.log(mealType);
     (async () => {
         console.log('activeMembers：', activeMembers);
@@ -645,7 +646,8 @@ function generateCombos() {
             category: categoryStr,  // 新增的category参数
             members: activeMembers,
             province_code: province_code,
-            mealType: mealType
+            mealType: mealType,
+            want_eat: want_eat
         });
         //显示营养元素及身材图片
         console.log('comboData：', comboData);
@@ -662,7 +664,7 @@ function generateCombos() {
         // 按 meal_structure 分组
         const groupedDishes = {};
         combo.dishes.forEach(dish => {
-            const structureType = dish.meal_structure ? Object.keys(dish.meal_structure)[0] : 'other';
+            const structureType = dish.meal_structure_type ? Object.keys(dish.meal_structure_type)[0] : 'other';
             if (!groupedDishes[structureType]) {
                 groupedDishes[structureType] = [];
             }
@@ -679,7 +681,7 @@ function generateCombos() {
                 ${dish.is_selected === 1 ? 'checked' : ''}>
                 <img src="://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
                 <span class="dish-name">${dish.name}</span>
-                ${dish.exact_portion.size}份
+                ${dish.exact_portion.size}份${dish.food_categories}
                 ${(dish.explicit_tags || []).map(tag => `<span class="nutri-tag">${tag}</span>`).join('')}
                 <span class="dish-per">
                     <span class="dot calories-dot">•${Math.round(dish.nutrients.EnergyKCal)}</span>
@@ -720,6 +722,7 @@ function generateCombos() {
                 searchDish();
             }
         });
+        document.getElementById('peican').addEventListener('click', generateRecommendations);
     }
 
     // 启动应用

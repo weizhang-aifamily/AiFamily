@@ -35,6 +35,7 @@ class MealRequest:
     implicit_tags: List[str] = field(default_factory=list)  # 分类
     dish_series: Optional[str] = None  # 菜系ID
     dish_category: Optional[str] = None # 菜品类别
+    want_eat: Optional[str] = None  # 逗号或空格隔开的食材/菜品名称
 
 @dataclass
 class ExactPortion:
@@ -70,6 +71,7 @@ class ComboMeal:
     meal_structure : Dict[str, Dict[str, int]] = field(default_factory=dict)
     nutrients: Dict[str, float] = field(default_factory=dict)  # 新增：营养素汇总
     need_nutrients: Dict[str, float] = field(default_factory=dict)  # 新增：目标营养素需求
+    food_category_distribution: Dict[str, int] = field(default_factory=dict)
 
 @dataclass
 class DishFoodNutrient1:
@@ -169,6 +171,7 @@ class DishFoodNutrient:
     foodName: str
     category1: str
     category2: Optional[str]
+    is_main_food: str
 
     # 营养成分信息（保持横表结构）
     edible: Optional[int]
@@ -223,11 +226,57 @@ class Dish:
     exact_portion: ExactPortion
     allergens: List[str]
     dish_tags: Dict[str, List[Dict[str, str]]]
+    foods: List[Food] = field(default_factory=list)  # 新增：食材详细信息
+    food_categories: List[str] = field(default_factory=list)  # 如 ['protein', 'vege_fruit']
     # 以下全部给默认值
     explicit_tags: List[str] = field(default_factory=list)
     implicit_tags: List[str] = field(default_factory=list)
-    meal_structure: Dict[str, str] = None  # main_dish, selected #main_dish, alternative
+    meal_structure_type: Dict[str, str] = None  # main_dish, selected #main_dish, alternative
     is_selected: int = None  # 1 0
     rating: Optional[float] = None
     description: Optional[str] = None
+
+@dataclass
+class Food:
+    """食材信息"""
+    food_id: int
+    food_amount_grams: int
+    foodCode: int
+    foodName: str
+    category1: str
+    category2: Optional[str]
+    is_main_food: str
+    # 营养成分信息
+    edible: Optional[int] = None
+    water: Optional[float] = None
+    energyKCal: Optional[int] = None
+    energyKJ: Optional[int] = None
+    protein: Optional[float] = None
+    fat: Optional[float] = None
+    CHO: Optional[float] = None
+    dietaryFiber: Optional[float] = None
+    cholesterol: Optional[float] = None
+    ash: Optional[float] = None
+    vitaminA: Optional[float] = None
+    carotene: Optional[float] = None
+    retinol: Optional[float] = None
+    thiamin: Optional[float] = None
+    riboflavin: Optional[float] = None
+    niacin: Optional[float] = None
+    vitaminC: Optional[float] = None
+    vitaminETotal: Optional[float] = None
+    vitaminE1: Optional[float] = None
+    vitaminE2: Optional[float] = None
+    vitaminE3: Optional[float] = None
+    Ca: Optional[float] = None
+    P: Optional[float] = None
+    K: Optional[float] = None
+    Na: Optional[float] = None
+    Mg: Optional[float] = None
+    Fe: Optional[float] = None
+    Zn: Optional[float] = None
+    Se: Optional[float] = None
+    Cu: Optional[float] = None
+    Mn: Optional[float] = None
+    remark: Optional[str] = None
 

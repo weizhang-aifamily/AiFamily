@@ -79,3 +79,92 @@ structure_def = {
     'soup': [],
     'baby_food': []
 }
+
+NUTRIENT_MAPPING = {
+    # 宏量
+    'protein': 'Protein',
+    'fat': 'Fat',
+    'CHO': 'Carbohydrate',
+    'dietaryFiber': 'DietaryFiber',
+    'ash': 'Ash',
+    # 能量
+    'energyKCal': 'EnergyKCal',
+    'energyKJ': 'EnergyKJ',
+    # 矿物质
+    'Ca': 'Calcium', 'P': 'Phosphorus', 'K': 'Potassium',
+    'Na': 'Sodium', 'Mg': 'Magnesium', 'Fe': 'Iron',
+    'Zn': 'Zinc', 'Se': 'Selenium', 'Cu': 'Copper',
+    'Mn': 'Manganese',
+    # 维生素
+    'vitaminA': 'VitaminA',
+    'carotene': 'Carotene',
+    'retinol': 'Retinol',
+    'thiamin': 'Thiamin',
+    'riboflavin': 'Riboflavin',
+    'niacin': 'Niacin',
+    'vitaminC': 'VitaminC',
+    'vitaminETotal': 'VitaminETotal',
+    'vitaminE1': 'VitaminE1',
+    'vitaminE2': 'VitaminE2',
+    'vitaminE3': 'VitaminE3',
+    # 其他
+    'cholesterol': 'Cholesterol',
+    'water': 'Water',
+    'edible': 'EdibleRatio'
+}
+# 新增食物类别映射配置（基于你提供的实际分类）
+FOOD_CATEGORY_MAPPING = {
+    # 谷薯类
+    '谷类及其制品': 'cereal',
+    '薯类淀粉及其制品': 'cereal',
+
+    # 肉蛋类
+    '畜肉类及其制品': 'protein',
+    '禽肉类及其制品': 'protein',
+    '蛋类及其制品': 'protein',
+    '鱼虾蟹贝类': 'protein',
+
+    # 蔬果类
+    '蔬菜类及其制品': 'vege_fruit',
+    '水果类及其制品': 'vege_fruit',
+    '菌藻类': 'vege_fruit',
+
+    # 奶豆类
+    '乳类及其制品': 'dairy_bean',
+    '干豆类及其制品': 'dairy_bean',
+    '坚果种子类': 'dairy_bean',
+
+    # 油脂类
+    '动物油脂类': 'oil',
+    '植物油': 'oil',
+    '油脂类': 'oil',
+
+    # 其他
+    '调味品': 'other',
+    '饮料': 'other',
+    '婴幼儿食品': 'other',
+    '其他类': 'other'
+}
+
+# 每餐食物类别目标配置（新增）
+MEAL_FOOD_CATEGORY_TARGETS = {
+    'breakfast': {
+        'cereal': {'min': 1, 'max': 2},
+        'protein': {'min': 1, 'max': 1},
+        'dairy_bean': {'min': 0, 'max': 1},
+        'vege_fruit': {'min': 0, 'max': 1}
+    },
+    'lunch': {
+        'cereal': {'min': 1, 'max': 1},
+        'protein': {'min': 1, 'max': 2},
+        'vege_fruit': {'min': 2, 'max': 3},
+        'dairy_bean': {'min': 0, 'max': 1}
+    },
+    'dinner': {
+        'cereal': {'min': 1, 'max': 1},
+        'protein': {'min': 1, 'max': 1},
+        'vege_fruit': {'min': 2, 'max': 2},
+        'dairy_bean': {'min': 0, 'max': 1}
+    }
+}
+all_categories = ['cereal', 'protein', 'vege_fruit', 'dairy_bean', 'oil', 'other']

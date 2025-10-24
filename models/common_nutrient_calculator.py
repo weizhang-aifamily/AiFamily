@@ -1,6 +1,8 @@
 # common_nutrient_calculator.py
 from collections import defaultdict
 from typing import Dict, Any, List
+
+from ejiacanAI.dish2_combo_models import Dish
 from models.nutrition_data import NutritionData
 from models.nutrient_config import MEAL_RATIO
 from models.nutrition_models import NutritionAnalysisInput

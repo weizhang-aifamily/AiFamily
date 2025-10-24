@@ -27,7 +27,8 @@ export async function getCombos({
   category = '',
   members = [],
   province_code = 'default',
-  mealType = 'all'
+  mealType = 'all',
+  want_eat = ''
 } = {}) {
   const url = `/family/getCombos/${member_ids}`;
 
@@ -37,7 +38,8 @@ export async function getCombos({
     cuisine: cuisine,
     category: category,
     members: members,
-    province_code: province_code
+    province_code: province_code,
+    want_eat: want_eat
   };
 
   try {
