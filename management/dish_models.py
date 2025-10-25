@@ -27,7 +27,7 @@ class NutrientRule:
     """一条需求标签判定规则"""
     id: int
     need_code: str
-    nutrient_name: str          # 英文列名，用于映射
+    nutrient: str          # 英文列名，用于映射
     comparison_operator: str    # ">=", "<=" 等
     threshold_value: float
     unit: str

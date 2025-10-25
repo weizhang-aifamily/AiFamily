@@ -641,7 +641,7 @@ function generateCombos() {
         console.log('activeMembers：', activeMembers);
         comboData = await getCombos({
             member_ids: memberIds,
-            activeSolutions: activeSolutions,
+            need_tags: activeSolutions,
             cuisine: cuisineStr,
             category: categoryStr,  // 新增的category参数
             members: activeMembers,
@@ -682,7 +682,7 @@ function generateCombos() {
                 <img src="://picsum.photos/seed/${dish.picSeed}/200" alt="${dish.name}">
                 <span class="dish-name">${dish.name}</span>
                 ${dish.exact_portion.size}份${dish.food_categories}
-                ${(dish.explicit_tags || []).map(tag => `<span class="nutri-tag">${tag}</span>`).join('')}
+                ${(dish.need_tags || []).map(tag => `<span class="nutri-tag">${tag}</span>`).join('')}
                 <span class="dish-per">
                     <span class="dot calories-dot">•${Math.round(dish.nutrients.EnergyKCal)}</span>
                     <span class="dot protein-dot">•${Math.round(dish.nutrients.Protein)}</span>

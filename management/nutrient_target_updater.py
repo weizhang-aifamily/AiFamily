@@ -141,9 +141,10 @@ class NutrientTargetUpdater:
         try:
             # 获取成员的饮食需求偏移值
             sql = """
-                SELECT nutrient_code, offset_val, is_positive
-                FROM ejia_member_diet_need 
-                WHERE member_id = %s AND offset_val IS NOT NULL
+                SELECT r.nutrient as nutrient_code, r.offset_val, r.is_positive
+                FROM ejia_enum_diet_need_nutrient_rule r
+                join ejia_member_diet_need n on r.need_code = n.need_code
+                WHERE member_id = %s
             """
             diet_needs = db.query(sql, [member_id])
 

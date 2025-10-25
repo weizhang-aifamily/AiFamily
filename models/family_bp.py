@@ -117,7 +117,7 @@ def get_combos(member_ids=None):
         meal_type = data.get('meal_type', 'all')
         cuisine = data.get('cuisine', None)
         category = data.get('category', None)
-        activeSolutions = data.get('activeSolutions', None)
+        need_tags = data.get('need_tags', None)
         members = data.get('members', [])  # 新增的members参数
         province_code = data.get('province_code', 'default')
         want_eat = data.get('want_eat', None)
@@ -142,7 +142,7 @@ def get_combos(member_ids=None):
                 dish_series=cuisine,  # 菜系ID
                 dish_category=category,
                 want_eat=want_eat,
-                explicit_tags=activeSolutions.split(","),
+                need_tags=need_tags.split(","),
             )
             all_day_meals = MealGeneratorV2.generate_per_meal_default(req)
         else:
@@ -158,7 +158,7 @@ def get_combos(member_ids=None):
                 dish_series=cuisine,  # 菜系ID
                 dish_category=category,
                 want_eat=want_eat,
-                explicit_tags=activeSolutions.split(","),
+                need_tags=need_tags.split(","),
             )
             all_day_meals = MealGeneratorV2.generate_per_meal(req)
 

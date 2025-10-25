@@ -22,7 +22,7 @@ export async function getDietSolutions(member_ids = "1,2") {
 }
 export async function getCombos({
   member_ids = "1,2",
-  activeSolutions = 'highCalcium,lowFat',
+  need_tags = 'highCalcium,lowFat',
   cuisine = 'sichuan',
   category = '',
   members = [],
@@ -34,7 +34,7 @@ export async function getCombos({
 
   const requestBody = {
     meal_type: mealType,
-    activeSolutions: activeSolutions,
+    need_tags: need_tags,
     cuisine: cuisine,
     category: category,
     members: members,

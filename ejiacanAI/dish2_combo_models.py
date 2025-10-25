@@ -31,7 +31,7 @@ class MealRequest:
     max_dishes_per_meal: int = 0    # 0 表示自动计算
     cook_time_limit: int = 30       # 分钟
     deficit_kcal: int = 0           # 热量缺口
-    explicit_tags: List[str] = field(default_factory=list)  # 标签
+    need_tags: List[str] = field(default_factory=list)  # 标签
     implicit_tags: List[str] = field(default_factory=list)  # 分类
     dish_series: Optional[str] = None  # 菜系ID
     dish_category: Optional[str] = None # 菜品类别
@@ -229,7 +229,7 @@ class Dish:
     foods: List[Food] = field(default_factory=list)  # 新增：食材详细信息
     food_categories: List[str] = field(default_factory=list)  # 如 ['protein', 'vege_fruit']
     # 以下全部给默认值
-    explicit_tags: List[str] = field(default_factory=list)
+    need_tags: List[str] = field(default_factory=list)
     implicit_tags: List[str] = field(default_factory=list)
     meal_structure_type: Dict[str, str] = None  # main_dish, selected #main_dish, alternative
     is_selected: int = None  # 1 0

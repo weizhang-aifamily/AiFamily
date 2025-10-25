@@ -625,15 +625,15 @@ class MealGeneratorV2:
     def _calculate_dish_score(cls, dish: Dish, req: MealRequest, nutrient_range: Dict,
                               current_want_eat_count: int = 0) -> int:
         """计算菜品分数（增加want_eat数量控制）"""
-        base_score = len(dish.explicit_tags)
+        base_score = len(dish.need_tags)
 
         # 1. 标签匹配度
-        if hasattr(req, 'explicit_tags') and req.explicit_tags:
-            req_tags = req.explicit_tags
+        if hasattr(req, 'need_tags') and req.need_tags:
+            req_tags = req.need_tags
             if isinstance(req_tags, str):
                 req_tags = req_tags.split(",")
 
-            matched_tags = set(req_tags) & set(dish.explicit_tags)
+            matched_tags = set(req_tags) & set(dish.need_tags)
             match_score = len(matched_tags) * 2
             base_score += match_score
 
@@ -894,6 +894,19 @@ class MealGeneratorV2:
 
         # 1. 优先使用 dish_tags 中的明确分类
         # 主食判断
+        staple_tags = dish_tags.get('structure_type', [])
+        if staple_tags:
+            return staple_tags[0].get('code', '')
+        # 如果以上都无法判断，按其他标签判断
+        return cls._classify_dish_structure_type_second(dish)
+
+    @classmethod
+    def _classify_dish_structure_type_second(cls, dish: Dish) -> str:
+        """判断菜品属于哪个类别"""
+        dish_tags = getattr(dish, 'dish_tags', {}) or {}
+
+        # 1. 优先使用 dish_tags 中的明确分类
+        # 主食判断
         staple_tags = dish_tags.get('staple', [])
         for tag in staple_tags:
             code = tag.get('code', '')
@@ -905,7 +918,7 @@ class MealGeneratorV2:
         for tag in vege_tags:
             code = tag.get('code', '')
             # 荤菜类别
-            if code in ['meat','seafood']:
+            if code in ['meat', 'seafood']:
                 return 'main_dish'
             # 素菜类别
             elif code in ['vege', 'vegan', 'egg']:
@@ -942,6 +955,7 @@ class MealGeneratorV2:
         # 5. 最终默认分类
         # 如果以上都无法判断，保守地分类为配菜
         return 'side_dish'
+
     # -------------------------------------------------
     # 打包单餐
     # -------------------------------------------------
@@ -1000,7 +1014,7 @@ class MealGeneratorV2:
                 default_portion=meta.dish_default_portion_g,
                 rating=meta.dish_rating,
                 description=meta.dish_description,
-                explicit_tags=meta.need_tags.split(",") if meta.need_tags else [],
+                need_tags=meta.need_tags.split(",") if meta.need_tags else [],
 
                 ingredients=ingredients,
                 nutrients=nutrients,

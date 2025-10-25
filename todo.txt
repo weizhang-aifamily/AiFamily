@@ -1,4 +1,16 @@
-在获取套餐时 增加营养最大值限制
+20251025
+done:餐次结构改成优先从数据库structure_type标签获取
+done:needtags字段在dish表和food表都加,都按ejia_enum_diet_need_nutrient_rule计算
+    done:更新food表
+    done:更新dish表
+done:更改ejia_member_daily_nutrient_actual的更新逻辑
+    done:更改ejia_member_diet_need表结构（改到ejia_enum_diet_need_nutrient_rule）
+20252026
+整理增加dish的prompt，检查dish管理维护功能
+
 搜索前端展示
-餐次结构后台批处理
+在获取套餐时 增加营养最大值限制
+category1基础数据从数据库获取（现在是在nutrition_config里）
+内存机制
+dish图片
 done:配置不同类别食物：谷薯、肉蛋、蔬果、奶豆等

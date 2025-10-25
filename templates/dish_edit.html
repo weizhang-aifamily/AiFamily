@@ -92,6 +92,8 @@
             <div class="food-amount">
               <label>用量（克）:</label>
               <input type="number" name="amount_grams_{{ food.code }}" value="{{ food.amount_grams if food.amount_grams else 0 }}" min="0" step="1">
+              <label>是否是主料(1,0):</label>
+              <input type="number" name="is_main_food_{{ food.code }}" value="{{ food.is_main_food if food.is_main_food else 0 }}" min="0" step="1">
               <input type="hidden" name="food_codes" value="{{ food.code }}">
             </div>
           </div>
